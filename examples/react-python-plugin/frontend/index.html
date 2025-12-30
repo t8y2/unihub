@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>React + Python 插件</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+
+    .result {
+      background: white;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    function App() {
+      const [input, setInput] = useState('');
+      const [result, setResult] = useState('');
+      const [loading, setLoading] = useState(false);
+
+      const callPython = async (action) => {
+        setLoading(true);
+        try {
+          const response = await window.api.plugin.backendCall(
+            'com.example.react-python',
+            action,
+            JSON.stringify({ text: input })
+          );
+          setResult(response);
+        } catch (error) {
+          setResult(`错误: ${error.message}`);
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="container">
+          <h1>🐍 React + Python 插件</h1>
+          <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+            前端使用 React，后端使用 Python 处理
+          </p>
+
+          <div className="card">
+            <h3>输入文本</h3>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="输入一些文本..."
+            />
+
+            <div>
+              <button onClick={() => callPython('reverse')} disabled={loading}>
+                反转文本
+              </button>
+              <button onClick={() => callPython('analyze')} disabled={loading}>
+                分析文本
+              </button>
+              <button onClick={() => callPython('hash')} disabled={loading}>
+                计算哈希
+              </button>
+            </div>
+
+            {result && (
+              <div className="result">
+                <strong>Python 处理结果：</strong>
+                <div>{result}</div>
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <h4>技术栈</h4>
+            <ul>
+              <li>前端：React 18 (CDN)</li>
+              <li>后端：Python 3</li>
+              <li>通信：Electron IPC + 子进程</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+
+</html>

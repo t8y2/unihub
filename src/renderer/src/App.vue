@@ -1,0 +1,289 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { pluginRegistry, initPlugins } from './plugins'
+import { pluginInstaller } from './plugins/marketplace/installer'
+import HomePage from './components/HomePage.vue'
+import PluginManager from './components/PluginManager.vue'
+import PluginStore from './components/PluginStore.vue'
+
+const isDark = ref(false)
+const showPluginManager = ref(false)
+const showPluginStore = ref(false)
+
+onMounted(async () => {
+  // 初始化插件系统
+  initPlugins()
+  
+  // 加载已安装的第三方插件
+  try {
+    await pluginInstaller.loadInstalledPlugins()
+  } catch (error) {
+    console.error('加载第三方插件失败:', error)
+  }
+  
+  // 从 localStorage 读取主题设置
+  const savedTheme = localStorage.getItem('theme')
+  if (savedTheme === 'dark') {
+    isDark.value = true
+    document.documentElement.classList.add('dark')
+  }
+
+  // 添加键盘快捷键监听
+  window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
+
+const handleKeyDown = async (e: KeyboardEvent) => {
+  // Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
+  if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+    e.preventDefault()
+    
+    if (tabs.value.length === 0) {
+      // 如果没有标签，关闭应用（Electron）
+      window.electron.ipcRenderer.send('window:close')
+    } else if (tabs.value.length === 1) {
+      // 如果只有一个标签，关闭标签（回到首页）
+      closeTab(activeTabId.value)
+    } else {
+      // 关闭当前标签
+      closeTab(activeTabId.value)
+    }
+  }
+}
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+    localStorage.setItem('theme', 'light')
+  }
+}
+
+interface Tab {
+  id: string
+  pluginId: string
+  title: string
+}
+
+const tabs = ref<Tab[]>([])
+const activeTabId = ref('')
+
+// 获取所有启用的插件
+const enabledPlugins = computed(() => pluginRegistry.getEnabled())
+
+// 按分类获取插件
+const pluginsByCategory = computed(() => {
+  const categories = new Map<string, typeof enabledPlugins.value>()
+  enabledPlugins.value.forEach(plugin => {
+    const category = plugin.metadata.category
+    if (!categories.has(category)) {
+      categories.set(category, [])
+    }
+    categories.get(category)!.push(plugin)
+  })
+  return categories
+})
+
+// 分类名称映射
+const categoryNames: Record<string, string> = {
+  formatter: '格式化',
+  tool: '工具',
+  encoder: '编码',
+  custom: '自定义'
+}
+
+const openTab = (pluginId: string) => {
+  const plugin = pluginRegistry.get(pluginId)
+  if (!plugin || !plugin.enabled) return
+  
+  // 检查是否已经打开
+  const existingTab = tabs.value.find(t => t.pluginId === pluginId)
+  if (existingTab) {
+    activeTabId.value = existingTab.id
+    return
+  }
+  
+  // 创建新标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId,
+    title: plugin.metadata.name
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
+}
+
+const closeTab = (tabId: string) => {
+  const index = tabs.value.findIndex(t => t.id === tabId)
+  if (index === -1) return
+  
+  // 如果关闭的是当前标签，切换到相邻标签
+  if (activeTabId.value === tabId) {
+    if (tabs.value.length > 1) {
+      const nextIndex = index === tabs.value.length - 1 ? index - 1 : index + 1
+      const nextTab = tabs.value[nextIndex]
+      if (nextTab) {
+        activeTabId.value = nextTab.id
+      }
+    } else {
+      // 最后一个标签，清空 activeTabId
+      activeTabId.value = ''
+    }
+  }
+  
+  tabs.value.splice(index, 1)
+}
+
+const goHome = () => {
+  // 关闭所有标签，回到首页
+  tabs.value = []
+  activeTabId.value = ''
+}
+</script>
+
+<template>
+  <div class="h-screen flex bg-gray-50 dark:bg-gray-900">
+    <!-- 侧边栏 -->
+    <aside class="w-52 bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      <!-- 顶部拖动区域 + Logo -->
+      <div class="h-16 flex items-end px-4 pb-2 pt-3 drag-region">
+        <button 
+          @click="goHome"
+          class="flex items-center gap-2 hover:opacity-80 transition-opacity no-drag"
+        >
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+          </div>
+          <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">UniHub</span>
+        </button>
+      </div>
+
+      <!-- 导航菜单 -->
+      <nav class="flex-1 p-2 overflow-y-auto">
+        <div class="space-y-1">
+          <template v-for="[category, plugins] in pluginsByCategory" :key="category">
+            <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-3 py-2" :class="{ 'mt-4': category !== 'formatter' }">
+              {{ categoryNames[category] || category }}
+            </div>
+            
+            <button
+              v-for="plugin in plugins"
+              :key="plugin.metadata.id"
+              @click="openTab(plugin.metadata.id)"
+              :class="[
+                'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                tabs.some(t => t.id === activeTabId && t.pluginId === plugin.metadata.id)
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
+              ]"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="plugin.metadata.icon" />
+              </svg>
+              {{ plugin.metadata.name }}
+            </button>
+          </template>
+        </div>
+      </nav>
+
+      <!-- 底部按钮 -->
+      <div class="p-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
+        <button
+          @click="showPluginManager = true"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+          </svg>
+          插件管理
+        </button>
+        
+        <button
+          @click="showPluginStore = true"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          插件商店
+        </button>
+        
+        <button
+          @click="toggleTheme"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50"
+        >
+          <svg v-if="!isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+          <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          {{ isDark ? '浅色模式' : '深色模式' }}
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 flex flex-col">
+      <!-- 标签栏 -->
+      <div v-if="tabs.length > 0" class="h-9 bg-gray-50 dark:bg-gray-800 flex items-center overflow-x-auto overflow-y-hidden scrollbar-hide drag-region">
+        <div class="flex items-center h-full flex-nowrap">
+          <div 
+            v-for="tab in tabs" 
+            :key="tab.id"
+            @click="activeTabId = tab.id"
+            :class="[
+              'group h-full flex items-center gap-2 px-4 cursor-pointer transition-colors relative flex-shrink-0 no-drag',
+              activeTabId === tab.id 
+                ? 'bg-white dark:bg-gray-900' 
+                : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
+            ]"
+          >
+            <span :class="[
+              'text-sm font-medium',
+              activeTabId === tab.id ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-400'
+            ]">{{ tab.title }}</span>
+            <button
+              @click.stop="closeTab(tab.id)"
+              class="w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors"
+            >
+              <svg class="w-3 h-3 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 内容区 -->
+      <div class="flex-1 bg-white dark:bg-gray-900 flex flex-col min-h-0">
+        <!-- 首页 -->
+        <HomePage v-if="tabs.length === 0" @open-tool="openTab" />
+        
+        <!-- 工具标签页 -->
+        <template v-for="tab in tabs" :key="tab.id">
+          <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
+            <component 
+              :is="pluginRegistry.get(tab.pluginId)?.component" 
+              v-bind="pluginRegistry.get(tab.pluginId)?.config || {}"
+            />
+          </div>
+        </template>
+      </div>
+    </main>
+
+    <!-- 插件管理器弹窗 -->
+    <PluginManager v-if="showPluginManager" @close="showPluginManager = false" />
+    
+    <!-- 插件商店弹窗 -->
+    <PluginStore v-if="showPluginStore" @close="showPluginStore = false" />
+  </div>
+</template>
