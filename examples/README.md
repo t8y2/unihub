@@ -1,6 +1,6 @@
 # 插件示例集合
 
-展示不同前后端技术栈组合的插件开发方式。
+展示不同前后端技术栈组合的插件开发方式，从简单的 CDN 引入到现代化的构建工具。
 
 ## 📚 示例列表
 
@@ -42,22 +42,43 @@
 
 ---
 
-### 3. Vue + Node.js 插件
+### 3. Vue + Python 插件 (CDN)
 
-**路径**: `simple-plugin/`
+**路径**: `vue-python-plugin/`
 
 **技术栈**：
 
 - 前端：Vue 3 (CDN)
-- 后端：Node.js
+- 后端：Python 3
 
 **特点**：
 
-- 💚 前后端同语言
 - 🔄 响应式开发
-- 📦 npm 生态丰富
+- 🐍 强大的数据处理能力
+- 📦 零构建配置
 
-**适合**：Web 工具、通用工具、快速开发
+**适合**：快速原型、数据处理工具
+
+---
+
+### 4. 现代化 Vue + Python 插件 ⭐
+
+**路径**: `modern-vue-plugin/`
+
+**技术栈**：
+
+- 前端：Vue 3 + TypeScript + Vite
+- 后端：Python 3
+
+**特点**：
+
+- 🛠️ 现代化构建工具
+- 📝 TypeScript 类型安全
+- 🎨 组件化开发
+- 📦 单文件打包（解决 CORS）
+- 🔥 热重载开发体验
+
+**适合**：复杂应用、团队开发、生产环境
 
 ---
 
@@ -82,6 +103,24 @@ python3 -m http.server 8080
 http://localhost:8080/plugin.zip
 ```
 
+### 现代化 Vue 插件开发
+
+```bash
+# 1. 进入现代化 Vue 插件目录
+cd modern-vue-plugin
+
+# 2. 安装依赖
+npm install
+
+# 3. 开发模式（热重载）
+npm run dev
+
+# 4. 构建并打包
+npm run package
+
+# 5. 在 UniHub 中拖拽安装 plugin.zip
+```
+
 ---
 
 ## 📖 文档
@@ -99,18 +138,37 @@ http://localhost:8080/plugin.zip
 **如果你想要...**
 
 - **最快的性能** → 原生 JS + Go
-- **快速开发** → Vue + Node.js
+- **快速原型** → Vue + Python (CDN)
 - **数据处理** → React + Python
+- **现代化开发** → 现代化 Vue + Python ⭐
 - **最小体积** → 原生 JS + Python
-- **复杂应用** → React + Node.js
+- **复杂应用** → 现代化 Vue + Python
 
 ### 技术栈对比
 
-| 示例           | 学习难度 | 开发速度   | 性能       | 体积       |
-| -------------- | -------- | ---------- | ---------- | ---------- |
-| 原生 JS + Go   | ⭐⭐⭐   | ⭐⭐⭐⭐   | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| React + Python | ⭐⭐⭐   | ⭐⭐⭐⭐   | ⭐⭐⭐     | ⭐⭐⭐     |
-| Vue + Node.js  | ⭐⭐     | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐   | ⭐⭐⭐⭐   |
+| 示例                    | 学习难度 | 开发速度   | 性能       | 体积       | 开发体验   |
+| ----------------------- | -------- | ---------- | ---------- | ---------- | ---------- |
+| 原生 JS + Go           | ⭐⭐⭐   | ⭐⭐⭐     | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐       |
+| React + Python (CDN)   | ⭐⭐⭐   | ⭐⭐⭐⭐   | ⭐⭐⭐     | ⭐⭐⭐     | ⭐⭐⭐     |
+| Vue + Python (CDN)     | ⭐⭐     | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐   | ⭐⭐⭐⭐   | ⭐⭐⭐     |
+| 现代化 Vue + Python ⭐ | ⭐⭐⭐   | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐   | ⭐⭐⭐     | ⭐⭐⭐⭐⭐ |
+
+### CDN vs 构建工具
+
+**CDN 方式** (vue-python-plugin, react-python-plugin)
+- ✅ 零配置，即写即用
+- ✅ 学习成本低
+- ❌ 缺少类型检查
+- ❌ 没有代码分割
+- ❌ 开发体验一般
+
+**构建工具方式** (modern-vue-plugin)
+- ✅ TypeScript 支持
+- ✅ 热重载开发
+- ✅ 代码分割优化
+- ✅ 现代化工具链
+- ❌ 需要学习构建配置
+- ❌ 初始设置复杂
 
 ---
 
@@ -118,18 +176,17 @@ http://localhost:8080/plugin.zip
 
 ### 创建你自己的插件
 
+#### 方式一：简单快速（CDN）
+
 1. **选择前端框架**
    - 原生 JS（零依赖）
    - Vue 3（响应式）
    - React（组件化）
-   - 其他任何框架
 
 2. **选择后端语言**（可选）
    - Python（数据处理）
    - Go（高性能）
    - Node.js（Web 工具）
-   - Rust（系统工具）
-   - 其他任何语言
 
 3. **实现功能**
    - 前端：创建 `frontend/index.html`
@@ -141,6 +198,45 @@ http://localhost:8080/plugin.zip
    zip -r plugin.zip manifest.json frontend/ backend/
    ```
 
+#### 方式二：现代化开发（推荐）
+
+1. **复制现代化模板**
+   ```bash
+   cp -r modern-vue-plugin my-plugin
+   cd my-plugin
+   ```
+
+2. **安装依赖**
+   ```bash
+   npm install
+   ```
+
+3. **开发你的功能**
+   - 修改 `src/App.vue`
+   - 添加组件到 `src/components/`
+   - 更新后端 `backend/main.py`
+   - 修改 `manifest.json`
+
+4. **构建和打包**
+   ```bash
+   npm run build
+   npm run package
+   ```
+
+### 解决 CORS 问题
+
+如果你使用构建工具，确保所有资源都内联到 HTML 中：
+
+```javascript
+// vite.config.ts
+import { viteSingleFile } from 'vite-plugin-singlefile'
+
+export default defineConfig({
+  plugins: [vue(), viteSingleFile()],
+  // ...
+})
+```
+
 ---
 
 ## 💡 更多示例
@@ -148,9 +244,20 @@ http://localhost:8080/plugin.zip
 想要更多示例？查看：
 
 - **图像处理插件** - 使用 Python PIL
-- **Markdown 编辑器** - 使用 Vue + Node.js
+- **Markdown 编辑器** - 使用现代化 Vue
 - **文件加密工具** - 使用 Rust
 - **API 测试工具** - 使用 React + Go
+- **代码格式化工具** - 使用 TypeScript
+
+### 插件功能展示
+
+**现代化 Vue 插件** 包含以下功能：
+- 🔤 Base64 编码/解码
+- 🔐 多种加密算法（凯撒密码、ROT13、MD5、SHA256）
+- 📦 数据压缩（Gzip、Zlib）
+- 📋 操作历史记录
+- ⚡ 实时处理反馈
+- 🎨 现代化 UI 设计
 
 ---
 

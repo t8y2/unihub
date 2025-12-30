@@ -5,7 +5,7 @@ import { markRaw } from 'vue'
 
 /**
  * 插件安装器（Electron 版本）
- * 使用 BrowserView 加载插件，类似 uTools
+ * 使用 BrowserView 加载插件
  */
 export class PluginInstaller {
   /**

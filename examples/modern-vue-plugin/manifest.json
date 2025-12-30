@@ -1,0 +1,17 @@
+{
+  "id": "com.example.modern-vue",
+  "name": "现代化 Vue 插件",
+  "version": "1.0.0",
+  "description": "使用 Vite + Vue 3 + TypeScript 构建的现代化插件，支持 Base64 编码、文本加密和数据压缩",
+  "author": "UniHub Team",
+  "frontend": {
+    "entry": "frontend/index.html",
+    "type": "vue"
+  },
+  "backend": {
+    "entry": "backend/main.py",
+    "type": "python"
+  },
+  "permissions": ["file-system"],
+  "icon": "🚀"
+}
