@@ -53,11 +53,13 @@ http://localhost:8080/plugin.zip
 ### 三种示例插件
 
 1. **原生 JS + Go** - 高性能工具
+
    ```bash
    cd examples/vanilla-go-plugin
    ```
 
 2. **React + Python** - 数据分析工具
+
    ```bash
    cd examples/react-python-plugin
    ```
@@ -111,10 +113,10 @@ python3 -m http.server 8080
 
 ## 🎯 技术栈对比
 
-| 组合 | 适用场景 | 学习难度 | 性能 |
-|------|----------|----------|------|
-| 原生 JS + Go | 高性能工具 | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| React + Python | 数据分析 | ⭐⭐⭐ | ⭐⭐⭐ |
-| Vue + Node.js | 快速开发 | ⭐⭐ | ⭐⭐⭐⭐ |
+| 组合           | 适用场景   | 学习难度 | 性能       |
+| -------------- | ---------- | -------- | ---------- |
+| 原生 JS + Go   | 高性能工具 | ⭐⭐⭐   | ⭐⭐⭐⭐⭐ |
+| React + Python | 数据分析   | ⭐⭐⭐   | ⭐⭐⭐     |
+| Vue + Node.js  | 快速开发   | ⭐⭐     | ⭐⭐⭐⭐   |
 
 ## 🛠️ 开发环境

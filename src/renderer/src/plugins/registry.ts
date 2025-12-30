@@ -3,7 +3,7 @@ import type { Plugin } from '@/types/plugin'
 
 class PluginRegistry {
   private plugins = reactive<Map<string, Plugin>>(new Map())
-  
+
   // 响应式版本号，用于触发外部组件更新
   public version = ref(0)
 
@@ -32,11 +32,11 @@ class PluginRegistry {
   }
 
   getEnabled(): Plugin[] {
-    return this.getAll().filter(p => p.enabled)
+    return this.getAll().filter((p) => p.enabled)
   }
 
   getByCategory(category: string): Plugin[] {
-    return this.getEnabled().filter(p => p.metadata.category === category)
+    return this.getEnabled().filter((p) => p.metadata.category === category)
   }
 
   toggle(id: string) {
@@ -71,8 +71,8 @@ class PluginRegistry {
   // 保存插件启用状态到 localStorage
   private saveToLocalStorage() {
     const enabledPlugins = this.getAll()
-      .filter(p => p.enabled)
-      .map(p => p.metadata.id)
+      .filter((p) => p.enabled)
+      .map((p) => p.metadata.id)
     localStorage.setItem('enabled-plugins', JSON.stringify(enabledPlugins))
   }
 
@@ -81,14 +81,14 @@ class PluginRegistry {
     try {
       const saved = localStorage.getItem('enabled-plugins')
       console.log(`[Registry] localStorage 数据: ${saved}`)
-      
+
       // 只有当 localStorage 中确实有保存的数据时才恢复
       // 如果是第一次运行（没有保存数据），保持所有插件的默认 enabled: true 状态
       if (saved !== null) {
         const enabledIds = JSON.parse(saved) as string[]
         console.log(`[Registry] 启用的插件 IDs:`, enabledIds)
-        
-        this.getAll().forEach(plugin => {
+
+        this.getAll().forEach((plugin) => {
           const wasEnabled = plugin.enabled
           plugin.enabled = enabledIds.includes(plugin.metadata.id)
           console.log(`[Registry] 插件 ${plugin.metadata.id}: ${wasEnabled} -> ${plugin.enabled}`)
@@ -97,7 +97,7 @@ class PluginRegistry {
       } else {
         console.log(`[Registry] 没有保存的状态，保持默认`)
         // 打印当前所有插件状态
-        this.getAll().forEach(plugin => {
+        this.getAll().forEach((plugin) => {
           console.log(`[Registry] 插件 ${plugin.metadata.id} 默认状态: ${plugin.enabled}`)
         })
       }
@@ -110,7 +110,7 @@ class PluginRegistry {
 
   // 重置所有插件为启用状态
   resetAll() {
-    this.getAll().forEach(plugin => {
+    this.getAll().forEach((plugin) => {
       plugin.enabled = true
     })
     this.version.value++

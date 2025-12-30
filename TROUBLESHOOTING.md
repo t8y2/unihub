@@ -5,6 +5,7 @@
 ### 1. EACCES 错误（权限被拒绝）
 
 **错误信息**：
+
 ```
 spawn /path/to/backend/main EACCES
 ```
@@ -14,6 +15,7 @@ spawn /path/to/backend/main EACCES
 **解决方案**：
 
 #### 方法 1：打包时添加权限（推荐）
+
 ```bash
 # 在打包脚本中添加
 chmod +x backend/main
@@ -21,11 +23,13 @@ zip -r plugin.zip manifest.json frontend/ backend/
 ```
 
 #### 方法 2：手动添加权限
+
 ```bash
 chmod +x backend/main
 ```
 
 #### 方法 3：自动修复
+
 插件管理器已更新，会在安装时自动添加执行权限。重新安装插件即可。
 
 ---
@@ -33,6 +37,7 @@ chmod +x backend/main
 ### 2. Vue 模板编译错误
 
 **错误信息**：
+
 ```
 Component provided template option but runtime compilation is not supported
 ```
@@ -42,6 +47,7 @@ Component provided template option but runtime compilation is not supported
 **解决方案**：
 
 已在 `electron.vite.config.ts` 中配置：
+
 ```typescript
 resolve: {
   alias: {
@@ -51,6 +57,7 @@ resolve: {
 ```
 
 重启开发服务器：
+
 ```bash
 pnpm dev
 ```
@@ -60,6 +67,7 @@ pnpm dev
 ### 3. iframe 沙箱警告
 
 **警告信息**：
+
 ```
 An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing
 ```
@@ -67,6 +75,7 @@ An iframe which has both allow-scripts and allow-same-origin for its sandbox att
 **说明**：这是预期行为。插件需要这些权限才能正常工作。
 
 **安全措施**：
+
 - 只安装来自可信来源的插件
 - 插件运行在独立的 iframe 中
 - 后端通过子进程隔离
@@ -77,6 +86,7 @@ An iframe which has both allow-scripts and allow-same-origin for its sandbox att
 ### 4. CSP 安全警告
 
 **警告信息**：
+
 ```
 Electron Security Warning (Insecure Content-Security-Policy)
 ```
@@ -84,14 +94,17 @@ Electron Security Warning (Insecure Content-Security-Policy)
 **解决方案**：
 
 已在 `src/renderer/index.html` 中添加 CSP：
+
 ```html
-<meta http-equiv="Content-Security-Policy" 
-      content="default-src 'self'; 
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; 
                script-src 'self' 'unsafe-eval'; 
                style-src 'self' 'unsafe-inline'; 
                img-src 'self' data: blob:; 
                connect-src 'self' http: https:; 
-               frame-src blob:;" />
+               frame-src blob:;"
+/>
 ```
 
 **注意**：开发模式下仍会显示警告，打包后会消失。
@@ -105,16 +118,18 @@ Electron Security Warning (Insecure Content-Security-Policy)
 **检查清单**：
 
 1. **检查 manifest.json**
+
    ```json
    {
      "id": "com.example.plugin",
      "name": "插件名称",
-     "main": "frontend/index.html",  // 确保路径正确
+     "main": "frontend/index.html", // 确保路径正确
      "category": "tool"
    }
    ```
 
 2. **检查文件结构**
+
    ```
    plugin.zip
    ├── manifest.json
@@ -136,21 +151,23 @@ Electron Security Warning (Insecure Content-Security-Policy)
 **检查清单**：
 
 1. **检查后端文件**
+
    ```bash
    # Python
    ls -la backend/main.py
    chmod +x backend/main.py
-   
+
    # Go
    ls -la backend/main
    chmod +x backend/main
    ```
 
 2. **测试后端**
+
    ```bash
    # Python
    python3 backend/main.py function_name '{"arg":"value"}'
-   
+
    # Go
    ./backend/main function_name '{"arg":"value"}'
    ```
@@ -158,7 +175,7 @@ Electron Security Warning (Insecure Content-Security-Policy)
 3. **检查返回格式**
    后端必须输出 JSON 到 stdout：
    ```json
-   {"success": true, "result": "..."}
+   { "success": true, "result": "..." }
    ```
 
 ---
@@ -166,6 +183,7 @@ Electron Security Warning (Insecure Content-Security-Policy)
 ### 7. Go 编译失败
 
 **错误信息**：
+
 ```
 go: command not found
 ```
@@ -173,6 +191,7 @@ go: command not found
 **解决方案**：
 
 安装 Go：
+
 ```bash
 # macOS
 brew install go
@@ -185,6 +204,7 @@ https://go.dev/dl/
 ```
 
 验证安装：
+
 ```bash
 go version
 ```
@@ -194,6 +214,7 @@ go version
 ### 8. Python 脚本无法执行
 
 **错误信息**：
+
 ```
 python3: command not found
 ```
@@ -201,6 +222,7 @@ python3: command not found
 **解决方案**：
 
 安装 Python 3：
+
 ```bash
 # macOS
 brew install python3
@@ -217,6 +239,7 @@ python3 --version
 ### 9. 插件 API 未定义
 
 **错误信息**：
+
 ```
 window.api is not defined
 ```
@@ -226,6 +249,7 @@ window.api is not defined
 **解决方案**：
 
 等待 `unihub-ready` 事件：
+
 ```javascript
 window.addEventListener('unihub-ready', () => {
   // 现在可以安全使用 window.api
@@ -242,12 +266,14 @@ window.addEventListener('unihub-ready', () => {
 **解决方案**：
 
 先卸载旧版本：
+
 ```bash
 # 在插件商店的"已安装"标签页中卸载
 # 然后重新安装新版本
 ```
 
 或手动删除：
+
 ```bash
 # macOS/Linux
 rm -rf ~/Library/Application\ Support/unihub-electron/plugins/com.example.plugin
@@ -262,6 +288,7 @@ rm -rf ~/Library/Application\ Support/unihub-electron/plugins/com.example.plugin
 ### 1. 查看插件日志
 
 打开开发者工具：
+
 ```
 Cmd/Ctrl + Shift + I
 ```
@@ -323,12 +350,14 @@ cat ~/Library/Application\ Support/unihub-electron/plugins-data.json | jq
 ### 开发插件时
 
 1. **先测试后端**
+
    ```bash
    # 独立测试后端逻辑
    ./backend/main test '{"data":"test"}'
    ```
 
 2. **使用本地服务器**
+
    ```bash
    python3 -m http.server 8080
    ```

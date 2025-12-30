@@ -17,6 +17,8 @@ const installUrl = ref('')
 const installing = ref(false)
 const error = ref('')
 const success = ref('')
+const isDragging = ref(false)
+const fileInput = ref<HTMLInputElement>()
 
 // 强制刷新计数器
 const refreshKey = ref(0)
@@ -53,15 +55,7 @@ const categoryNames: Record<string, string> = {
 }
 
 const togglePlugin = (id: string): void => {
-  console.log(`[PluginManagement] 切换插件 ${id}`)
-  const plugin = pluginRegistry.get(id)
-  console.log(`[PluginManagement] 插件当前状态:`, plugin?.enabled)
-  
   pluginRegistry.toggle(id)
-  
-  const updatedPlugin = pluginRegistry.get(id)
-  console.log(`[PluginManagement] 插件新状态:`, updatedPlugin?.enabled)
-  
   // 强制刷新
   refreshKey.value++
 }
@@ -98,6 +92,74 @@ const installFromUrl = async (): Promise<void> => {
 
     success.value = '✅ 插件安装成功！'
     installUrl.value = ''
+
+    // 重新加载插件列表
+    await loadInstalledPlugins()
+    await pluginInstaller.loadInstalledPlugins()
+
+    // 2秒后清除成功消息
+    setTimeout(() => {
+      success.value = ''
+    }, 2000)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '安装失败'
+  } finally {
+    installing.value = false
+  }
+}
+
+// 处理文件拖拽
+const handleDrop = async (event: DragEvent): Promise<void> => {
+  event.preventDefault()
+  isDragging.value = false
+
+  const files = event.dataTransfer?.files
+  if (!files || files.length === 0) {
+    error.value = '请拖拽一个文件'
+    return
+  }
+
+  const file = files[0]
+  await installFile(file)
+}
+
+// 触发文件选择
+const triggerFileSelect = (): void => {
+  fileInput.value?.click()
+}
+
+// 处理文件选择
+const handleFileSelect = async (event: Event): Promise<void> => {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+
+  if (!files || files.length === 0) {
+    return
+  }
+
+  const file = files[0]
+  await installFile(file)
+
+  // 清空文件输入，允许重复选择同一文件
+  target.value = ''
+}
+
+// 安装文件的通用方法
+const installFile = async (file: File): Promise<void> => {
+  if (!file.name.endsWith('.zip')) {
+    error.value = '只支持 .zip 格式的插件文件'
+    return
+  }
+
+  try {
+    installing.value = true
+    error.value = ''
+    success.value = ''
+
+    // 直接调用文件安装方法
+    await pluginInstaller.installFromFile(file)
+
+    success.value = '✅ 插件安装成功！'
 
     // 重新加载插件列表
     await loadInstalledPlugins()
@@ -294,8 +356,9 @@ const getSourceLabel = (source: string): string => {
               <!-- 操作按钮 -->
               <Button
                 size="sm"
-                variant="destructive"
+                variant="outline"
                 @click="uninstallPlugin(plugin.id)"
+                class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
               >
                 卸载
               </Button>
@@ -307,23 +370,68 @@ const getSourceLabel = (source: string): string => {
       <!-- 插件商店标签页 -->
       <div v-show="activeTab === 'store'" class="px-6 pb-6 space-y-4">
         <!-- 从 URL 安装 -->
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            从 URL 安装插件
-          </h3>
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"
+        >
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">安装插件</h3>
+
+          <!-- 拖拽区域 -->
+          <div
+            @drop="handleDrop"
+            @dragover.prevent
+            @dragenter.prevent
+            @click="triggerFileSelect"
+            :class="[
+              'border-2 border-dashed rounded-lg p-8 mb-4 text-center transition-colors cursor-pointer',
+              isDragging
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+            ]"
+            @dragenter="isDragging = true"
+            @dragleave="isDragging = false"
+          >
+            <svg
+              class="w-12 h-12 mx-auto mb-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+            <p class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              拖拽 ZIP 文件到这里
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">或者点击选择文件</p>
+            <Button variant="outline" size="sm" type="button" @click.stop> 选择文件 </Button>
+          </div>
+
+          <!-- 隐藏的文件输入 -->
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".zip"
+            @change="handleFileSelect"
+            class="hidden"
+          />
+
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            输入插件 ZIP 文件的 URL（支持纯前端和带后端的插件）
+            支持三种安装方式：拖拽文件、点击选择文件，或输入 URL
           </p>
 
           <div class="flex gap-3">
             <Input
               v-model="installUrl"
-              placeholder="http://localhost:8080/plugin.zip"
+              placeholder="http://localhost:8080/plugin.zip 或 file:///path/to/plugin.zip"
               class="flex-1"
               :disabled="installing"
             />
             <Button :disabled="installing || !installUrl.trim()" @click="installFromUrl">
-              {{ installing ? '安装中...' : '安装' }}
+              {{ installing ? '安装中...' : '从 URL 安装' }}
             </Button>
           </div>
 
@@ -371,7 +479,9 @@ const getSourceLabel = (source: string): string => {
         </div>
 
         <!-- 插件开发指南 -->
-        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
+        <div
+          class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800"
+        >
           <h3
             class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2"
           >
@@ -390,8 +500,7 @@ const getSourceLabel = (source: string): string => {
           </p>
           <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside">
             <li>
-              完整指南：<code
-                class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
+              完整指南：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
                 >PLUGIN_GUIDE.md</code
               >
             </li>

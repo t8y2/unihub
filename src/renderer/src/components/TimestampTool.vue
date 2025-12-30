@@ -41,21 +41,21 @@ const timestampToDate = () => {
       dateResult.value = '请输入时间戳'
       return
     }
-    
+
     let ts = parseInt(timestampInput.value.trim())
-    
+
     // 如果是 10 位，说明是秒级时间戳，转换为毫秒
     if (ts.toString().length === 10) {
       ts = ts * 1000
     }
-    
+
     const date = new Date(ts)
-    
+
     if (isNaN(date.getTime())) {
       dateResult.value = '无效的时间戳'
       return
     }
-    
+
     dateResult.value = date.toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
@@ -76,17 +76,17 @@ const dateToTimestamp = () => {
       timestampResult.value = '请输入日期时间'
       return
     }
-    
+
     const date = new Date(dateInput.value.trim())
-    
+
     if (isNaN(date.getTime())) {
       timestampResult.value = '无效的日期格式'
       return
     }
-    
+
     const timestamp = Math.floor(date.getTime() / 1000)
     const timestampMs = date.getTime()
-    
+
     timestampResult.value = `秒级: ${timestamp}\n毫秒级: ${timestampMs}`
   } catch (e: any) {
     timestampResult.value = `转换失败: ${e.message}`
@@ -120,7 +120,9 @@ const useCurrentDate = () => {
 <template>
   <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900">
     <!-- 当前时间显示 -->
-    <div class="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white p-6">
+    <div
+      class="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white p-6"
+    >
       <div class="max-w-4xl mx-auto">
         <h2 class="text-lg font-semibold mb-4">当前时间</h2>
         <div class="grid grid-cols-2 gap-4">
@@ -133,7 +135,12 @@ const useCurrentDate = () => {
                 class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
                 </svg>
               </button>
             </div>
@@ -147,7 +154,12 @@ const useCurrentDate = () => {
                 class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
                 </svg>
               </button>
             </div>
@@ -165,8 +177,18 @@ const useCurrentDate = () => {
         <!-- 时间戳转日期 -->
         <div class="bg-gray-50 rounded-lg p-6">
           <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            <svg
+              class="w-5 h-5 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
             时间戳转日期
           </h3>
@@ -179,14 +201,13 @@ const useCurrentDate = () => {
                 class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 @keyup.enter="timestampToDate"
               />
-              <Button @click="useCurrentTimestamp" variant="secondary">
-                使用当前
-              </Button>
-              <Button @click="timestampToDate">
-                转换
-              </Button>
+              <Button @click="useCurrentTimestamp" variant="secondary"> 使用当前 </Button>
+              <Button @click="timestampToDate"> 转换 </Button>
             </div>
-            <div v-if="dateResult" class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+            <div
+              v-if="dateResult"
+              class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700"
+            >
               <div class="flex items-center justify-between">
                 <span class="font-mono text-lg">{{ dateResult }}</span>
                 <button
@@ -194,7 +215,12 @@ const useCurrentDate = () => {
                   class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                 </button>
               </div>
@@ -205,8 +231,18 @@ const useCurrentDate = () => {
         <!-- 日期转时间戳 -->
         <div class="bg-gray-50 rounded-lg p-6">
           <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+            <svg
+              class="w-5 h-5 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 17l-5-5m0 0l5-5m-5 5h12"
+              />
             </svg>
             日期转时间戳
           </h3>
@@ -218,14 +254,13 @@ const useCurrentDate = () => {
                 class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 @change="dateToTimestamp"
               />
-              <Button @click="useCurrentDate" variant="secondary">
-                使用当前
-              </Button>
-              <Button @click="dateToTimestamp">
-                转换
-              </Button>
+              <Button @click="useCurrentDate" variant="secondary"> 使用当前 </Button>
+              <Button @click="dateToTimestamp"> 转换 </Button>
             </div>
-            <div v-if="timestampResult" class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700">
+            <div
+              v-if="timestampResult"
+              class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700"
+            >
               <div class="flex items-center justify-between">
                 <pre class="font-mono text-sm">{{ timestampResult }}</pre>
                 <button
@@ -233,7 +268,12 @@ const useCurrentDate = () => {
                   class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                 </button>
               </div>

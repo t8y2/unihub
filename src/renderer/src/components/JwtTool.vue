@@ -36,17 +36,17 @@ const parseExpiresIn = (exp: string): number | undefined => {
   if (!exp) return undefined
   const match = exp.match(/^(\d+)([smhd])$/)
   if (!match || !match[1] || !match[2]) return undefined
-  
+
   const value = parseInt(match[1])
   const unit = match[2]
-  
+
   const multipliers: Record<string, number> = {
     s: 1,
     m: 60,
     h: 3600,
     d: 86400
   }
-  
+
   return value * (multipliers[unit] || 1)
 }
 
@@ -61,7 +61,7 @@ const decodeJwt = () => {
     // 解码（不验证签名）
     const decoded = jose.decodeJwt(input.value)
     const header = jose.decodeProtectedHeader(input.value)
-    
+
     const result = {
       header,
       payload: decoded
@@ -88,7 +88,7 @@ const verifyJwt = async () => {
     // 验证并解码
     const secretKey = new TextEncoder().encode(secret.value)
     const { payload: decoded } = await jose.jwtVerify(input.value, secretKey)
-    
+
     output.value = JSON.stringify(decoded, null, 2)
   } catch (e: any) {
     error.value = `验证失败: ${e.message}`
@@ -109,10 +109,9 @@ const encodeJwt = async () => {
 
     const payloadObj = JSON.parse(payload.value)
     const secretKey = new TextEncoder().encode(secret.value)
-    
-    const jwt = new jose.SignJWT(payloadObj)
-      .setProtectedHeader({ alg: algorithm.value })
-    
+
+    const jwt = new jose.SignJWT(payloadObj).setProtectedHeader({ alg: algorithm.value })
+
     // 添加过期时间
     const expSeconds = parseExpiresIn(expiresIn.value)
     if (expSeconds) {
@@ -148,7 +147,9 @@ const clearAll = () => {
 <template>
   <div class="flex-1 flex flex-col min-h-0">
     <!-- 工具栏 -->
-    <div class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0">
+    <div
+      class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
+    >
       <div class="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-md p-1">
         <Button
           @click="mode = 'decode'"
@@ -168,38 +169,15 @@ const clearAll = () => {
 
       <div class="h-8 w-px bg-gray-300"></div>
 
-      <Button
-        v-if="mode === 'decode'"
-        @click="decodeJwt"
-        size="sm"
-      >
-        解码 Token
-      </Button>
+      <Button v-if="mode === 'decode'" @click="decodeJwt" size="sm"> 解码 Token </Button>
 
-      <Button
-        v-if="mode === 'decode'"
-        @click="verifyJwt"
-        size="sm"
-        variant="secondary"
-      >
+      <Button v-if="mode === 'decode'" @click="verifyJwt" size="sm" variant="secondary">
         验证 Token
       </Button>
 
-      <Button
-        v-if="mode === 'encode'"
-        @click="encodeJwt"
-        size="sm"
-      >
-        生成 Token
-      </Button>
+      <Button v-if="mode === 'encode'" @click="encodeJwt" size="sm"> 生成 Token </Button>
 
-      <Button
-        @click="clearAll"
-        size="sm"
-        variant="ghost"
-      >
-        清空
-      </Button>
+      <Button @click="clearAll" size="sm" variant="ghost"> 清空 </Button>
 
       <div v-if="mode === 'encode'" class="ml-auto flex items-center gap-4">
         <div class="flex items-center gap-2">
@@ -216,12 +194,7 @@ const clearAll = () => {
 
         <div class="flex items-center gap-2">
           <Label class="text-sm text-gray-600 dark:text-gray-400">过期时间:</Label>
-          <Input
-            v-model="expiresIn"
-            type="text"
-            placeholder="1h, 7d, 30m"
-            class="w-24 h-8"
-          />
+          <Input v-model="expiresIn" type="text" placeholder="1h, 7d, 30m" class="w-24 h-8" />
         </div>
       </div>
     </div>
@@ -230,8 +203,12 @@ const clearAll = () => {
     <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- 输入区 -->
       <div class="flex-1 flex flex-col border-r border-gray-200 min-w-0">
-        <div class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+        <div
+          class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0"
+        >
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+          >
             {{ mode === 'decode' ? 'JWT Token' : 'Payload (JSON)' }}
           </span>
         </div>
@@ -245,13 +222,15 @@ const clearAll = () => {
           <textarea
             v-else
             v-model="payload"
-            placeholder='输入 Payload JSON...'
+            placeholder="输入 Payload JSON..."
             class="w-full h-full p-4 bg-white text-sm font-mono resize-none focus:outline-none"
           />
         </div>
 
         <!-- 密钥输入 -->
-        <div class="h-16 bg-gray-50 border-t border-gray-200 flex items-center px-4 gap-2 flex-shrink-0">
+        <div
+          class="h-16 bg-gray-50 border-t border-gray-200 flex items-center px-4 gap-2 flex-shrink-0"
+        >
           <label class="text-sm text-gray-600 font-medium">密钥:</label>
           <input
             v-model="secret"
@@ -264,8 +243,12 @@ const clearAll = () => {
 
       <!-- 输出区 -->
       <div class="flex-1 flex flex-col min-w-0">
-        <div class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 justify-between flex-shrink-0">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+        <div
+          class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 justify-between flex-shrink-0"
+        >
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+          >
             {{ mode === 'decode' ? '解码结果' : '生成的 Token' }}
           </span>
           <Button
@@ -274,32 +257,78 @@ const clearAll = () => {
             size="sm"
             class="flex items-center gap-1.5"
           >
-            <svg v-if="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg
+              v-if="!copied"
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
             <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
             {{ copied ? '已复制' : '复制' }}
           </Button>
         </div>
         <div class="flex-1 overflow-auto bg-[#0d1117] min-h-0 scrollbar-hide">
-          <pre v-if="output && mode === 'decode'" class="p-4 text-sm whitespace-pre-wrap break-words"><code v-html="highlightedOutput" class="hljs"></code></pre>
-          <pre v-else-if="output" class="p-4 text-sm text-green-400 font-mono whitespace-pre-wrap break-all">{{ output }}</pre>
+          <pre
+            v-if="output && mode === 'decode'"
+            class="p-4 text-sm whitespace-pre-wrap break-words"
+          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          <pre
+            v-else-if="output"
+            class="p-4 text-sm text-green-400 font-mono whitespace-pre-wrap break-all"
+            >{{ output }}</pre
+          >
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">结果...</div>
         </div>
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="error" class="h-12 bg-red-50 border-t border-red-200 flex items-center px-4 gap-3 flex-shrink-0">
-      <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <div
+      v-if="error"
+      class="h-12 bg-red-50 border-t border-red-200 flex items-center px-4 gap-3 flex-shrink-0"
+    >
+      <svg
+        class="w-5 h-5 text-red-600 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
-      <Button @click="error = ''" size="icon" variant="ghost" class="text-red-400 hover:text-red-600">
+      <Button
+        @click="error = ''"
+        size="icon"
+        variant="ghost"
+        class="text-red-400 hover:text-red-600"
+      >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </Button>
     </div>

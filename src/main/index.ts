@@ -4,6 +4,11 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { PluginManager } from './plugin-manager'
 
+// 在开发环境中禁用安全警告
+if (is.dev) {
+  process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
+}
+
 let mainWindow: BrowserWindow | null = null
 const pluginManager = new PluginManager()
 
@@ -68,6 +73,10 @@ app.on('window-all-closed', () => {
 function setupIpcHandlers() {
   ipcMain.handle('plugin:install', async (_, url: string) => {
     return await pluginManager.installPlugin(url)
+  })
+
+  ipcMain.handle('plugin:install-from-buffer', async (_, buffer: number[], filename: string) => {
+    return await pluginManager.installFromBuffer(buffer, filename)
   })
 
   ipcMain.handle('plugin:uninstall', async (_, pluginId: string) => {

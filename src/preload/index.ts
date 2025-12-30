@@ -4,6 +4,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   plugin: {
     install: (url: string) => ipcRenderer.invoke('plugin:install', url),
+    installFromBuffer: (buffer: number[], filename: string) =>
+      ipcRenderer.invoke('plugin:install-from-buffer', buffer, filename),
     uninstall: (pluginId: string) => ipcRenderer.invoke('plugin:uninstall', pluginId),
     list: () => ipcRenderer.invoke('plugin:list'),
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),

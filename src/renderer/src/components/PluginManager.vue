@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog'
 
 const emit = defineEmits<{
@@ -21,7 +21,7 @@ const allPlugins = computed(() => pluginRegistry.getAll())
 
 const pluginsByCategory = computed(() => {
   const categories = new Map<string, typeof allPlugins.value>()
-  allPlugins.value.forEach(plugin => {
+  allPlugins.value.forEach((plugin) => {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
       categories.set(category, [])
@@ -59,11 +59,13 @@ const enabledCount = computed(() => pluginRegistry.getEnabled().length)
       <div class="flex-1 overflow-y-auto -mx-6 px-6">
         <div class="space-y-6">
           <div v-for="[category, plugins] in pluginsByCategory" :key="category">
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <h3
+              class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2"
+            >
               <div class="w-1 h-4 bg-blue-500 rounded-full"></div>
               {{ categoryNames[category] || category }}
             </h3>
-            
+
             <div class="space-y-2">
               <div
                 v-for="plugin in plugins"
@@ -71,9 +73,21 @@ const enabledCount = computed(() => pluginRegistry.getEnabled().length)
                 class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <!-- 图标 -->
-                <div class="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="plugin.metadata.icon" />
+                <div
+                  class="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-5 h-5 text-blue-600 dark:text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      :d="plugin.metadata.icon"
+                    />
                   </svg>
                 </div>
 
@@ -109,9 +123,7 @@ const enabledCount = computed(() => pluginRegistry.getEnabled().length)
       </div>
 
       <DialogFooter>
-        <Button @click="emit('close')" variant="outline">
-          关闭
-        </Button>
+        <Button @click="emit('close')" variant="outline"> 关闭 </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

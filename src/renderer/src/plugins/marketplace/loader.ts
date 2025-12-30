@@ -38,8 +38,9 @@ export class PluginLoader {
       const uint8Array = new Uint8Array(arrayBuffer)
 
       // ZIP 文件签名：50 4B 03 04
-      const isZip = uint8Array[0] === 0x50 &&
-        uint8Array[1] === 0x4B &&
+      const isZip =
+        uint8Array[0] === 0x50 &&
+        uint8Array[1] === 0x4b &&
         uint8Array[2] === 0x03 &&
         uint8Array[3] === 0x04
 
@@ -89,8 +90,8 @@ export class PluginLoader {
       // 创建 Tauri API（根据权限）
       if (isTauriAvailable()) {
         const tauriAPI = createTauriAPI(permissions)
-          // 将 API 注入到全局，供插件组件使用
-          ; (window as any).__PLUGIN_TAURI_API__ = tauriAPI
+        // 将 API 注入到全局，供插件组件使用
+        ;(window as any).__PLUGIN_TAURI_API__ = tauriAPI
       }
 
       // 转换为标准插件格式
@@ -112,7 +113,7 @@ export class PluginLoader {
 
       // 标记是否有后端
       if (pluginDef.metadata?.has_backend) {
-        (plugin as any).hasBackend = true
+        ;(plugin as any).hasBackend = true
       }
 
       return plugin
@@ -133,7 +134,7 @@ export class PluginLoader {
       computed: (window as any).Vue?.computed,
       watch: (window as any).Vue?.watch,
       onMounted: (window as any).Vue?.onMounted,
-      onUnmounted: (window as any).Vue?.onUnmounted,
+      onUnmounted: (window as any).Vue?.onUnmounted
     }
 
     // 根据权限添加 API
@@ -169,13 +170,25 @@ export class PluginLoader {
       const exports = module.exports
 
       // 过滤掉不能作为参数名的保留字
-      const sandboxKeys = Object.keys(sandbox).filter(key => {
+      const sandboxKeys = Object.keys(sandbox).filter((key) => {
         // 排除严格模式下的保留字
-        const reserved = ['eval', 'arguments', 'yield', 'let', 'static', 'implements', 'interface', 'package', 'private', 'protected', 'public']
+        const reserved = [
+          'eval',
+          'arguments',
+          'yield',
+          'let',
+          'static',
+          'implements',
+          'interface',
+          'package',
+          'private',
+          'protected',
+          'public'
+        ]
         return !reserved.includes(key)
       })
 
-      const sandboxValues = sandboxKeys.map(key => sandbox[key])
+      const sandboxValues = sandboxKeys.map((key) => sandbox[key])
 
       // 构建沙箱代码
       const sandboxCode = `

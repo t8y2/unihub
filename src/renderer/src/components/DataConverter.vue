@@ -13,11 +13,17 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 
 // 确保 Buffer 在全局可用
 if (typeof window !== 'undefined') {
-  (window as any).Buffer = Buffer
+  ;(window as any).Buffer = Buffer
 }
 
 hljs.registerLanguage('json', json)
@@ -134,7 +140,7 @@ const swapFormats = () => {
   const temp = fromFormat.value
   fromFormat.value = toFormat.value
   toFormat.value = temp
-  
+
   if (output.value) {
     input.value = output.value
     convert()
@@ -145,7 +151,9 @@ const swapFormats = () => {
 <template>
   <div class="flex-1 flex flex-col min-h-0">
     <!-- 工具栏 -->
-    <div class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0">
+    <div
+      class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
+    >
       <div class="flex items-center gap-2">
         <Label class="text-sm text-gray-600 font-medium">从:</Label>
         <Select v-model="fromFormat">
@@ -161,14 +169,14 @@ const swapFormats = () => {
         </Select>
       </div>
 
-      <Button
-        @click="swapFormats"
-        size="icon"
-        variant="ghost"
-        title="交换格式"
-      >
+      <Button @click="swapFormats" size="icon" variant="ghost" title="交换格式">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+          />
         </svg>
       </Button>
 
@@ -189,20 +197,9 @@ const swapFormats = () => {
 
       <div class="h-8 w-px bg-gray-300"></div>
 
-      <Button
-        @click="convert"
-        size="sm"
-      >
-        转换
-      </Button>
+      <Button @click="convert" size="sm"> 转换 </Button>
 
-      <Button
-        @click="clearAll"
-        size="sm"
-        variant="ghost"
-      >
-        清空
-      </Button>
+      <Button @click="clearAll" size="sm" variant="ghost"> 清空 </Button>
 
       <div class="ml-auto flex items-center gap-4">
         <Label class="flex items-center gap-2 text-sm text-gray-600 font-normal cursor-pointer">
@@ -212,13 +209,7 @@ const swapFormats = () => {
 
         <div class="flex items-center gap-2">
           <Label class="text-sm text-gray-600 dark:text-gray-400">缩进:</Label>
-          <Input
-            v-model.number="indent"
-            type="number"
-            min="2"
-            max="8"
-            class="w-16 h-8"
-          />
+          <Input v-model.number="indent" type="number" min="2" max="8" class="w-16 h-8" />
         </div>
       </div>
     </div>
@@ -227,8 +218,12 @@ const swapFormats = () => {
     <div class="flex-1 flex min-h-0 overflow-hidden">
       <!-- 输入区 -->
       <div class="flex-1 flex flex-col border-r border-gray-200 min-w-0">
-        <div class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+        <div
+          class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0"
+        >
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+          >
             输入 ({{ fromFormat.toUpperCase() }})
           </span>
         </div>
@@ -243,8 +238,12 @@ const swapFormats = () => {
 
       <!-- 输出区 -->
       <div class="flex-1 flex flex-col min-w-0">
-        <div class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 justify-between flex-shrink-0">
-          <span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+        <div
+          class="h-10 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 justify-between flex-shrink-0"
+        >
+          <span
+            class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
+          >
             输出 ({{ toFormat.toUpperCase() }})
           </span>
           <Button
@@ -253,31 +252,79 @@ const swapFormats = () => {
             size="sm"
             class="flex items-center gap-1.5"
           >
-            <svg v-if="!copied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            <svg
+              v-if="!copied"
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
             </svg>
             <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
             {{ copied ? '已复制' : '复制' }}
           </Button>
         </div>
-        <div class="flex-1 overflow-auto bg-[#0d1117] min-h-0 scrollbar-hide" :class="{ 'overflow-x-auto': !wordWrap }">
-          <pre v-if="output" class="p-4 text-sm" :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"><code v-html="highlightedOutput" class="hljs"></code></pre>
-          <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">转换结果...</div>
+        <div
+          class="flex-1 overflow-auto bg-[#0d1117] min-h-0 scrollbar-hide"
+          :class="{ 'overflow-x-auto': !wordWrap }"
+        >
+          <pre
+            v-if="output"
+            class="p-4 text-sm"
+            :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"
+          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
+            转换结果...
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 错误提示 -->
-    <div v-if="error" class="h-12 bg-red-50 border-t border-red-200 flex items-center px-4 gap-3 flex-shrink-0">
-      <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <div
+      v-if="error"
+      class="h-12 bg-red-50 border-t border-red-200 flex items-center px-4 gap-3 flex-shrink-0"
+    >
+      <svg
+        class="w-5 h-5 text-red-600 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
-      <Button @click="error = ''" size="icon" variant="ghost" class="text-red-400 hover:text-red-600">
+      <Button
+        @click="error = ''"
+        size="icon"
+        variant="ghost"
+        class="text-red-400 hover:text-red-600"
+      >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
         </svg>
       </Button>
     </div>

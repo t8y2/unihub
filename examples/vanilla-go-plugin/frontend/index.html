@@ -1,214 +1,216 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
-<head>
-  <meta charset="UTF-8">
-  <title>原生 JS + Go 插件</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #f3f4f6;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 32px;
-    }
-
-    .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 32px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-    }
-
-    .card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .input-group {
-      margin-bottom: 16px;
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #374151;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    input:focus,
-    select:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    button {
-      flex: 1;
-      padding: 12px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: #5568d3;
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .result {
-      background: #f9fafb;
-      border-left: 4px solid #667eea;
-      padding: 16px;
-      border-radius: 4px;
-      margin-top: 16px;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    .stat {
-      background: #f0f4ff;
-      padding: 16px;
-      border-radius: 8px;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #667eea;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0 0 8px 0; font-size: 32px;">⚡ 原生 JS + Go 插件</h1>
-      <p style="margin: 0; opacity: 0.9;">无框架依赖，纯原生 JavaScript + Go 后端</p>
-    </div>
-
-    <div class="card">
-      <h3>文件处理工具</h3>
-
-      <div class="input-group">
-        <label>输入数据</label>
-        <input type="text" id="input" placeholder="输入要处理的数据...">
-      </div>
-
-      <div class="input-group">
-        <label>操作类型</label>
-        <select id="operation">
-          <option value="compress">压缩数据</option>
-          <option value="encrypt">加密数据</option>
-          <option value="hash">计算哈希</option>
-          <option value="benchmark">性能测试</option>
-        </select>
-      </div>
-
-      <div class="btn-group">
-        <button onclick="processData()">🚀 执行 Go 后端</button>
-        <button onclick="clearResult()">🗑️ 清除结果</button>
-      </div>
-
-      <div id="result"></div>
-      <div id="stats"></div>
-    </div>
-
-    <div class="card">
-      <h4>💡 技术特点</h4>
-      <ul style="color: #6b7280; line-height: 1.8;">
-        <li><strong>零依赖前端</strong>：纯原生 JavaScript，无需任何框架</li>
-        <li><strong>高性能后端</strong>：Go 语言编写，编译为原生二进制</li>
-        <li><strong>快速执行</strong>：子进程调用，毫秒级响应</li>
-        <li><strong>跨平台</strong>：支持 macOS、Linux、Windows</li>
-      </ul>
-    </div>
-  </div>
-
-  <script>
-    let startTime;
-
-    async function processData() {
-      const input = document.getElementById('input').value;
-      const operation = document.getElementById('operation').value;
-
-      if (!input) {
-        alert('请输入数据');
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <title>原生 JS + Go 插件</title>
+    <style>
+      * {
+        box-sizing: border-box;
       }
 
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '<div style="color: #667eea;">⏳ 处理中...</div>';
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f3f4f6;
+      }
 
-      startTime = Date.now();
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 32px;
+      }
 
-      try {
-        const response = await window.api.plugin.backendCall(
-          'com.example.vanilla-go',
-          operation,
-          JSON.stringify({ data: input })
-        );
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+      }
 
-        const elapsed = Date.now() - startTime;
-        const result = JSON.parse(response);
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
 
-        resultDiv.innerHTML = `
+      .input-group {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #374151;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      button:hover {
+        background: #5568d3;
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .result {
+        background: #f9fafb;
+        border-left: 4px solid #667eea;
+        padding: 16px;
+        border-radius: 4px;
+        margin-top: 16px;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .stat {
+        background: #f0f4ff;
+        padding: 16px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1 style="margin: 0 0 8px 0; font-size: 32px">⚡ 原生 JS + Go 插件</h1>
+        <p style="margin: 0; opacity: 0.9">无框架依赖，纯原生 JavaScript + Go 后端</p>
+      </div>
+
+      <div class="card">
+        <h3>文件处理工具</h3>
+
+        <div class="input-group">
+          <label>输入数据</label>
+          <input type="text" id="input" placeholder="输入要处理的数据..." />
+        </div>
+
+        <div class="input-group">
+          <label>操作类型</label>
+          <select id="operation">
+            <option value="compress">压缩数据</option>
+            <option value="encrypt">加密数据</option>
+            <option value="hash">计算哈希</option>
+            <option value="benchmark">性能测试</option>
+          </select>
+        </div>
+
+        <div class="btn-group">
+          <button onclick="processData()">🚀 执行 Go 后端</button>
+          <button onclick="clearResult()">🗑️ 清除结果</button>
+        </div>
+
+        <div id="result"></div>
+        <div id="stats"></div>
+      </div>
+
+      <div class="card">
+        <h4>💡 技术特点</h4>
+        <ul style="color: #6b7280; line-height: 1.8">
+          <li><strong>零依赖前端</strong>：纯原生 JavaScript，无需任何框架</li>
+          <li><strong>高性能后端</strong>：Go 语言编写，编译为原生二进制</li>
+          <li><strong>快速执行</strong>：子进程调用，毫秒级响应</li>
+          <li><strong>跨平台</strong>：支持 macOS、Linux、Windows</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      let startTime
+
+      async function processData() {
+        const input = document.getElementById('input').value
+        const operation = document.getElementById('operation').value
+
+        if (!input) {
+          alert('请输入数据')
+          return
+        }
+
+        const resultDiv = document.getElementById('result')
+        resultDiv.innerHTML = '<div style="color: #667eea;">⏳ 处理中...</div>'
+
+        startTime = Date.now()
+
+        try {
+          const response = await window.api.plugin.backendCall(
+            'com.example.vanilla-go',
+            operation,
+            JSON.stringify({ data: input })
+          )
+
+          const elapsed = Date.now() - startTime
+          const result = JSON.parse(response)
+
+          resultDiv.innerHTML = `
           <div class="result">
             <strong>✅ 处理完成</strong><br><br>
             ${JSON.stringify(result, null, 2)}
           </div>
-        `;
+        `
 
-        document.getElementById('stats').innerHTML = `
+          document.getElementById('stats').innerHTML = `
           <div class="stats">
             <div class="stat">
               <div class="stat-value">${elapsed}ms</div>
@@ -223,23 +225,22 @@
               <div class="stat-label">输出大小</div>
             </div>
           </div>
-        `;
-      } catch (error) {
-        resultDiv.innerHTML = `
+        `
+        } catch (error) {
+          resultDiv.innerHTML = `
           <div class="result" style="border-color: #ef4444; background: #fef2f2;">
             <strong>❌ 错误</strong><br><br>
             ${error.message}
           </div>
-        `;
+        `
+        }
       }
-    }
 
-    function clearResult() {
-      document.getElementById('result').innerHTML = '';
-      document.getElementById('stats').innerHTML = '';
-      document.getElementById('input').value = '';
-    }
-  </script>
-</body>
-
+      function clearResult() {
+        document.getElementById('result').innerHTML = ''
+        document.getElementById('stats').innerHTML = ''
+        document.getElementById('input').value = ''
+      }
+    </script>
+  </body>
 </html>

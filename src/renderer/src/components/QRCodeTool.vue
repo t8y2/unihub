@@ -2,7 +2,13 @@
 import { ref } from 'vue'
 import qrcode from 'qrcode-generator'
 import jsQR from 'jsqr'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -25,21 +31,21 @@ const generateQRCode = () => {
     const qr = qrcode(0, errorLevel.value)
     qr.addData(inputText.value)
     qr.make()
-    
+
     const canvas = document.createElement('canvas')
     const moduleCount = qr.getModuleCount()
     const size = parseInt(qrSize.value)
     const canvasSize = moduleCount * size
-    
+
     canvas.width = canvasSize
     canvas.height = canvasSize
-    
+
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('无法创建 canvas context')
-    
+
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, canvasSize, canvasSize)
-    
+
     ctx.fillStyle = '#000000'
     for (let row = 0; row < moduleCount; row++) {
       for (let col = 0; col < moduleCount; col++) {
@@ -48,7 +54,7 @@ const generateQRCode = () => {
         }
       }
     }
-    
+
     qrCodeDataUrl.value = canvas.toDataURL('image/png')
   } catch (e: any) {
     alert(`生成失败: ${e.message}`)
@@ -83,14 +89,14 @@ const copyQRCode = async () => {
     // 将 data URL 转换为 Blob
     const response = await fetch(qrCodeDataUrl.value)
     const blob = await response.blob()
-    
+
     // 使用 Clipboard API 复制图片
     await navigator.clipboard.write([
       new ClipboardItem({
         [blob.type]: blob
       })
     ])
-    
+
     alert('已复制到剪贴板')
   } catch (e: any) {
     console.error('复制失败:', e)
@@ -119,48 +125,48 @@ const handleImageUpload = (event: Event) => {
       const canvas = document.createElement('canvas')
       canvas.width = img.width
       canvas.height = img.height
-      
+
       const ctx = canvas.getContext('2d')
       if (!ctx) {
         decodeError.value = '无法创建 canvas context'
         return
       }
-      
+
       ctx.drawImage(img, 0, 0)
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      
+
       const code = jsQR(imageData.data, imageData.width, imageData.height)
-      
+
       if (code) {
         decodeResult.value = code.data
       } else {
         decodeError.value = '未能识别二维码，请确保图片清晰且包含有效的二维码'
       }
     }
-    
+
     img.onerror = () => {
       decodeError.value = '图片加载失败'
     }
-    
+
     img.src = e.target?.result as string
   }
-  
+
   reader.onerror = () => {
     decodeError.value = '文件读取失败'
   }
-  
+
   reader.readAsDataURL(file)
 }
 
 const pasteAndDecode = async () => {
   try {
     const items = await navigator.clipboard.read()
-    
+
     for (const item of items) {
-      const imageType = item.types.find(t => t.startsWith('image/'))
+      const imageType = item.types.find((t) => t.startsWith('image/'))
       if (imageType) {
         const blob = await item.getType(imageType)
-        
+
         const reader = new FileReader()
         reader.onload = (e) => {
           const img = new Image()
@@ -168,18 +174,18 @@ const pasteAndDecode = async () => {
             const canvas = document.createElement('canvas')
             canvas.width = img.width
             canvas.height = img.height
-            
+
             const ctx = canvas.getContext('2d')
             if (!ctx) {
               decodeError.value = '无法创建 canvas context'
               return
             }
-            
+
             ctx.drawImage(img, 0, 0)
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-            
+
             const code = jsQR(imageData.data, imageData.width, imageData.height)
-            
+
             if (code) {
               decodeResult.value = code.data
               decodeError.value = ''
@@ -193,7 +199,7 @@ const pasteAndDecode = async () => {
         return
       }
     }
-    
+
     alert('剪贴板中没有图片')
   } catch (e: any) {
     alert(`粘贴失败: ${e.message}`)
@@ -202,7 +208,7 @@ const pasteAndDecode = async () => {
 
 const copyDecodeResult = async () => {
   if (!decodeResult.value) return
-  
+
   try {
     await navigator.clipboard.writeText(decodeResult.value)
     alert('已复制')
@@ -214,7 +220,9 @@ const copyDecodeResult = async () => {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-800">
-    <div class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0">
+    <div
+      class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 flex-shrink-0"
+    >
       <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">二维码工具</h2>
     </div>
 
@@ -224,7 +232,12 @@ const copyDecodeResult = async () => {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
             </svg>
             生成二维码
           </h3>
@@ -271,9 +284,7 @@ const copyDecodeResult = async () => {
               </div>
             </div>
 
-            <Button @click="generateQRCode" class="w-full">
-              生成二维码
-            </Button>
+            <Button @click="generateQRCode" class="w-full"> 生成二维码 </Button>
 
             <div v-if="qrCodeDataUrl" class="border-t border-gray-200 pt-4">
               <div class="flex flex-col items-center">
@@ -281,15 +292,11 @@ const copyDecodeResult = async () => {
                   :src="qrCodeDataUrl"
                   alt="QR Code"
                   class="rounded-lg shadow-sm border border-gray-200 max-w-xs"
-                  style="image-rendering: pixelated;"
+                  style="image-rendering: pixelated"
                 />
                 <div class="flex gap-2 mt-4">
-                  <Button @click="downloadQRCode" variant="default">
-                    下载
-                  </Button>
-                  <Button @click="copyQRCode" variant="secondary">
-                    复制图片
-                  </Button>
+                  <Button @click="downloadQRCode" variant="default"> 下载 </Button>
+                  <Button @click="copyQRCode" variant="secondary"> 复制图片 </Button>
                 </div>
               </div>
             </div>
@@ -300,7 +307,12 @@ const copyDecodeResult = async () => {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             解析二维码
           </h3>
@@ -345,7 +357,12 @@ const copyDecodeResult = async () => {
                   title="复制"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
                   </svg>
                 </Button>
               </div>

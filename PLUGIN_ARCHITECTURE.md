@@ -18,21 +18,25 @@ plugin.zip
 ## 🎨 支持的前端框架
 
 ### 1. 原生 JavaScript
+
 - 零依赖，最快加载
 - 直接操作 DOM
 - 适合简单插件
 
 ### 2. Vue 3
+
 - 通过 CDN 引入
 - 响应式开发
 - 组件化
 
 ### 3. React
+
 - 通过 CDN 引入
 - 使用 Babel Standalone
 - 现代化开发
 
 ### 4. 其他框架
+
 - Svelte（编译后）
 - Alpine.js
 - Lit
@@ -41,30 +45,39 @@ plugin.zip
 ## 🔧 支持的后端语言
 
 ### 1. Python
+
 ```
 backend/main.py
 ```
+
 调用方式：`python3 main.py <function> <args>`
 
 ### 2. Go
+
 ```
 backend/main.go → 编译为 main
 ```
+
 调用方式：`./main <function> <args>`
 
 ### 3. Node.js
+
 ```
 backend/main.js
 ```
+
 调用方式：`node main.js <function> <args>`
 
 ### 4. Rust
+
 ```
 backend/Cargo.toml + src/
 ```
+
 编译后调用：`./target/release/backend <function> <args>`
 
 ### 5. 其他语言
+
 - Java: `java -jar backend.jar`
 - Ruby: `ruby main.rb`
 - PHP: `php main.php`
@@ -76,15 +89,18 @@ backend/Cargo.toml + src/
 
 ```javascript
 const response = await window.api.plugin.backendCall(
-  'plugin-id',      // 插件 ID
-  'function-name',  // 函数名
-  JSON.stringify({ /* args */ })  // 参数（JSON 字符串）
+  'plugin-id', // 插件 ID
+  'function-name', // 函数名
+  JSON.stringify({
+    /* args */
+  }) // 参数（JSON 字符串）
 )
 ```
 
 ### 后端接收参数
 
 命令行参数：
+
 1. `argv[1]` - 函数名
 2. `argv[2]` - JSON 参数字符串
 
@@ -102,12 +118,12 @@ const response = await window.api.plugin.backendCall(
 
 ## 🚀 示例组合
 
-| 前端 | 后端 | 用途 |
-|------|------|------|
-| 原生 JS | Go | 高性能工具 |
-| React | Python | 数据分析 |
-| Vue | Node.js | Web 工具 |
-| Svelte | Rust | 系统工具 |
+| 前端    | 后端    | 用途       |
+| ------- | ------- | ---------- |
+| 原生 JS | Go      | 高性能工具 |
+| React   | Python  | 数据分析   |
+| Vue     | Node.js | Web 工具   |
+| Svelte  | Rust    | 系统工具   |
 
 ## 📝 开发流程
 

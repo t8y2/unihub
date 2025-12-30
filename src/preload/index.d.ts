@@ -8,7 +8,9 @@ declare global {
         install: (url: string) => Promise<{ success: boolean; message: string }>
         uninstall: (pluginId: string) => Promise<{ success: boolean; message: string }>
         list: () => Promise<any[]>
-        load: (pluginId: string) => Promise<{ success: boolean; htmlPath?: string; message?: string }>
+        load: (
+          pluginId: string
+        ) => Promise<{ success: boolean; htmlPath?: string; message?: string }>
         backendCall: (pluginId: string, functionName: string, args: string) => Promise<string>
       }
       fs: {

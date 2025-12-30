@@ -58,6 +58,7 @@ plugin.zip
 ### 插件类型
 
 **纯前端插件**（最简单）：
+
 ```
 plugin.zip
 ├── manifest.json
@@ -66,6 +67,7 @@ plugin.zip
 ```
 
 **带第三方库的前端插件**：
+
 ```
 plugin.zip
 ├── manifest.json
@@ -76,6 +78,7 @@ plugin.zip
 ```
 
 **带 Rust 后端的插件**（高性能）：
+
 ```
 plugin.zip
 ├── manifest.json
@@ -92,6 +95,7 @@ plugin.zip
 ### 最小插件示例
 
 **1. manifest.json**（元数据）
+
 ```json
 {
   "id": "com.yourname.hello",
@@ -110,6 +114,7 @@ plugin.zip
 ```
 
 **2. frontend/index.js**（插件代码）
+
 ```javascript
 // Vue 组件定义
 const component = {
@@ -124,12 +129,12 @@ const component = {
       </button>
     </div>
   `,
-  
+
   setup() {
     const { ref } = window.Vue
     const message = ref('Hello World!')
     const count = ref(0)
-    
+
     return { message, count }
   }
 }
@@ -141,6 +146,7 @@ if (typeof module !== 'undefined' && module.exports) {
 ```
 
 **3. 打包**
+
 ```bash
 zip -r plugin.zip manifest.json frontend/
 ```
@@ -160,31 +166,31 @@ setup($tauri) {
   // 哈希计算（无需权限）
   const md5 = await $tauri.hash('data', 'md5')
   const sha256 = await $tauri.hash('data', 'sha256')
-  
+
   // Base64（无需权限）
   const encoded = await $tauri.base64Encode('Hello')
   const decoded = await $tauri.base64Decode(encoded)
-  
+
   // 压缩（无需权限）
   const compressed = await $tauri.compress('large data...')
   const decompressed = await $tauri.decompress(compressed)
-  
+
   // 系统信息（无需权限）
   const info = await $tauri.getSystemInfo()
-  
+
   // HTTP 请求（需要 network 权限）
   const response = await $tauri.httpRequest({
     url: 'https://api.example.com/data',
     method: 'GET'
   })
-  
+
   // 剪贴板（需要 clipboard 权限）
   const text = await $tauri.readClipboard()
   await $tauri.writeClipboard('Hello')
-  
+
   // 通知（需要 notification 权限）
   await $tauri.showNotification('标题', '内容')
-  
+
   // 文件系统（需要 filesystem 权限）
   const content = await $tauri.readFile('path/to/file.txt')
   await $tauri.writeFile('path/to/file.txt', 'content')
@@ -229,6 +235,7 @@ plugin.zip
 ```
 
 在 `index.js` 中导入：
+
 ```javascript
 // 加载第三方库
 const lodash = await import('./vendor/lodash.min.js')
@@ -249,11 +256,11 @@ const component = {
     // 动态加载
     const script = document.createElement('script')
     script.src = 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js'
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       script.onload = resolve
       document.head.appendChild(script)
     })
-    
+
     const data = window._.chunk([1, 2, 3, 4], 2)
     // ...
   }
@@ -263,6 +270,7 @@ const component = {
 ### 多文件组织
 
 **项目结构：**
+
 ```
 my-plugin/
 ├── manifest.json
@@ -274,6 +282,7 @@ my-plugin/
 ```
 
 **index.js**（入口）：
+
 ```javascript
 import { createComponent } from './component.js'
 import { formatData } from './utils.js'
@@ -286,6 +295,7 @@ if (typeof module !== 'undefined' && module.exports) {
 ```
 
 **component.js**：
+
 ```javascript
 export function createComponent() {
   return {
@@ -298,6 +308,7 @@ export function createComponent() {
 ```
 
 **utils.js**：
+
 ```javascript
 export function formatData(data) {
   return data.toUpperCase()
@@ -308,20 +319,21 @@ export function formatData(data) {
 
 ```json
 {
-  "id": "com.yourname.plugin-name",     // 必需：唯一 ID（反向域名）
-  "name": "插件名称",                    // 必需：显示名称
-  "description": "插件描述",             // 必需：简短描述
-  "version": "1.0.0",                   // 必需：版本号（语义化）
-  "author": {                           // 必需：作者信息
+  "id": "com.yourname.plugin-name", // 必需：唯一 ID（反向域名）
+  "name": "插件名称", // 必需：显示名称
+  "description": "插件描述", // 必需：简短描述
+  "version": "1.0.0", // 必需：版本号（语义化）
+  "author": {
+    // 必需：作者信息
     "name": "你的名字",
-    "email": "your@email.com",          // 可选
-    "url": "https://yoursite.com"       // 可选
+    "email": "your@email.com", // 可选
+    "url": "https://yoursite.com" // 可选
   },
-  "category": "tool",                   // 必需：formatter/tool/encoder/custom
-  "keywords": ["关键词1", "关键词2"],    // 必需：关键词数组
-  "icon": "M12 4v16m8-8H4",             // 可选：Heroicons SVG path
-  "permissions": ["network"],           // 可选：权限数组
-  "main": "frontend/index.js"           // 可选：入口文件（默认 frontend/index.js）
+  "category": "tool", // 必需：formatter/tool/encoder/custom
+  "keywords": ["关键词1", "关键词2"], // 必需：关键词数组
+  "icon": "M12 4v16m8-8H4", // 可选：Heroicons SVG path
+  "permissions": ["network"], // 可选：权限数组
+  "main": "frontend/index.js" // 可选：入口文件（默认 frontend/index.js）
 }
 ```
 
@@ -336,21 +348,21 @@ export function formatData(data) {
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>我的插件</title>
-</head>
-<body>
-  <div id="app">
-    <h1>Hello World</h1>
-    <button onclick="handleClick()">点击</button>
-  </div>
-  
-  <script>
-    function handleClick() {
-      alert('Hello!');
-    }
-  </script>
-</body>
+  <head>
+    <title>我的插件</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Hello World</h1>
+      <button onclick="handleClick()">点击</button>
+    </div>
+
+    <script>
+      function handleClick() {
+        alert('Hello!')
+      }
+    </script>
+  </body>
 </html>
 ```
 
@@ -361,26 +373,26 @@ export function formatData(data) {
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
-</head>
-<body>
-  <div id="app">
-    <h1>{{ message }}</h1>
-    <button @click="count++">点击: {{ count }}</button>
-  </div>
-  
-  <script>
-    const { createApp, ref } = Vue;
-    createApp({
-      setup() {
-        const message = ref('Hello Vue!');
-        const count = ref(0);
-        return { message, count };
-      }
-    }).mount('#app');
-  </script>
-</body>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <h1>{{ message }}</h1>
+      <button @click="count++">点击: {{ count }}</button>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue
+      createApp({
+        setup() {
+          const message = ref('Hello Vue!')
+          const count = ref(0)
+          return { message, count }
+        }
+      }).mount('#app')
+    </script>
+  </body>
 </html>
 ```
 
@@ -391,29 +403,30 @@ export function formatData(data) {
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
-  
-  <script type="text/babel">
-    function App() {
-      const [count, setCount] = React.useState(0);
-      return (
-        <div>
-          <h1>Hello React!</h1>
-          <button onClick={() => setCount(count + 1)}>
-            点击: {count}
-          </button>
-        </div>
-      );
-    }
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
+  <head>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      function App() {
+        const [count, setCount] = React.useState(0)
+        return (
+          <div>
+            <h1>Hello React!</h1>
+            <button onClick={() => setCount(count + 1)}>点击: {count}</button>
+          </div>
+        )
+      }
+      ReactDOM.render(<App />, document.getElementById('root'))
+    </script>
+  </body>
 </html>
 ```
 
@@ -438,7 +451,7 @@ def process(args):
 if __name__ == '__main__':
     function_name = sys.argv[1]
     args = sys.argv[2]
-    
+
     if function_name == 'process':
         print(process(args))
 ```
@@ -467,10 +480,10 @@ type Output struct {
 func main() {
     functionName := os.Args[1]
     argsJSON := os.Args[2]
-    
+
     var input Input
     json.Unmarshal([]byte(argsJSON), &input)
-    
+
     output := Output{Result: input.Text}
     result, _ := json.Marshal(output)
     fmt.Println(string(result))
@@ -482,9 +495,9 @@ func main() {
 **优势**：与前端同语言、npm 生态
 
 ```javascript
-const args = JSON.parse(process.argv[3]);
-const result = { result: args.text.toUpperCase() };
-console.log(JSON.stringify(result));
+const args = JSON.parse(process.argv[3])
+const result = { result: args.text.toUpperCase() }
+console.log(JSON.stringify(result))
 ```
 
 ### Rust（推荐系统工具）
@@ -564,8 +577,8 @@ pub extern "C" fn process_data(
     output_len: *mut usize,
 ) -> i32 {
     // 1. 解析参数
-    let args_slice = unsafe { 
-        std::slice::from_raw_parts(args_ptr, args_len) 
+    let args_slice = unsafe {
+        std::slice::from_raw_parts(args_ptr, args_len)
     };
     let args_str = match std::str::from_utf8(args_slice) {
         Ok(s) => s,
@@ -594,7 +607,7 @@ pub extern "C" fn process_data(
     // 5. 写入输出
     let response_bytes = response_json.as_bytes();
     let buffer_size = unsafe { *output_len };
-    
+
     if response_bytes.len() > buffer_size {
         return -4;
     }
@@ -651,6 +664,7 @@ pub extern "C" fn function_name(
 ```
 
 **返回码约定：**
+
 - `0` - 成功
 - `-1` - 参数解析失败
 - `-2` - JSON 反序列化失败
@@ -743,6 +757,7 @@ class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
 ## 📚 示例
 
 查看完整示例：
+
 - `examples/complete-example.js` - 纯 JavaScript 插件
 - `examples/plugin-with-backend/` - 带 Rust 后端的插件
 

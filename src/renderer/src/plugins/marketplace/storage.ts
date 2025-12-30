@@ -26,7 +26,7 @@ export class PluginStorage {
    */
   savePluginInfo(info: InstalledPluginInfo): void {
     const installed = this.getInstalledPlugins()
-    const index = installed.findIndex(p => p.id === info.id)
+    const index = installed.findIndex((p) => p.id === info.id)
 
     if (index >= 0) {
       installed[index] = info
@@ -42,7 +42,7 @@ export class PluginStorage {
    */
   removePluginInfo(pluginId: string): void {
     const installed = this.getInstalledPlugins()
-    const filtered = installed.filter(p => p.id !== pluginId)
+    const filtered = installed.filter((p) => p.id !== pluginId)
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filtered))
   }
 
@@ -51,7 +51,7 @@ export class PluginStorage {
    */
   getPluginInfo(pluginId: string): InstalledPluginInfo | undefined {
     const installed = this.getInstalledPlugins()
-    return installed.find(p => p.id === pluginId)
+    return installed.find((p) => p.id === pluginId)
   }
 
   /**
@@ -123,7 +123,7 @@ export class PluginStorage {
     const installed = this.getInstalledPlugins()
 
     // 删除所有插件代码
-    installed.forEach(plugin => {
+    installed.forEach((plugin) => {
       this.removePluginCode(plugin.id)
     })
 

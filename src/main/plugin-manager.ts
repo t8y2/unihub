@@ -56,10 +56,27 @@ export class PluginManager {
       }
 
       const buffer = Buffer.from(await response.arrayBuffer())
+      return await this.installFromBuffer(buffer, url)
+    } catch (error: any) {
+      console.error('安装插件失败:', error)
+      return { success: false, message: error.message }
+    }
+  }
+
+  async installFromBuffer(
+    buffer: Buffer | number[],
+    filename: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      console.log('开始安装插件:', filename)
+
+      // 如果是数组，转换为 Buffer
+      const zipBuffer = Array.isArray(buffer) ? Buffer.from(buffer) : buffer
+
       const tempZip = join(app.getPath('temp'), 'plugin-temp.zip')
       const tempExtract = join(app.getPath('temp'), 'plugin-extract')
 
-      writeFileSync(tempZip, buffer)
+      writeFileSync(tempZip, zipBuffer)
 
       if (existsSync(tempExtract)) {
         rmSync(tempExtract, { recursive: true, force: true })
@@ -94,7 +111,7 @@ export class PluginManager {
       if (existsSync(backendDir)) {
         const { chmod } = await import('fs/promises')
         const { readdir } = await import('fs/promises')
-        
+
         try {
           const files = await readdir(backendDir)
           for (const file of files) {
@@ -115,8 +132,8 @@ export class PluginManager {
         version: manifest.version,
         enabled: true,
         installedAt: new Date().toISOString(),
-        source: 'url',
-        sourceUrl: url,
+        source: filename.startsWith('http') ? 'url' : 'local',
+        sourceUrl: filename.startsWith('http') ? filename : undefined,
         metadata: manifest
       }
 
@@ -175,11 +192,7 @@ export class PluginManager {
     }
   }
 
-  async callPluginBackend(
-    pluginId: string,
-    functionName: string,
-    args: string
-  ): Promise<string> {
+  async callPluginBackend(pluginId: string, functionName: string, args: string): Promise<string> {
     try {
       const installed = this.getInstalledPlugins()
       const plugin = installed.find((p) => p.id === pluginId)
@@ -233,8 +246,7 @@ export class PluginManager {
         const target = join(backendDir, 'target', 'release', 'backend')
         command = target
         commandArgs = [functionName, args]
-      }
-      else {
+      } else {
         throw new Error('未找到支持的后端文件')
       }
 

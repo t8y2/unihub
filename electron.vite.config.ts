@@ -30,7 +30,7 @@ export default defineConfig({
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
         // 使用包含编译器的 Vue 版本，支持运行时模板编译
-        'vue': 'vue/dist/vue.esm-bundler.js'
+        vue: 'vue/dist/vue.esm-bundler.js'
       }
     },
     plugins: [vue(), tailwindcss()],

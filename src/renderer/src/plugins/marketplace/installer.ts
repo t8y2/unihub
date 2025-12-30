@@ -13,12 +13,40 @@ export class PluginInstaller {
    */
   async installFromUrl(url: string): Promise<void> {
     try {
-      if (!url.endsWith('.zip')) {
+      // 只对 HTTP URL 进行 .zip 检查，blob URL 不需要检查
+      if (url.startsWith('http') && !url.endsWith('.zip')) {
         throw new Error('仅支持 .zip 格式的插件包')
       }
 
       // 调用 Electron 主进程安装插件
       const result = await window.api.plugin.install(url)
+
+      if (!result.success) {
+        throw new Error(result.message)
+      }
+
+      console.log('✅ 插件安装成功')
+    } catch (error) {
+      console.error('安装插件失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 从文件安装插件
+   */
+  async installFromFile(file: File): Promise<void> {
+    try {
+      if (!file.name.endsWith('.zip')) {
+        throw new Error('仅支持 .zip 格式的插件包')
+      }
+
+      // 将文件转换为 ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = new Uint8Array(arrayBuffer)
+
+      // 调用 Electron 主进程安装插件（传递文件数据）
+      const result = await window.api.plugin.installFromBuffer(Array.from(buffer), file.name)
 
       if (!result.success) {
         throw new Error(result.message)
@@ -86,7 +114,7 @@ export class PluginInstaller {
                   v-if="iframeUrl" 
                   :src="iframeUrl" 
                   class="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                   @load="onIframeLoad"
                 ></iframe>
                 <div v-else class="flex items-center justify-center h-full">
@@ -148,13 +176,31 @@ export class PluginInstaller {
                 }
 
                 // 读取 HTML 内容
-                const htmlContent = await window.api.fs.readFile(result.htmlPath)
+                let htmlContent = await window.api.fs.readFile(result.htmlPath)
+
+                // 修改 HTML 内容，添加 CSP meta 标签（允许外部脚本）
+                const cspMeta =
+                  "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data: blob:;\">"
+
+                if (htmlContent.includes('<head>')) {
+                  htmlContent = htmlContent.replace('<head>', '<head>' + cspMeta)
+                } else if (htmlContent.includes('<html>')) {
+                  htmlContent = htmlContent.replace('<html>', '<html><head>' + cspMeta + '</head>')
+                } else {
+                  htmlContent =
+                    '<html><head>' + cspMeta + '</head><body>' + htmlContent + '</body></html>'
+                }
 
                 // 创建 blob URL
                 const blob = new Blob([htmlContent], { type: 'text/html' })
                 this.iframeUrl = URL.createObjectURL(blob)
               } catch (error) {
                 console.error('加载插件失败:', error)
+              }
+            },
+            beforeUnmount() {
+              if (this.iframeUrl) {
+                URL.revokeObjectURL(this.iframeUrl)
               }
             }
           }),
