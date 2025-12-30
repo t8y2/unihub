@@ -87,6 +87,7 @@ export class PluginInstaller {
                   :src="iframeUrl" 
                   class="w-full h-full border-0"
                   sandbox="allow-scripts allow-same-origin allow-forms"
+                  @load="onIframeLoad"
                 ></iframe>
                 <div v-else class="flex items-center justify-center h-full">
                   <p class="text-gray-500">加载中...</p>
@@ -96,6 +97,45 @@ export class PluginInstaller {
             data() {
               return {
                 iframeUrl: ''
+              }
+            },
+            methods: {
+              async onIframeLoad() {
+                const iframe = this.$refs.iframe as HTMLIFrameElement
+                if (!iframe) return
+
+                const iframeWindow = iframe.contentWindow
+                if (iframeWindow) {
+                  try {
+                    // 导入 Vue
+                    const Vue = await import('vue')
+
+                    // 注入 UniHub API
+                    ;(iframeWindow as any).UniHub = {
+                      Vue,
+                      // 提供调用后端的方法
+                      invoke: async (command: string, args: any) => {
+                        if (command === 'plugin_backend_call') {
+                          return await window.api.plugin.backendCall(
+                            args.pluginId,
+                            args.functionName,
+                            args.args
+                          )
+                        }
+                        throw new Error(`Unknown command: ${command}`)
+                      }
+                    }
+
+                    // 注入 window.api（用于插件直接调用）
+                    ;(iframeWindow as any).api = window.api
+
+                    // 触发插件初始化事件
+                    iframeWindow.dispatchEvent(new Event('unihub-ready'))
+                    console.log('✅ 插件 API 已注入:', metadata.name)
+                  } catch (error) {
+                    console.error('注入插件 API 失败:', error)
+                  }
+                }
               }
             },
             async mounted() {
@@ -113,38 +153,6 @@ export class PluginInstaller {
                 // 创建 blob URL
                 const blob = new Blob([htmlContent], { type: 'text/html' })
                 this.iframeUrl = URL.createObjectURL(blob)
-
-                // 等待 iframe 加载完成后注入 API
-                this.$nextTick(() => {
-                  const iframe = this.$refs.iframe as HTMLIFrameElement
-                  iframe.onload = async () => {
-                    const iframeWindow = iframe.contentWindow
-                    if (iframeWindow) {
-                      // 导入 Vue
-                      const Vue = await import('vue')
-
-                      // 注入 UniHub API
-                      iframeWindow.UniHub = {
-                        Vue,
-                        // 提供调用后端的方法
-                        invoke: async (command: string, args: any) => {
-                          if (command === 'plugin_backend_call') {
-                            return await window.api.plugin.backendCall(
-                              args.pluginId,
-                              args.functionName,
-                              args.args
-                            )
-                          }
-                          throw new Error(`Unknown command: ${command}`)
-                        }
-                      }
-
-                      // 触发插件初始化事件
-                      iframeWindow.dispatchEvent(new Event('unihub-ready'))
-                      console.log('✅ 插件 API 已注入:', metadata.name)
-                    }
-                  }
-                })
               } catch (error) {
                 console.error('加载插件失败:', error)
               }

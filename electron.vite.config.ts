@@ -28,7 +28,9 @@ export default defineConfig({
     root: './src/renderer',
     resolve: {
       alias: {
-        '@': resolve(__dirname, 'src/renderer/src')
+        '@': resolve(__dirname, 'src/renderer/src'),
+        // 使用包含编译器的 Vue 版本，支持运行时模板编译
+        'vue': 'vue/dist/vue.esm-bundler.js'
       }
     },
     plugins: [vue(), tailwindcss()],

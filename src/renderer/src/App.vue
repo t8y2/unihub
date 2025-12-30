@@ -3,12 +3,9 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
-import PluginManager from './components/PluginManager.vue'
-import PluginStore from './components/PluginStore.vue'
+import PluginManagementPage from './components/PluginManagementPage.vue'
 
 const isDark = ref(false)
-const showPluginManager = ref(false)
-const showPluginStore = ref(false)
 
 onMounted(async () => {
   // 初始化插件系统
@@ -69,6 +66,7 @@ interface Tab {
   id: string
   pluginId: string
   title: string
+  type: 'plugin' | 'management'
 }
 
 const tabs = ref<Tab[]>([])
@@ -103,7 +101,7 @@ const openTab = (pluginId: string) => {
   if (!plugin || !plugin.enabled) return
   
   // 检查是否已经打开
-  const existingTab = tabs.value.find(t => t.pluginId === pluginId)
+  const existingTab = tabs.value.find(t => t.pluginId === pluginId && t.type === 'plugin')
   if (existingTab) {
     activeTabId.value = existingTab.id
     return
@@ -113,7 +111,27 @@ const openTab = (pluginId: string) => {
   const newTab: Tab = {
     id: Date.now().toString(),
     pluginId,
-    title: plugin.metadata.name
+    title: plugin.metadata.name,
+    type: 'plugin'
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
+}
+
+const openPluginManagement = () => {
+  // 检查是否已经打开
+  const existingTab = tabs.value.find(t => t.type === 'management')
+  if (existingTab) {
+    activeTabId.value = existingTab.id
+    return
+  }
+  
+  // 创建新标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId: 'plugin-management',
+    title: '插件管理',
+    type: 'management'
   }
   tabs.value.push(newTab)
   activeTabId.value = newTab.id
@@ -197,23 +215,18 @@ const goHome = () => {
       <!-- 底部按钮 -->
       <div class="p-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
         <button
-          @click="showPluginManager = true"
-          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50"
+          @click="openPluginManagement"
+          :class="[
+            'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+            tabs.some(t => t.id === activeTabId && t.type === 'management')
+              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
+          ]"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
           </svg>
           插件管理
-        </button>
-        
-        <button
-          @click="showPluginStore = true"
-          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          插件商店
         </button>
         
         <button
@@ -271,7 +284,12 @@ const goHome = () => {
         <!-- 工具标签页 -->
         <template v-for="tab in tabs" :key="tab.id">
           <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
+            <!-- 插件管理页面 -->
+            <PluginManagementPage v-if="tab.type === 'management'" />
+            
+            <!-- 普通插件 -->
             <component 
+              v-else
               :is="pluginRegistry.get(tab.pluginId)?.component" 
               v-bind="pluginRegistry.get(tab.pluginId)?.config || {}"
             />
@@ -279,11 +297,5 @@ const goHome = () => {
         </template>
       </div>
     </main>
-
-    <!-- 插件管理器弹窗 -->
-    <PluginManager v-if="showPluginManager" @close="showPluginManager = false" />
-    
-    <!-- 插件商店弹窗 -->
-    <PluginStore v-if="showPluginStore" @close="showPluginStore = false" />
   </div>
 </template>

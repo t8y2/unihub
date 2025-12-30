@@ -89,6 +89,27 @@ export class PluginManager {
       const fs = await import('fs/promises')
       await fs.cp(tempExtract, pluginDir, { recursive: true })
 
+      // 给后端可执行文件添加执行权限
+      const backendDir = join(pluginDir, 'backend')
+      if (existsSync(backendDir)) {
+        const { chmod } = await import('fs/promises')
+        const { readdir } = await import('fs/promises')
+        
+        try {
+          const files = await readdir(backendDir)
+          for (const file of files) {
+            const filePath = join(backendDir, file)
+            // 给所有文件添加执行权限（特别是编译后的二进制文件）
+            if (!file.endsWith('.py') && !file.endsWith('.js') && !file.endsWith('.go')) {
+              await chmod(filePath, 0o755)
+              console.log(`✅ 已添加执行权限: ${file}`)
+            }
+          }
+        } catch (error) {
+          console.warn('添加执行权限失败:', error)
+        }
+      }
+
       const pluginInfo: InstalledPlugin = {
         id: manifest.id,
         version: manifest.version,
