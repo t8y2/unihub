@@ -53,7 +53,15 @@ const categoryNames: Record<string, string> = {
 }
 
 const togglePlugin = (id: string): void => {
+  console.log(`[PluginManagement] 切换插件 ${id}`)
+  const plugin = pluginRegistry.get(id)
+  console.log(`[PluginManagement] 插件当前状态:`, plugin?.enabled)
+  
   pluginRegistry.toggle(id)
+  
+  const updatedPlugin = pluginRegistry.get(id)
+  console.log(`[PluginManagement] 插件新状态:`, updatedPlugin?.enabled)
+  
   // 强制刷新
   refreshKey.value++
 }
