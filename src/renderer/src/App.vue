@@ -4,6 +4,7 @@ import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
+import SettingsPage from './components/SettingsPage.vue'
 
 const isDark = ref(false)
 const sidebarCollapsed = ref(false)
@@ -124,7 +125,7 @@ interface Tab {
   id: string
   pluginId: string
   title: string
-  type: 'plugin' | 'management'
+  type: 'plugin' | 'management' | 'settings'
 }
 
 const tabs = ref<Tab[]>([])
@@ -205,9 +206,22 @@ const openPluginManagement = (): void => {
 }
 
 const openSettings = (): void => {
-  // TODO: 实现设置页面
-  console.log('打开设置页面')
-  // 可以在这里添加设置页面的逻辑
+  // 检查是否已经打开
+  const existingTab = tabs.value.find((t) => t.type === 'settings')
+  if (existingTab) {
+    activeTabId.value = existingTab.id
+    return
+  }
+
+  // 创建新标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId: 'settings',
+    title: '设置',
+    type: 'settings'
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
 }
 
 const closeTab = (tabId: string): void => {
@@ -496,6 +510,9 @@ const goHome = (): void => {
           <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
             <!-- 插件管理页面 -->
             <PluginManagementPage v-if="tab.type === 'management'" />
+
+            <!-- 设置页面 -->
+            <SettingsPage v-else-if="tab.type === 'settings'" />
 
             <!-- 普通插件 -->
             <component

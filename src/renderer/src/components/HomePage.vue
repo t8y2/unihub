@@ -90,9 +90,11 @@ const clearSearch = (): void => {
               />
             </svg>
           </div>
+          <div class="text-left">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">UniHub</h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400">开发者的通用工具集</p>
+          </div>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">UniHub</h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400">开发者的通用工具集</p>
       </div>
 
       <!-- 搜索框 -->
@@ -137,7 +139,7 @@ const clearSearch = (): void => {
           <div class="w-1 h-5 bg-green-500 rounded-full"></div>
           最近访问
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <button
             v-for="plugin in recentPluginsList"
             :key="plugin.metadata.id"
