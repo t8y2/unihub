@@ -247,7 +247,7 @@ const goHome = () => {
     <!-- 主内容区 -->
     <main class="flex-1 flex flex-col">
       <!-- 标签栏 -->
-      <div v-if="tabs.length > 0" class="h-9 bg-gray-50 dark:bg-gray-800 flex items-center overflow-x-auto overflow-y-hidden scrollbar-hide drag-region">
+      <div v-if="tabs.length > 0" class="h-9 bg-[rgb(246,246,245)] dark:bg-gray-800 flex items-center overflow-x-auto overflow-y-hidden scrollbar-hide drag-region">
         <div class="flex items-center h-full flex-nowrap">
           <div 
             v-for="tab in tabs" 
@@ -257,7 +257,7 @@ const goHome = () => {
               'group h-full flex items-center gap-2 px-4 cursor-pointer transition-colors relative flex-shrink-0 no-drag',
               activeTabId === tab.id 
                 ? 'bg-white dark:bg-gray-900' 
-                : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
+                : 'bg-[rgb(246,246,245)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
             ]"
           >
             <span :class="[
@@ -266,7 +266,10 @@ const goHome = () => {
             ]">{{ tab.title }}</span>
             <button
               @click.stop="closeTab(tab.id)"
-              class="w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors"
+              :class="[
+                'w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors',
+                activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              ]"
             >
               <svg class="w-3 h-3 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

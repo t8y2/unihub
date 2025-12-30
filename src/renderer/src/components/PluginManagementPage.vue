@@ -138,46 +138,38 @@ const getSourceLabel = (source: string): string => {
 
 <template>
   <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
-    <!-- 顶部标题栏 -->
-    <div class="h-16 flex items-center justify-between px-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">插件管理</h1>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
-          管理内置插件和第三方插件
-        </p>
-      </div>
-    </div>
-
     <!-- 标签页切换 -->
-    <div class="flex items-center gap-1 px-6 pt-4 bg-white dark:bg-gray-800">
-      <button
-        @click="activeTab = 'installed'"
-        :class="[
-          'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors',
-          activeTab === 'installed'
-            ? 'bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-        ]"
-      >
-        已安装插件 ({{ builtInPlugins.length + installedPlugins.length }})
-      </button>
-      <button
-        @click="activeTab = 'store'"
-        :class="[
-          'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors',
-          activeTab === 'store'
-            ? 'bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100'
-            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-        ]"
-      >
-        插件商店
-      </button>
+    <div class="flex items-center gap-1 px-6 pt-4 pb-2">
+      <div class="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+        <button
+          @click="activeTab = 'installed'"
+          :class="[
+            'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+            activeTab === 'installed'
+              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+          ]"
+        >
+          已安装插件 ({{ builtInPlugins.length + installedPlugins.length }})
+        </button>
+        <button
+          @click="activeTab = 'store'"
+          :class="[
+            'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+            activeTab === 'store'
+              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+          ]"
+        >
+          插件商店
+        </button>
+      </div>
     </div>
 
     <!-- 内容区 -->
     <div class="flex-1 overflow-y-auto">
       <!-- 已安装插件标签页 -->
-      <div v-show="activeTab === 'installed'" class="p-6 space-y-6">
+      <div v-show="activeTab === 'installed'" class="px-6 pb-6 space-y-4">
         <!-- 内置插件 -->
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -295,7 +287,7 @@ const getSourceLabel = (source: string): string => {
       </div>
 
       <!-- 插件商店标签页 -->
-      <div v-show="activeTab === 'store'" class="p-6 space-y-6">
+      <div v-show="activeTab === 'store'" class="px-6 pb-6 space-y-4">
         <!-- 从 URL 安装 -->
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
