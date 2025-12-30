@@ -1,20 +1,26 @@
-import { reactive, markRaw } from 'vue'
+import { reactive, markRaw, ref } from 'vue'
 import type { Plugin } from '@/types/plugin'
 
 class PluginRegistry {
   private plugins = reactive<Map<string, Plugin>>(new Map())
+  
+  // 响应式版本号，用于触发外部组件更新
+  public version = ref(0)
 
   register(plugin: Plugin) {
+    console.log(`[Registry] 注册插件: ${plugin.metadata.id}, enabled: ${plugin.enabled}`)
     // 使用 markRaw 避免 Vue 对组件进行深度响应式处理
     const pluginWithRawComponent = {
       ...plugin,
       component: markRaw(plugin.component)
     }
     this.plugins.set(plugin.metadata.id, pluginWithRawComponent)
+    this.version.value++
   }
 
   unregister(id: string) {
     this.plugins.delete(id)
+    this.version.value++
   }
 
   get(id: string): Plugin | undefined {
@@ -36,7 +42,10 @@ class PluginRegistry {
   toggle(id: string) {
     const plugin = this.plugins.get(id)
     if (plugin) {
+      const wasEnabled = plugin.enabled
       plugin.enabled = !plugin.enabled
+      console.log(`[Registry] toggle ${id}: ${wasEnabled} -> ${plugin.enabled}`)
+      this.version.value++
       this.saveToLocalStorage()
     }
   }
@@ -45,6 +54,7 @@ class PluginRegistry {
     const plugin = this.plugins.get(id)
     if (plugin) {
       plugin.enabled = true
+      this.version.value++
       this.saveToLocalStorage()
     }
   }
@@ -53,6 +63,7 @@ class PluginRegistry {
     const plugin = this.plugins.get(id)
     if (plugin) {
       plugin.enabled = false
+      this.version.value++
       this.saveToLocalStorage()
     }
   }
@@ -69,15 +80,41 @@ class PluginRegistry {
   loadFromLocalStorage() {
     try {
       const saved = localStorage.getItem('enabled-plugins')
-      if (saved) {
+      console.log(`[Registry] localStorage 数据: ${saved}`)
+      
+      // 只有当 localStorage 中确实有保存的数据时才恢复
+      // 如果是第一次运行（没有保存数据），保持所有插件的默认 enabled: true 状态
+      if (saved !== null) {
         const enabledIds = JSON.parse(saved) as string[]
+        console.log(`[Registry] 启用的插件 IDs:`, enabledIds)
+        
         this.getAll().forEach(plugin => {
+          const wasEnabled = plugin.enabled
           plugin.enabled = enabledIds.includes(plugin.metadata.id)
+          console.log(`[Registry] 插件 ${plugin.metadata.id}: ${wasEnabled} -> ${plugin.enabled}`)
+        })
+        this.version.value++
+      } else {
+        console.log(`[Registry] 没有保存的状态，保持默认`)
+        // 打印当前所有插件状态
+        this.getAll().forEach(plugin => {
+          console.log(`[Registry] 插件 ${plugin.metadata.id} 默认状态: ${plugin.enabled}`)
         })
       }
     } catch (e) {
-      console.error('Failed to load plugin state:', e)
+      console.error('[Registry] Failed to load plugin state:', e)
+      // 出错时清除损坏的数据
+      localStorage.removeItem('enabled-plugins')
     }
+  }
+
+  // 重置所有插件为启用状态
+  resetAll() {
+    this.getAll().forEach(plugin => {
+      plugin.enabled = true
+    })
+    this.version.value++
+    localStorage.removeItem('enabled-plugins')
   }
 }
 

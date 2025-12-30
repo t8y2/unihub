@@ -73,10 +73,16 @@ const tabs = ref<Tab[]>([])
 const activeTabId = ref('')
 
 // 获取所有启用的插件
-const enabledPlugins = computed(() => pluginRegistry.getEnabled())
+const enabledPlugins = computed(() => {
+  // 依赖 version 来触发重新计算
+  pluginRegistry.version.value
+  return pluginRegistry.getEnabled()
+})
 
 // 按分类获取插件
 const pluginsByCategory = computed(() => {
+  // 依赖 version 来触发重新计算
+  pluginRegistry.version.value
   const categories = new Map<string, typeof enabledPlugins.value>()
   enabledPlugins.value.forEach(plugin => {
     const category = plugin.metadata.category

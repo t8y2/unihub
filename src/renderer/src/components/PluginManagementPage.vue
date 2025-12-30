@@ -18,8 +18,16 @@ const installing = ref(false)
 const error = ref('')
 const success = ref('')
 
+// 强制刷新计数器
+const refreshKey = ref(0)
+
 // 内置插件
-const builtInPlugins = computed(() => pluginRegistry.getAll())
+const builtInPlugins = computed(() => {
+  // 依赖 pluginRegistry.version 来触发重新计算
+  pluginRegistry.version.value
+  refreshKey.value
+  return pluginRegistry.getAll()
+})
 
 // 已安装的第三方插件
 const installedPlugins = ref<any[]>([])
@@ -46,6 +54,8 @@ const categoryNames: Record<string, string> = {
 
 const togglePlugin = (id: string): void => {
   pluginRegistry.toggle(id)
+  // 强制刷新
+  refreshKey.value++
 }
 
 const enabledCount = computed(() => pluginRegistry.getEnabled().length)
@@ -231,7 +241,7 @@ const getSourceLabel = (source: string): string => {
                   <!-- 开关 -->
                   <Switch
                     :checked="plugin.enabled"
-                    @update:checked="() => togglePlugin(plugin.metadata.id)"
+                    @update:checked="togglePlugin(plugin.metadata.id)"
                   />
                 </div>
               </div>
