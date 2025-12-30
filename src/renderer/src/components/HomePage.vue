@@ -1,17 +1,36 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { pluginRegistry } from '@/plugins'
 import type { TabType } from '@/types/plugin'
+
+const props = defineProps<{
+  recentPlugins: string[]
+}>()
 
 const emit = defineEmits<{
   openTool: [type: TabType]
 }>()
 
+const searchQuery = ref('')
+
 const enabledPlugins = computed(() => pluginRegistry.getEnabled())
 
+// 搜索过滤后的插件
+const filteredPlugins = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return enabledPlugins.value
+  }
+  
+  const query = searchQuery.value.toLowerCase()
+  return enabledPlugins.value.filter(plugin => 
+    plugin.metadata.name.toLowerCase().includes(query) ||
+    plugin.metadata.description.toLowerCase().includes(query)
+  )
+})
+
 const pluginsByCategory = computed(() => {
-  const categories = new Map<string, typeof enabledPlugins.value>()
-  enabledPlugins.value.forEach((plugin) => {
+  const categories = new Map<string, typeof filteredPlugins.value>()
+  filteredPlugins.value.forEach((plugin) => {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
       categories.set(category, [])
@@ -19,6 +38,14 @@ const pluginsByCategory = computed(() => {
     categories.get(category)!.push(plugin)
   })
   return categories
+})
+
+// 最近访问的插件（过滤掉不存在或未启用的）
+const recentPluginsList = computed(() => {
+  return props.recentPlugins
+    .map(id => pluginRegistry.get(id))
+    .filter(plugin => plugin && plugin.enabled)
+    .slice(0, 6) // 最多显示6个
 })
 
 const categoryNames: Record<string, string> = {
@@ -36,6 +63,10 @@ const sortedCategories = computed(() => {
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
   })
 })
+
+const clearSearch = (): void => {
+  searchQuery.value = ''
+}
 </script>
 
 <template>
@@ -64,14 +95,115 @@ const sortedCategories = computed(() => {
         <p class="text-sm text-gray-600 dark:text-gray-400">开发者的通用工具集</p>
       </div>
 
+      <!-- 搜索框 -->
+      <div class="mb-8">
+        <div class="relative max-w-md mx-auto">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </div>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索工具..."
+            class="w-full pl-10 pr-10 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <svg class="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 最近访问 -->
+      <div v-if="recentPluginsList.length > 0 && !searchQuery" class="mb-8">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+          <div class="w-1 h-5 bg-green-500 rounded-full"></div>
+          最近访问
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <button
+            v-for="plugin in recentPluginsList"
+            :key="plugin.metadata.id"
+            @click="emit('openTool', plugin.metadata.id)"
+            class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/20 dark:group-hover:bg-green-500/30 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5 text-green-600 dark:text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="plugin.metadata.icon"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3
+                  class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
+                >
+                  {{ plugin.metadata.name }}
+                </h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                  {{ plugin.metadata.description }}
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 搜索结果提示 -->
+      <div v-if="searchQuery && filteredPlugins.length === 0" class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">未找到相关工具</h3>
+        <p class="text-gray-600 dark:text-gray-400">尝试使用其他关键词搜索</p>
+      </div>
+
       <!-- 工具分类 -->
-      <div class="space-y-6">
+      <div v-if="sortedCategories.length > 0" class="space-y-6">
         <div v-for="[category, plugins] in sortedCategories" :key="category">
           <h2
             class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"
           >
             <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
             {{ categoryNames[category] || category }}
+            <span v-if="searchQuery" class="text-xs text-gray-500 dark:text-gray-400 font-normal">
+              ({{ plugins.length }} 个结果)
+            </span>
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <button
@@ -116,7 +248,7 @@ const sortedCategories = computed(() => {
 
       <!-- 底部信息 -->
       <div class="mt-12 text-center text-xs text-gray-500 dark:text-gray-500">
-        <p>快捷键：Cmd/Ctrl + W 关闭标签</p>
+        <p>快捷键：Cmd/Ctrl + W 关闭标签 | Cmd/Ctrl + B 切换侧边栏</p>
       </div>
     </div>
   </div>

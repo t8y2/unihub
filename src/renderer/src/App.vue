@@ -6,6 +6,44 @@ import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
 
 const isDark = ref(false)
+const sidebarCollapsed = ref(false)
+
+// 最近访问的插件
+const recentPlugins = ref<string[]>([])
+
+// 从 localStorage 加载最近访问
+const loadRecentPlugins = (): void => {
+  const saved = localStorage.getItem('recentPlugins')
+  if (saved) {
+    try {
+      recentPlugins.value = JSON.parse(saved)
+    } catch (error) {
+      console.error('加载最近访问失败:', error)
+      recentPlugins.value = []
+    }
+  }
+}
+
+// 保存最近访问到 localStorage
+const saveRecentPlugins = (): void => {
+  localStorage.setItem('recentPlugins', JSON.stringify(recentPlugins.value))
+}
+
+// 添加到最近访问
+const addToRecent = (pluginId: string): void => {
+  // 移除已存在的
+  const index = recentPlugins.value.indexOf(pluginId)
+  if (index > -1) {
+    recentPlugins.value.splice(index, 1)
+  }
+  // 添加到开头
+  recentPlugins.value.unshift(pluginId)
+  // 限制最多10个
+  if (recentPlugins.value.length > 10) {
+    recentPlugins.value = recentPlugins.value.slice(0, 10)
+  }
+  saveRecentPlugins()
+}
 
 onMounted(async () => {
   // 初始化插件系统
@@ -25,6 +63,15 @@ onMounted(async () => {
     document.documentElement.classList.add('dark')
   }
 
+  // 从 localStorage 读取侧边栏状态
+  const savedSidebarState = localStorage.getItem('sidebarCollapsed')
+  if (savedSidebarState === 'true') {
+    sidebarCollapsed.value = true
+  }
+
+  // 加载最近访问
+  loadRecentPlugins()
+
   // 添加键盘快捷键监听
   window.addEventListener('keydown', handleKeyDown)
 })
@@ -33,7 +80,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
 })
 
-const handleKeyDown = async (e: KeyboardEvent) => {
+const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
   // Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
   if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
     e.preventDefault()
@@ -49,9 +96,15 @@ const handleKeyDown = async (e: KeyboardEvent) => {
       closeTab(activeTabId.value)
     }
   }
+
+  // Cmd+B (Mac) 或 Ctrl+B (Windows/Linux) 切换侧边栏
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+    e.preventDefault()
+    toggleSidebar()
+  }
 }
 
-const toggleTheme = () => {
+const toggleTheme = (): void => {
   isDark.value = !isDark.value
   if (isDark.value) {
     document.documentElement.classList.add('dark')
@@ -60,6 +113,11 @@ const toggleTheme = () => {
     document.documentElement.classList.remove('dark')
     localStorage.setItem('theme', 'light')
   }
+}
+
+const toggleSidebar = (): void => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value.toString())
 }
 
 interface Tab {
@@ -75,14 +133,14 @@ const activeTabId = ref('')
 // 获取所有启用的插件
 const enabledPlugins = computed(() => {
   // 依赖 version 来触发重新计算
-  pluginRegistry.version.value
+  void pluginRegistry.version.value
   return pluginRegistry.getEnabled()
 })
 
 // 按分类获取插件
 const pluginsByCategory = computed(() => {
   // 依赖 version 来触发重新计算
-  pluginRegistry.version.value
+  void pluginRegistry.version.value
   const categories = new Map<string, typeof enabledPlugins.value>()
   enabledPlugins.value.forEach((plugin) => {
     const category = plugin.metadata.category
@@ -102,9 +160,12 @@ const categoryNames: Record<string, string> = {
   custom: '自定义'
 }
 
-const openTab = (pluginId: string) => {
+const openTab = (pluginId: string): void => {
   const plugin = pluginRegistry.get(pluginId)
   if (!plugin || !plugin.enabled) return
+
+  // 添加到最近访问
+  addToRecent(pluginId)
 
   // 检查是否已经打开
   const existingTab = tabs.value.find((t) => t.pluginId === pluginId && t.type === 'plugin')
@@ -124,7 +185,7 @@ const openTab = (pluginId: string) => {
   activeTabId.value = newTab.id
 }
 
-const openPluginManagement = () => {
+const openPluginManagement = (): void => {
   // 检查是否已经打开
   const existingTab = tabs.value.find((t) => t.type === 'management')
   if (existingTab) {
@@ -143,13 +204,13 @@ const openPluginManagement = () => {
   activeTabId.value = newTab.id
 }
 
-const openSettings = () => {
+const openSettings = (): void => {
   // TODO: 实现设置页面
   console.log('打开设置页面')
   // 可以在这里添加设置页面的逻辑
 }
 
-const closeTab = (tabId: string) => {
+const closeTab = (tabId: string): void => {
   const index = tabs.value.findIndex((t) => t.id === tabId)
   if (index === -1) return
 
@@ -170,7 +231,7 @@ const closeTab = (tabId: string) => {
   tabs.value.splice(index, 1)
 }
 
-const goHome = () => {
+const goHome = (): void => {
   // 关闭所有标签，回到首页
   tabs.value = []
   activeTabId.value = ''
@@ -181,37 +242,50 @@ const goHome = () => {
   <div class="h-screen flex bg-gray-50 dark:bg-gray-900">
     <!-- 侧边栏 -->
     <aside
-      class="w-52 bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col"
+      :class="[
+        'bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 flex-shrink-0',
+        sidebarCollapsed ? 'w-12' : 'w-52'
+      ]"
     >
-      <!-- 顶部拖动区域 + Logo -->
-      <div class="h-16 flex items-end px-4 pb-2 pt-3 drag-region">
-        <button
-          @click="goHome"
-          class="flex items-center gap-2 hover:opacity-80 transition-opacity no-drag"
+      <!-- 顶部拖动区域 -->
+      <div class="h-16 flex items-end pb-3 justify-center drag-region">
+        <span
+          v-show="!sidebarCollapsed"
+          class="text-sm font-semibold text-gray-800 dark:text-gray-100"
+          >UniHub</span
         >
-          <div
-            class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center"
+      </div>
+
+      <!-- 导航菜单 -->
+      <nav class="flex-1 p-2 overflow-y-auto scrollbar-hide">
+        <div class="space-y-1">
+          <!-- 首页按钮 -->
+          <button
+            :class="[
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              tabs.length === 0
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+              sidebarCollapsed ? 'justify-center' : ''
+            ]"
+            @click="goHome"
+            :title="sidebarCollapsed ? '首页' : ''"
           >
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
               />
             </svg>
-          </div>
-          <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">UniHub</span>
-        </button>
-      </div>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">首页</span>
+          </button>
 
-      <!-- 导航菜单 -->
-      <nav class="flex-1 p-2 overflow-y-auto">
-        <div class="space-y-1">
           <template v-for="[category, plugins] in pluginsByCategory" :key="category">
             <div
-              class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-3 py-2"
-              :class="{ 'mt-4': category !== 'formatter' }"
+              v-show="!sidebarCollapsed"
+              class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-3 py-2 mt-4"
             >
               {{ categoryNames[category] || category }}
             </div>
@@ -219,15 +293,17 @@ const goHome = () => {
             <button
               v-for="plugin in plugins"
               :key="plugin.metadata.id"
-              @click="openTab(plugin.metadata.id)"
               :class="[
                 'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                 tabs.some((t) => t.id === activeTabId && t.pluginId === plugin.metadata.id)
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+                sidebarCollapsed ? 'justify-center' : ''
               ]"
+              @click="openTab(plugin.metadata.id)"
+              :title="sidebarCollapsed ? plugin.metadata.name : ''"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -235,7 +311,7 @@ const goHome = () => {
                   :d="plugin.metadata.icon"
                 />
               </svg>
-              {{ plugin.metadata.name }}
+              <span v-show="!sidebarCollapsed" class="whitespace-nowrap">{{ plugin.metadata.name }}</span>
             </button>
           </template>
         </div>
@@ -244,15 +320,17 @@ const goHome = () => {
       <!-- 底部按钮 -->
       <div class="p-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
         <button
-          @click="openPluginManagement"
           :class="[
             'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
             tabs.some((t) => t.id === activeTabId && t.type === 'management')
               ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+            sidebarCollapsed ? 'justify-center' : ''
           ]"
+          @click="openPluginManagement"
+          :title="sidebarCollapsed ? '插件管理' : ''"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -260,16 +338,16 @@ const goHome = () => {
               d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
             />
           </svg>
-          插件管理
+          <span v-show="!sidebarCollapsed" class="whitespace-nowrap">插件管理</span>
         </button>
 
         <!-- 底部工具栏 -->
-        <div class="flex items-center gap-1 px-1">
+        <div :class="['flex items-center gap-1 px-1', sidebarCollapsed ? 'flex-col' : '']">
           <!-- 主题切换 -->
           <button
-            @click="toggleTheme"
             class="flex items-center justify-center w-8 h-8 rounded-md text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
             :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
+            @click="toggleTheme"
           >
             <!-- 太阳图标 (浅色模式) -->
             <svg
@@ -299,9 +377,9 @@ const goHome = () => {
 
           <!-- 设置按钮 -->
           <button
-            @click="openSettings"
             class="flex items-center justify-center w-8 h-8 rounded-md text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50 transition-colors"
             title="设置"
+            @click="openSettings"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -323,27 +401,52 @@ const goHome = () => {
     </aside>
 
     <!-- 主内容区 -->
-    <main class="flex-1 flex flex-col">
-      <!-- 标签栏 -->
-      <div
-        v-if="tabs.length > 0"
-        class="h-9 bg-[rgb(246,246,245)] dark:bg-gray-800 flex items-center overflow-x-auto overflow-y-hidden scrollbar-hide drag-region"
-      >
-        <div class="flex items-center h-full flex-nowrap">
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- 顶部标题栏 -->
+      <div class="h-9 bg-[rgb(246,246,245)] dark:bg-gray-800 flex items-center drag-region">
+        <!-- 左侧控制按钮 -->
+        <div class="flex items-center gap-2 px-6 no-drag">
+          <!-- 侧边栏切换按钮 -->
+          <button
+            class="flex items-center justify-center w-6 h-6 rounded hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors"
+            :title="sidebarCollapsed ? '展开侧边栏 (⌘B)' : '收起侧边栏 (⌘B)'"
+            @click="toggleSidebar"
+          >
+            <svg
+              class="w-4 h-4 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- 标签栏 -->
+        <div
+          v-if="tabs.length > 0"
+          class="flex-1 flex items-center h-full overflow-x-auto overflow-y-hidden scrollbar-hide"
+        >
           <div
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTabId = tab.id"
             :class="[
-              'group h-full flex items-center gap-2 px-4 cursor-pointer transition-colors relative flex-shrink-0 no-drag',
+              'group h-full flex items-center gap-2 px-4 cursor-pointer transition-colors relative flex-shrink-0 no-drag min-w-0',
               activeTabId === tab.id
                 ? 'bg-white dark:bg-gray-900'
                 : 'bg-[rgb(246,246,245)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
             ]"
+            @click="activeTabId = tab.id"
           >
             <span
               :class="[
-                'text-sm font-medium',
+                'text-sm font-medium truncate',
                 activeTabId === tab.id
                   ? 'text-gray-900 dark:text-gray-100'
                   : 'text-gray-600 dark:text-gray-400'
@@ -351,11 +454,11 @@ const goHome = () => {
               >{{ tab.title }}</span
             >
             <button
-              @click.stop="closeTab(tab.id)"
               :class="[
-                'w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors',
+                'w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors flex-shrink-0',
                 activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
               ]"
+              @click.stop="closeTab(tab.id)"
             >
               <svg
                 class="w-3 h-3 text-gray-500 dark:text-gray-400"
@@ -373,12 +476,20 @@ const goHome = () => {
             </button>
           </div>
         </div>
+
+        <!-- 中间标题区域（无标签时显示） -->
+        <div v-else class="flex-1 flex items-center justify-center">
+          <span class="text-sm font-medium text-gray-600 dark:text-gray-400">UniHub</span>
+        </div>
+
+        <!-- 右侧占位，保持平衡 -->
+        <div class="w-12"></div>
       </div>
 
       <!-- 内容区 -->
       <div class="flex-1 bg-white dark:bg-gray-900 flex flex-col min-h-0">
         <!-- 首页 -->
-        <HomePage v-if="tabs.length === 0" @open-tool="openTab" />
+        <HomePage v-if="tabs.length === 0" @open-tool="openTab" :recent-plugins="recentPlugins" />
 
         <!-- 工具标签页 -->
         <template v-for="tab in tabs" :key="tab.id">
