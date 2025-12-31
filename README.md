@@ -1,24 +1,8 @@
-# UniHub - 开放式插件平台
+# UniHub
 
-基于 Electron + Vue 的可扩展工具平台，支持任意前后端技术栈的插件开发。
+一个现代化的 Electron 插件平台，支持热重载和 Sidecar 模式。
 
-## ✨ 核心特性
-
-- 🎨 **前端自由**：支持原生 JS、Vue、React 等任何前端框架
-- 🔧 **后端自由**：支持 Python、Go、Node.js、Rust 等任何后端语言
-- 📦 **即插即用**：ZIP 格式插件，一键安装
-- ⚡ **高性能**：子进程隔离，原生性能
-- 🔒 **安全可靠**：权限系统，沙箱隔离
-
-## 🚀 快速开始
-
-### 运行应用
-
-## Recommended IDE Setup
-
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
-
-## Project Setup
+## 快速开始
 
 ```bash
 # 安装依赖
@@ -27,78 +11,142 @@ pnpm install
 # 开发模式
 pnpm dev
 
-# 构建应用
-pnpm build:mac    # macOS
-pnpm build:win    # Windows
-pnpm build:linux  # Linux
+# 构建（编译代码）
+pnpm build
+
+# 打包应用
+pnpm build:unpack    # 打包但不生成安装包（用于测试）
+pnpm build:mac       # 打包 macOS 应用
+pnpm build:win       # 打包 Windows 应用
+pnpm build:linux     # 打包 Linux 应用
+
+# 代码检查
+pnpm lint            # ESLint 检查
+pnpm typecheck       # TypeScript 类型检查
+pnpm format          # Prettier 格式化
 ```
 
-### 测试插件
+## 插件开发
+
+### 1. 创建插件
 
 ```bash
-# 使用快速测试脚本
-./test-plugin.sh
-
-# 或手动测试
-cd examples/vanilla-go-plugin
-./build.sh && ./package.sh
-python3 -m http.server 8080
-
-# 在应用的插件商店输入
-http://localhost:8080/plugin.zip
-```
-
-## 📚 插件开发
-
-### 快速创建插件
-
-```bash
-# 使用脚手架工具创建插件
-node tools/create-plugin.js my-awesome-plugin
-
-cd my-awesome-plugin
+npm create vite@latest my-plugin -- --template vue-ts
+cd my-plugin
 npm install
-npm run dev
 ```
 
-### 打包发布
+### 2. 配置 vite.config.ts
 
-```bash
-# 1. 构建插件
-npm run build
+```typescript
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 
-# 2. 打包成 zip
-npm run package
-
-# 3. 测试插件
-# 在 UniHub 中安装 plugin.zip
-
-# 4. 发布到 GitHub Release
-# 上传 plugin.zip 到你的仓库 Release
+export default defineConfig({
+  plugins: [vue()],
+  base: './',  // 🔥 关键：使用相对路径
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets'
+  }
+})
 ```
 
-### 示例插件
+### 3. 配置 package.json
 
-**modern-vue-plugin** - 使用 Vite + Vue 3 + TypeScript
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "unihub": {
+    "id": "com.example.my-plugin",
+    "icon": "🚀",
+    "category": "tool",
+    "entry": "dist/index.html",
+    "permissions": ["fs", "clipboard", "http"],
+    "dev": {
+      "enabled": false,
+      "url": "http://localhost:5173",
+      "autoReload": true
+    }
+  }
+}
+```
+
+### 4. 使用 API
+
+```typescript
+// 打开插件（在独立窗口中）
+await window.api.plugin.open('com.example.my-plugin')
+
+// 关闭插件窗口
+await window.api.plugin.close('com.example.my-plugin')
+
+// 在插件窗口中使用 API
+// 文件系统
+const result = await window.node.fs.readFile('./data.json')
+await window.node.fs.writeFile('./output.txt', 'Hello')
+
+// 数据库
+await window.unihub.db.put('key', { value: 123 })
+const data = await window.unihub.db.get('key')
+
+// 剪贴板
+await window.unihub.clipboard.writeText('Hello')
+const text = await window.unihub.clipboard.readText()
+
+// HTTP
+const data = await window.unihub.http.get('https://api.example.com')
+
+// Sidecar（可选）
+const result = await window.node.spawn('./sidecar/main', [], {
+  input: JSON.stringify({ action: 'process' })
+})
+```
+
+## 架构设计
+
+### 三等公民制度
+
+1. **第一公民：JavaScript/TypeScript（80%）**
+   - 进程内，< 1ms
+   - 零依赖，内置支持
+   - 推荐用于 UI、文件处理、HTTP 请求
+
+2. **第二公民：Go/Rust/C++（15%）**
+   - Sidecar 模式，50-200ms
+   - 编译成 .exe
+   - 推荐用于图像处理、视频转码
+
+3. **第三公民：Python/Shell（5%）**
+   - 不推荐，环境依赖
+   - 需打包成 .exe
+
+### 为什么用多文件模式？
+
+1. **安全性**：避免 `unsafe-inline`，防止 XSS
+2. **性能**：避免 Base64 膨胀 33%
+3. **稳定性**：工具链默认支持
+
+## 文档
+
+- [插件 API 参考](./docs/PLUGIN_API.md)
+- [插件开发指南](./docs/PLUGIN_DEVELOPMENT.md)
+- [热重载指南](./docs/HOT_RELOAD.md)
+- [架构设计](./docs/ARCHITECTURE.md)
+
+## 示例
+
+参考 `examples/modern-vue-plugin/` 目录。
 
 ```bash
 cd examples/modern-vue-plugin
 npm install
-npm run dev
-npm run package
+npm run dev      # 开发模式
+npm run build    # 构建
+npm run package  # 打包成 .zip
 ```
 
-### 文档
+## License
 
-- **[PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)** - 完整开发指南（配置、API、打包、发布）
-- **[PLUGIN_API_REFERENCE.md](PLUGIN_API_REFERENCE.md)** - API 详细参考
-
-## 🎯 技术栈对比
-
-| 组合           | 适用场景   | 学习难度 | 性能       |
-| -------------- | ---------- | -------- | ---------- |
-| 原生 JS + Go   | 高性能工具 | ⭐⭐⭐   | ⭐⭐⭐⭐⭐ |
-| React + Python | 数据分析   | ⭐⭐⭐   | ⭐⭐⭐     |
-| Vue + Node.js  | 快速开发   | ⭐⭐     | ⭐⭐⭐⭐   |
-
-## 🛠️ 开发环境
+MIT

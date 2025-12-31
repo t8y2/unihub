@@ -6,18 +6,29 @@ declare global {
     api: {
       plugin: {
         install: (url: string) => Promise<{ success: boolean; message: string }>
-        installFromBuffer: (buffer: number[], filename: string) => Promise<{ success: boolean; message: string }>
+        installFromBuffer: (
+          buffer: number[],
+          filename: string
+        ) => Promise<{ success: boolean; message: string }>
         uninstall: (pluginId: string) => Promise<{ success: boolean; message: string }>
-        list: () => Promise<any[]>
+        list: () => Promise<Array<Record<string, unknown>>>
         load: (
           pluginId: string
-        ) => Promise<{ success: boolean; htmlPath?: string; devUrl?: string; message?: string }>
-        backendCall: (pluginId: string, functionName: string, args: string) => Promise<string>
+        ) => Promise<{ success: boolean; htmlPath?: string; devUrl?: string; html?: string; message?: string }>
+        open: (pluginId: string) => Promise<{ success: boolean; message?: string }>
+        close: (pluginId: string) => Promise<{ success: boolean }>
         dev: {
-          register: (pluginId: string, devUrl: string, autoReload?: boolean) => Promise<{ success: boolean; error?: string }>
+          register: (
+            pluginId: string,
+            devUrl: string,
+            autoReload?: boolean
+          ) => Promise<{ success: boolean; error?: string }>
           unregister: (pluginId: string) => Promise<{ success: boolean; error?: string }>
           isDevMode: (pluginId: string) => Promise<{ success: boolean; data: boolean }>
-          list: () => Promise<{ success: boolean; data: Array<{ id: string; url: string; autoReload: boolean }> }>
+          list: () => Promise<{
+            success: boolean
+            data: Array<{ id: string; url: string; autoReload: boolean }>
+          }>
         }
       }
       fs: {
@@ -27,6 +38,40 @@ declare global {
       app: {
         getPath: (name: string) => Promise<string>
       }
+    }
+    // Node.js API（第一公民）
+    node: {
+      fs: {
+        readFile: (filePath: string) => Promise<{ success: boolean; data?: string; error?: string }>
+        writeFile: (
+          filePath: string,
+          content: string
+        ) => Promise<{ success: boolean; error?: string }>
+        readdir: (dirPath: string) => Promise<{ success: boolean; data?: string[]; error?: string }>
+        exists: (filePath: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
+        stat: (
+          filePath: string
+        ) => Promise<{
+          success: boolean
+          data?: { isFile: boolean; isDirectory: boolean; size: number; mtime: string }
+          error?: string
+        }>
+        mkdir: (dirPath: string) => Promise<{ success: boolean; error?: string }>
+        selectFile: () => Promise<{ success: boolean; data?: string | null; error?: string }>
+        selectDirectory: () => Promise<{ success: boolean; data?: string | null; error?: string }>
+      }
+      spawn: (
+        command: string,
+        args?: string[],
+        options?: { timeout?: number; input?: string }
+      ) => Promise<{
+        success: boolean
+        stdout?: string
+        stderr?: string
+        exitCode?: number
+        error?: string
+      }>
+      getPluginDir: () => Promise<{ success: boolean; data?: string; error?: string }>
     }
   }
 }

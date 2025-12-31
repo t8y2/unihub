@@ -9,8 +9,8 @@ const api = {
     uninstall: (pluginId: string) => ipcRenderer.invoke('plugin:uninstall', pluginId),
     list: () => ipcRenderer.invoke('plugin:list'),
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),
-    backendCall: (pluginId: string, functionName: string, args: string) =>
-      ipcRenderer.invoke('plugin:backend-call', pluginId, functionName, args),
+    open: (pluginId: string) => ipcRenderer.invoke('plugin:open', pluginId),
+    close: (pluginId: string) => ipcRenderer.invoke('plugin:close', pluginId),
     // 开发模式 API
     dev: {
       register: (pluginId: string, devUrl: string, autoReload?: boolean) =>
@@ -47,13 +47,14 @@ const api = {
   },
   // HTTP API
   http: {
-    request: (options: any) => ipcRenderer.invoke('plugin-api:http:request', options)
+    request: (options: Record<string, unknown>) =>
+      ipcRenderer.invoke('plugin-api:http:request', options)
   },
   // 存储 API
   storage: {
     get: (pluginId: string, key: string) =>
       ipcRenderer.invoke('plugin-api:storage:get', pluginId, key),
-    set: (pluginId: string, key: string, value: any) =>
+    set: (pluginId: string, key: string, value: unknown) =>
       ipcRenderer.invoke('plugin-api:storage:set', pluginId, key, value),
     delete: (pluginId: string, key: string) =>
       ipcRenderer.invoke('plugin-api:storage:delete', pluginId, key),
@@ -68,27 +69,32 @@ const api = {
 const unihubAPI = {
   // 数据库 API（简化版，自动使用当前插件 ID）
   db: {
-    put: async (key: string, value: any) => {
+    put: async (key: string, value: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
       const result = await ipcRenderer.invoke('plugin-api:storage:set', pluginId, key, value)
       return result.success
     },
     get: async (key: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
       const result = await ipcRenderer.invoke('plugin-api:storage:get', pluginId, key)
       return result.success ? result.data : null
     },
     remove: async (key: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
       const result = await ipcRenderer.invoke('plugin-api:storage:delete', pluginId, key)
       return result.success
     },
     allKeys: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
       const result = await ipcRenderer.invoke('plugin-api:storage:allKeys', pluginId)
       return result.success ? result.data : []
     },
     clear: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
       const result = await ipcRenderer.invoke('plugin-api:storage:clear', pluginId)
       return result.success
@@ -150,7 +156,7 @@ const unihubAPI = {
   },
   // HTTP API
   http: {
-    get: async (url: string, options?: any) => {
+    get: async (url: string, options?: Record<string, unknown>) => {
       const result = await ipcRenderer.invoke('plugin-api:http:request', {
         url,
         method: 'GET',
@@ -158,7 +164,7 @@ const unihubAPI = {
       })
       return result.success ? result.data : null
     },
-    post: async (url: string, data: any, options?: any) => {
+    post: async (url: string, data: unknown, options?: Record<string, unknown>) => {
       const result = await ipcRenderer.invoke('plugin-api:http:request', {
         url,
         method: 'POST',
@@ -167,7 +173,7 @@ const unihubAPI = {
       })
       return result.success ? result.data : null
     },
-    request: async (options: any) => {
+    request: async (options: Record<string, unknown>) => {
       const result = await ipcRenderer.invoke('plugin-api:http:request', options)
       return result.success ? result.data : null
     }
@@ -193,18 +199,65 @@ const unihubAPI = {
       const result = await ipcRenderer.invoke('plugin-api:notification:show', options)
       return result.success
     }
-  },
-  // 后端调用 API
-  backend: {
-    call: async (functionName: string, args: any) => {
+  }
+}
+
+// 创建 Node.js API（用于插件）
+const nodeAPI = {
+  // 文件系统 API（限制在插件目录内）
+  fs: {
+    readFile: async (filePath: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
-      return await ipcRenderer.invoke(
-        'plugin:backend-call',
-        pluginId,
-        functionName,
-        JSON.stringify(args)
-      )
+      return await ipcRenderer.invoke('node-api:fs:readFile', pluginId, filePath)
+    },
+    writeFile: async (filePath: string, content: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      return await ipcRenderer.invoke('node-api:fs:writeFile', pluginId, filePath, content)
+    },
+    readdir: async (dirPath: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      return await ipcRenderer.invoke('node-api:fs:readdir', pluginId, dirPath)
+    },
+    exists: async (filePath: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      return await ipcRenderer.invoke('node-api:fs:exists', pluginId, filePath)
+    },
+    stat: async (filePath: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      return await ipcRenderer.invoke('node-api:fs:stat', pluginId, filePath)
+    },
+    mkdir: async (dirPath: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      return await ipcRenderer.invoke('node-api:fs:mkdir', pluginId, dirPath)
+    },
+    selectFile: async () => {
+      return await ipcRenderer.invoke('node-api:fs:selectFile')
+    },
+    selectDirectory: async () => {
+      return await ipcRenderer.invoke('node-api:fs:selectDirectory')
     }
+  },
+  // 子进程 API（Sidecar 模式）
+  spawn: async (
+    command: string,
+    args: string[] = [],
+    options: Record<string, unknown> = {}
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+    return await ipcRenderer.invoke('node-api:spawn', pluginId, command, args, options)
+  },
+  // 获取插件目录
+  getPluginDir: async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+    return await ipcRenderer.invoke('node-api:getPluginDir', pluginId)
   }
 }
 
@@ -213,14 +266,17 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('unihub', unihubAPI)
+    contextBridge.exposeInMainWorld('node', nodeAPI)
   } catch (error) {
     console.error(error)
   }
 } else {
-  // @ts-ignore
+  // @ts-ignore (fallback for non-isolated context)
   window.electron = electronAPI
-  // @ts-ignore
+  // @ts-ignore (fallback for non-isolated context)
   window.api = api
-  // @ts-ignore
+  // @ts-ignore (fallback for non-isolated context)
   window.unihub = unihubAPI
+  // @ts-ignore (fallback for non-isolated context)
+  window.node = nodeAPI
 }

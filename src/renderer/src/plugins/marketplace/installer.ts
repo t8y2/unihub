@@ -1,11 +1,9 @@
 import { pluginRegistry } from '../registry'
-import { pluginStorage } from './storage'
-import type { InstalledPluginInfo } from '@/types/marketplace'
 import { markRaw } from 'vue'
 
 /**
  * 插件安装器（Electron 版本）
- * 使用 BrowserView 加载插件
+ * 在应用内 iframe 中加载插件
  */
 export class PluginInstaller {
   /**
@@ -74,7 +72,7 @@ export class PluginInstaller {
         throw new Error(result.message)
       }
 
-      console.log(`✅ 插件 ${pluginId} 已卸载`)
+      console.log('✅ 插件已卸载:', pluginId)
     } catch (error) {
       console.error('卸载插件失败:', error)
       throw error
@@ -92,9 +90,9 @@ export class PluginInstaller {
       for (const pluginInfo of plugins) {
         if (!pluginInfo.enabled) continue
 
-        const metadata = pluginInfo.metadata
+        const metadata = pluginInfo.metadata as any
 
-        // 创建插件组件（使用 iframe 加载）
+        // 创建插件组件（在应用内 iframe 中加载）
         const plugin = {
           metadata: {
             id: metadata.id,
@@ -108,136 +106,79 @@ export class PluginInstaller {
           },
           component: markRaw({
             template: `
-              <div class="w-full h-full">
-                <iframe 
-                  ref="iframe"
-                  v-if="iframeUrl" 
-                  :src="iframeUrl" 
-                  class="w-full h-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-                  @load="onIframeLoad"
-                ></iframe>
-                <div v-else class="flex items-center justify-center h-full">
-                  <p class="text-gray-500">加载中...</p>
+              <div class="w-full h-full flex flex-col bg-white dark:bg-gray-900">
+                <div v-if="loading" class="flex-1 flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">加载插件中...</p>
+                  </div>
                 </div>
+                <div v-else-if="error" class="flex-1 flex items-center justify-center">
+                  <div class="text-center max-w-md">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                      <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">加载失败</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">{{ error }}</p>
+                  </div>
+                </div>
+                <iframe
+                  v-else
+                  ref="iframe"
+                  :srcdoc="pluginHtml"
+                  class="flex-1 w-full border-0"
+                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  allow="plugin:"
+                />
               </div>
             `,
             data() {
               return {
-                iframeUrl: ''
+                pluginName: metadata.name,
+                pluginId: metadata.id,
+                pluginHtml: '',
+                loading: true,
+                error: ''
               }
             },
-            methods: {
-              async onIframeLoad() {
-                const iframe = this.$refs.iframe as HTMLIFrameElement
-                if (!iframe) return
-
-                const iframeWindow = iframe.contentWindow
-                if (iframeWindow) {
-                  try {
-                    // 导入 Vue
-                    const Vue = await import('vue')
-
-                    // 注入 UniHub API
-                    ;(iframeWindow as any).UniHub = {
-                      Vue,
-                      // 提供调用后端的方法
-                      invoke: async (command: string, args: any) => {
-                        if (command === 'plugin_backend_call') {
-                          return await window.api.plugin.backendCall(
-                            args.pluginId,
-                            args.functionName,
-                            args.args
-                          )
-                        }
-                        throw new Error(`Unknown command: ${command}`)
-                      }
-                    }
-
-                    // 注入 window.api（用于插件直接调用）
-                    ;(iframeWindow as any).api = window.api
-
-                    // 触发插件初始化事件
-                    iframeWindow.dispatchEvent(new Event('unihub-ready'))
-                    console.log('✅ 插件 API 已注入:', metadata.name)
-                  } catch (error) {
-                    console.error('注入插件 API 失败:', error)
-                  }
-                }
-              }
-            },
-            async mounted() {
+            async mounted(this: any) {
               try {
-                // 获取插件加载信息
-                const loadResult = await window.api.plugin.load(metadata.id)
-
-                if (!loadResult.success) {
-                  throw new Error(loadResult.message || '加载插件失败')
-                }
-
-                // 如果是开发模式，直接加载开发服务器 URL
-                if (loadResult.devUrl) {
-                  console.log(`🔥 开发模式: ${metadata.name} -> ${loadResult.devUrl}`)
-                  this.iframeUrl = loadResult.devUrl
-                  
-                  // 等待 iframe 加载后注入插件 ID
-                  this.$nextTick(() => {
-                    const iframe = this.$refs.iframe as HTMLIFrameElement
-                    if (iframe && iframe.contentWindow) {
-                      ;(iframe.contentWindow as any).__UNIHUB_PLUGIN_ID__ = metadata.id
-                      ;(iframe.contentWindow as any).__UNIHUB_DEV_MODE__ = true
-                    }
-                  })
+                // 加载插件
+                const result = await window.api.plugin.load(this.pluginId)
+                
+                if (!result.success) {
+                  this.error = result.message || '加载插件失败'
+                  this.loading = false
                   return
                 }
 
-                // 生产模式：读取打包后的 HTML 文件
-                if (!loadResult.htmlPath) {
-                  throw new Error('未找到插件入口文件')
-                }
-
-                const readResult = (await window.api.fs.readFile(loadResult.htmlPath)) as {
-                  success: boolean
-                  data?: string
-                  error?: string
-                }
-                let htmlContent = readResult.success ? readResult.data || '' : ''
-
-                if (!htmlContent) {
-                  throw new Error('无法读取插件 HTML 文件')
-                }
-
-                // 修改 HTML 内容，添加 CSP meta 标签（允许外部脚本）
-                const cspMeta =
-                  "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; style-src 'self' 'unsafe-inline'; connect-src 'self' http: https:; img-src 'self' data: blob:;\">"
-
-                if (htmlContent.includes('<head>')) {
-                  htmlContent = htmlContent.replace('<head>', '<head>' + cspMeta)
-                } else if (htmlContent.includes('<html>')) {
-                  htmlContent = htmlContent.replace('<html>', '<html><head>' + cspMeta + '</head>')
+                if (result.devUrl) {
+                  // 开发模式：使用 devUrl
+                  const devUrl = result.devUrl
+                  this.pluginHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body { margin: 0; padding: 0; overflow: hidden; } iframe { width: 100vw; height: 100vh; border: 0; }</style></head><body><iframe src="' + devUrl + '" sandbox="allow-scripts allow-same-origin"></iframe></body></html>'
+                } else if (result.html) {
+                  // 生产模式：使用转换后的 HTML
+                  this.pluginHtml = result.html
                 } else {
-                  htmlContent =
-                    '<html><head>' + cspMeta + '</head><body>' + htmlContent + '</body></html>'
+                  this.error = '插件格式不正确'
                 }
 
-                // 创建 blob URL
-                const blob = new Blob([htmlContent], { type: 'text/html' })
-                this.iframeUrl = URL.createObjectURL(blob)
+                this.loading = false
 
-                // 等待 iframe 加载后注入插件 ID
+                // 注入插件 API
                 this.$nextTick(() => {
-                  const iframe = this.$refs.iframe as HTMLIFrameElement
+                  const iframe = this.$refs.iframe
                   if (iframe && iframe.contentWindow) {
-                    ;(iframe.contentWindow as any).__UNIHUB_PLUGIN_ID__ = metadata.id
+                    iframe.contentWindow.pluginAPI = window.api
+                    console.log('✅ 插件 API 已注入:', this.pluginId)
                   }
                 })
-              } catch (error) {
-                console.error('加载插件失败:', error)
-              }
-            },
-            beforeUnmount() {
-              if (this.iframeUrl) {
-                URL.revokeObjectURL(this.iframeUrl)
+              } catch (err) {
+                console.error('加载插件失败:', err)
+                this.error = String(err)
+                this.loading = false
               }
             }
           }),
@@ -246,7 +187,7 @@ export class PluginInstaller {
         }
 
         pluginRegistry.register(plugin)
-        console.log(`✅ 已加载插件: ${metadata.name}`)
+        console.log('✅ 已加载插件:', metadata.name)
       }
     } catch (error) {
       console.error('加载插件列表失败:', error)

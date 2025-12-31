@@ -1,4 +1,3 @@
-import { BrowserWindow } from 'electron'
 import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
@@ -19,10 +18,6 @@ interface PackageJson {
     icon?: string
     category?: string
     entry: string
-    backend?: {
-      entry: string
-      type: 'python' | 'node' | 'go' | 'binary'
-    }
     permissions?: string[]
     screenshots?: string[]
     dev?: {
@@ -44,10 +39,6 @@ interface PluginMetadata {
   category: string
   keywords?: string[]
   permissions?: string[]
-  backend?: {
-    entry: string
-    type: string
-  }
   dev?: {
     enabled?: boolean
     url?: string
@@ -66,7 +57,6 @@ interface InstalledPlugin {
 }
 
 export class PluginManager {
-  private mainWindow: BrowserWindow | null = null
   private pluginsDir: string
   private pluginsDataFile: string
 
@@ -78,10 +68,6 @@ export class PluginManager {
     if (!existsSync(this.pluginsDir)) {
       mkdirSync(this.pluginsDir, { recursive: true })
     }
-  }
-
-  setMainWindow(window: BrowserWindow): void {
-    this.mainWindow = window
   }
 
   async installPlugin(url: string): Promise<{ success: boolean; message: string }> {
@@ -148,7 +134,6 @@ export class PluginManager {
           category: pkg.unihub.category || 'tool',
           keywords: pkg.keywords || [],
           permissions: pkg.unihub.permissions || [],
-          backend: pkg.unihub.backend,
           dev: pkg.unihub.dev
         }
       } else if (existsSync(manifestPath)) {
@@ -175,18 +160,18 @@ export class PluginManager {
       const fs = await import('fs/promises')
       await fs.cp(tempExtract, pluginDir, { recursive: true })
 
-      // 给后端可执行文件添加执行权限
-      const backendDir = join(pluginDir, 'backend')
-      if (existsSync(backendDir)) {
+      // 给 sidecar 可执行文件添加执行权限
+      const sidecarDir = join(pluginDir, 'sidecar')
+      if (existsSync(sidecarDir)) {
         const { chmod } = await import('fs/promises')
         const { readdir } = await import('fs/promises')
 
         try {
-          const files = await readdir(backendDir)
+          const files = await readdir(sidecarDir)
           for (const file of files) {
-            const filePath = join(backendDir, file)
-            // 给所有文件添加执行权限（特别是编译后的二进制文件）
-            if (!file.endsWith('.py') && !file.endsWith('.js') && !file.endsWith('.go')) {
+            const filePath = join(sidecarDir, file)
+            // 给所有可执行文件添加执行权限
+            if (file.endsWith('.exe') || !file.includes('.')) {
               await chmod(filePath, 0o755)
               console.log(`✅ 已添加执行权限: ${file}`)
             }
@@ -276,83 +261,6 @@ export class PluginManager {
       return { success: true, htmlPath }
     } catch (error) {
       return { success: false, message: (error as Error).message }
-    }
-  }
-
-  async callPluginBackend(pluginId: string, functionName: string, args: string): Promise<string> {
-    try {
-      const installed = this.getInstalledPlugins()
-      const plugin = installed.find((p) => p.id === pluginId)
-
-      if (!plugin) {
-        throw new Error('插件未安装')
-      }
-
-      const pluginDir = join(this.pluginsDir, pluginId)
-      const backendDir = join(pluginDir, 'backend')
-
-      if (!existsSync(backendDir)) {
-        throw new Error('插件没有后端')
-      }
-
-      // 查找后端可执行文件
-      const { promisify } = await import('util')
-      const execFile = promisify((await import('child_process')).execFile)
-
-      // 支持多种后端类型
-      let command: string
-      let commandArgs: string[]
-
-      // 1. 检查编译后的二进制文件
-      if (existsSync(join(backendDir, 'main'))) {
-        command = join(backendDir, 'main')
-        commandArgs = [functionName, args]
-      }
-      // 2. 检查 Python
-      else if (existsSync(join(backendDir, 'main.py'))) {
-        command = 'python3'
-        commandArgs = [join(backendDir, 'main.py'), functionName, args]
-      }
-      // 3. 检查 Node.js
-      else if (existsSync(join(backendDir, 'main.js'))) {
-        command = 'node'
-        commandArgs = [join(backendDir, 'main.js'), functionName, args]
-      }
-      // 4. 检查 Go
-      else if (existsSync(join(backendDir, 'main.go'))) {
-        // 先编译 Go
-        await execFile('go', ['build', '-o', 'main', 'main.go'], { cwd: backendDir })
-        command = join(backendDir, 'main')
-        commandArgs = [functionName, args]
-      }
-      // 5. 检查 Rust
-      else if (existsSync(join(backendDir, 'Cargo.toml'))) {
-        // 先编译 Rust
-        await execFile('cargo', ['build', '--release'], { cwd: backendDir })
-        const target = join(backendDir, 'target', 'release', 'backend')
-        command = target
-        commandArgs = [functionName, args]
-      } else {
-        throw new Error('未找到支持的后端文件')
-      }
-
-      // 执行后端命令
-      const { stdout, stderr } = await execFile(command, commandArgs, {
-        timeout: 30000, // 30秒超时
-        maxBuffer: 10 * 1024 * 1024 // 10MB 缓冲区
-      })
-
-      if (stderr) {
-        console.warn('后端警告:', stderr)
-      }
-
-      return stdout.trim()
-    } catch (error) {
-      console.error('调用后端失败:', error)
-      return JSON.stringify({
-        success: false,
-        error: (error as Error).message
-      })
     }
   }
 

@@ -1,23 +1,19 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { viteSingleFile } from 'vite-plugin-singlefile'
 
 export default defineConfig({
-  plugins: [vue(), viteSingleFile()],
+  plugins: [vue()],
+  // 关键配置：使用相对路径，避免白屏问题
+  base: './',
   build: {
     outDir: 'dist',
+    assetsDir: 'assets',
     emptyOutDir: true,
     sourcemap: false,
-    minify: true,
-    rollupOptions: {
-      output: {
-        inlineDynamicImports: true,
-        manualChunks: undefined
-      }
-    }
+    minify: true
   },
   server: {
-    port: 3000,
-    open: true
+    port: 5173,
+    open: false
   }
 })
