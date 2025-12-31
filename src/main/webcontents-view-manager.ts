@@ -81,6 +81,17 @@ export class WebContentsViewManager {
       console.error(`[Plugin ${pluginId}] 加载失败:`, errorCode, errorDescription)
     })
 
+    // 拦截插件视图中的 Cmd+W / Ctrl+W 快捷键
+    view.webContents.on('before-input-event', (event, input) => {
+      // 检查是否是 Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
+      if (input.type === 'keyDown' && input.key === 'w' && (input.meta || input.control)) {
+        event.preventDefault()
+        console.log(`🚫 阻止插件 ${pluginId} 中的 Cmd+W 关闭窗口`)
+        // 通知主窗口的渲染进程处理关闭标签
+        this.mainWindow?.webContents.send('handle-close-tab')
+      }
+    })
+
     this.views.set(pluginId, view)
     return view
   }
