@@ -18,28 +18,6 @@ const success = ref('')
 const isDragging = ref(false)
 const fileInput = ref<HTMLInputElement>()
 
-// 官方插件商店
-interface OfficialPlugin {
-  id: string
-  name: string
-  description: string
-  version: string
-  author: { name: string }
-  category: string
-  keywords: string[]
-  icon?: string
-  downloadUrl: string
-  homepage?: string
-  downloads?: number
-  rating?: number
-  verified?: boolean
-}
-
-const officialPlugins = ref<OfficialPlugin[]>([])
-const loadingOfficialPlugins = ref(false)
-const searchQuery = ref('')
-const selectedCategory = ref('all')
-
 // 强制刷新计数器
 const refreshKey = ref(0)
 
@@ -64,129 +42,6 @@ const installedPlugins = ref<
     }
   }>
 >([])
-
-// 加载官方插件列表
-const loadOfficialPlugins = async (): Promise<void> => {
-  try {
-    loadingOfficialPlugins.value = true
-
-    // 正式环境使用官方 API
-    const apiUrl = import.meta.env.VITE_PLUGIN_STORE_API || 'https://api.unihub.'
-    const response = await fetch(`${apiUrl}/v1/plugins?featured=true&limit=50`)
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    officialPlugins.value = data.plugins || []
-
-    // 开发环境回退到测试数据
-    if (officialPlugins.value.length === 0) {
-      console.warn('使用测试数据，请配置 VITE_PLUGIN_STORE_API 环境变量')
-      officialPlugins.value = getTestPlugins()
-    }
-  } catch (err) {
-    console.error('加载官方插件失败:', err)
-    // 回退到测试数据
-    officialPlugins.value = getTestPlugins()
-    error.value = '无法连接到插件商店，显示本地测试数据'
-  } finally {
-    loadingOfficialPlugins.value = false
-  }
-}
-
-// 测试数据
-const getTestPlugins = (): OfficialPlugin[] => [
-  {
-    id: 'com.unihub.hash-tool',
-    name: '哈希工具',
-    description: '计算文件和文本的 MD5、SHA256 等哈希值，支持拖拽文件批量处理',
-    version: '1.2.0',
-    author: { name: 'UniHub Team' },
-    category: 'tool',
-    keywords: ['hash', 'md5', 'sha256', 'crypto', 'security'],
-    icon: 'M12 4v16m8-8H4',
-    downloadUrl: 'http://localhost:8080/hash-tool.zip',
-    homepage: 'https://github.com/unihub-team/hash-tool',
-    downloads: 1250,
-    rating: 4.8,
-    verified: true
-  },
-  {
-    id: 'com.community.json-formatter',
-    name: 'JSON 格式化器',
-    description: '美化和压缩 JSON 数据，支持语法高亮和错误检测',
-    version: '2.1.0',
-    author: { name: '张三' },
-    category: 'formatter',
-    keywords: ['json', 'format', 'beautify', 'minify'],
-    icon: 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z',
-    downloadUrl: 'http://localhost:8080/json-formatter.zip',
-    homepage: 'https://github.com/zhangsan/json-formatter',
-    downloads: 890,
-    rating: 4.5,
-    verified: false
-  }
-]
-
-// 过滤官方插件
-const filteredOfficialPlugins = computed(() => {
-  let plugins = officialPlugins.value
-
-  // 按分类过滤
-  if (selectedCategory.value !== 'all') {
-    plugins = plugins.filter((p) => p.category === selectedCategory.value)
-  }
-
-  // 按搜索关键词过滤
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
-    plugins = plugins.filter(
-      (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.keywords.some((k: string) => k.toLowerCase().includes(query))
-    )
-  }
-
-  return plugins
-})
-
-// 获取官方插件的所有分类
-const officialCategories = computed(() => {
-  const cats = new Set(officialPlugins.value.map((p) => p.category))
-  return Array.from(cats)
-})
-
-// 安装官方插件
-const installOfficialPlugin = async (plugin: OfficialPlugin): Promise<void> => {
-  try {
-    installing.value = true
-    error.value = ''
-    success.value = ''
-
-    await pluginInstaller.installFromUrl(plugin.downloadUrl)
-    success.value = `✅ ${plugin.name} 安装成功！`
-
-    // 重新加载插件列表
-    await loadInstalledPlugins()
-    await pluginInstaller.loadInstalledPlugins()
-
-    setTimeout(() => {
-      success.value = ''
-    }, 2000)
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : '安装失败'
-  } finally {
-    installing.value = false
-  }
-}
-
-// 打开插件主页
-const openPluginHomepage = (url: string): void => {
-  window.open(url, '_blank')
-}
 
 // 按分类分组
 const pluginsByCategory = computed(() => {
@@ -232,7 +87,6 @@ const loadInstalledPlugins = async (): Promise<void> => {
 
 onMounted(() => {
   loadInstalledPlugins()
-  loadOfficialPlugins()
 })
 
 // 从 URL 安装

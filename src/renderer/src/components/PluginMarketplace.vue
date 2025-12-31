@@ -29,9 +29,7 @@ interface Plugin {
   updatedAt: string
 }
 
-// 开发阶段：使用当前仓库
-// 正式发布后：建议迁移到独立的 unihub-plugins 仓库
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/yourname/unihub@main/marketplace/plugins.json'
+const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
 
 const plugins = ref<Plugin[]>([])
 const loading = ref(true)
@@ -246,9 +244,24 @@ onMounted(() => {
           <!-- 插件图标和信息 -->
           <div class="flex items-start gap-3 mb-3">
             <div
-              class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl flex-shrink-0"
+              class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
             >
-              {{ plugin.icon }}
+              <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
+              <svg
+                v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
+                class="w-6 h-6 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  :d="plugin.icon"
+                />
+              </svg>
+              <span v-else class="text-2xl">{{ plugin.icon }}</span>
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -320,9 +333,24 @@ onMounted(() => {
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
               <div class="flex items-start gap-4">
                 <div
-                  class="w-16 h-16 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white text-3xl flex-shrink-0"
+                  class="w-16 h-16 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
                 >
-                  {{ selectedPlugin.icon }}
+                  <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
+                  <svg
+                    v-if="selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')"
+                    class="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      :d="selectedPlugin.icon"
+                    />
+                  </svg>
+                  <span v-else class="text-3xl">{{ selectedPlugin.icon }}</span>
                 </div>
                 <div class="flex-1">
                   <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">

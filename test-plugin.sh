@@ -4,38 +4,40 @@
 
 echo "🎯 UniHub 插件测试工具"
 echo ""
-echo "选择要测试的插件："
-echo "1. 原生 JS + Go 插件（高性能）"
-echo "2. React + Python 插件（数据处理）"
-echo "3. Vue + Node.js 插件（快速开发）"
-echo ""
-read -p "请输入选项 (1-3): " choice
 
-case $choice in
-  1)
-    echo ""
-    echo "📦 准备原生 JS + Go 插件..."
-    cd examples/vanilla-go-plugin
-    ./build.sh
-    ./package.sh
-    ;;
-  2)
-    echo ""
-    echo "📦 准备 React + Python 插件..."
-    cd examples/react-python-plugin
-    ./package.sh
-    ;;
-  3)
-    echo ""
-    echo "📦 准备 Vue + Node.js 插件..."
-    cd examples/simple-plugin
-    ./package.sh
-    ;;
-  *)
-    echo "❌ 无效选项"
-    exit 1
-    ;;
-esac
+PLUGIN_DIR="examples/modern-vue-plugin"
+
+if [ ! -d "$PLUGIN_DIR" ]; then
+  echo "❌ 插件目录不存在: $PLUGIN_DIR"
+  exit 1
+fi
+
+echo "📦 构建插件..."
+cd "$PLUGIN_DIR"
+
+if [ ! -f "package.json" ]; then
+  echo "❌ package.json 不存在"
+  exit 1
+fi
+
+# 安装依赖（如果需要）
+if [ ! -d "node_modules" ]; then
+  echo "📥 安装依赖..."
+  npm install
+fi
+
+# 构建
+echo "🔨 构建中..."
+npm run build
+
+# 打包
+echo "📦 打包中..."
+npm run package
+
+if [ ! -f "plugin.zip" ]; then
+  echo "❌ 打包失败"
+  exit 1
+fi
 
 echo ""
 echo "✅ 插件已打包完成！"

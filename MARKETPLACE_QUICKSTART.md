@@ -1,191 +1,113 @@
 # 🚀 插件市场快速开始
 
-## 5 分钟搭建插件市场
+5 分钟搭建零成本插件市场（GitHub + jsDelivr CDN）
 
-### 第 1 步：创建 GitHub 仓库 (2 分钟)
+## 方案选择
 
-```bash
-# 1. 在 GitHub 上创建新仓库 "unihub-plugins"
+### 方案 A：使用当前仓库（推荐开发阶段）
 
-# 2. 克隆并初始化
-git clone https://github.com/yourname/unihub-plugins.git
-cd unihub-plugins
-
-# 3. 复制市场文件
-cp -r /path/to/unihub/marketplace/* .
-
-# 4. 推送
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
-
-### 第 2 步：配置 CDN URL (1 分钟)
-
-编辑 `src/renderer/src/components/PluginMarketplace.vue`：
+**优点：** 快速开始，无需额外配置  
+**适合：** 开发测试阶段
 
 ```typescript
-// 第 45 行左右
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/yourname/unihub-plugins@main/plugins.json'
+// PluginMarketplace.vue
+const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
+```
+
+### 方案 B：独立插件仓库（推荐正式发布）
+
+**优点：** 更专业，方便社区贡献  
+**适合：** 正式发布后
+
+```bash
+# 创建独立仓库
+mkdir unihub-plugins
+cd unihub-plugins
+git init
+cp -r /path/to/unihub/marketplace/* .
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/你的用户名/unihub-plugins.git
+git push -u origin main
+```
+
+```typescript
+// PluginMarketplace.vue
+const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub-plugins@main/plugins.json'
+```
+
+## 快速部署（方案 A）
+
+### 1. 推送到 GitHub (1 分钟)
+
+```bash
+git add marketplace/
+git commit -m "Add plugin marketplace"
+git push
+```
+
+### 2. 配置 CDN URL (1 分钟)
+
+编辑 `src/renderer/src/components/PluginMarketplace.vue` 第 47 行：
+
+```typescript
+const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
 //                                              ^^^^^^^^ 改成你的 GitHub 用户名
 ```
 
-### 第 3 步：测试 (2 分钟)
+### 3. 测试 (2 分钟)
 
 ```bash
-# 1. 启动应用
 pnpm dev
-
-# 2. 打开插件管理
-# 3. 切换到"插件商店"标签
-# 4. 应该能看到插件列表！
+# 打开「插件管理」→「插件商店」标签
 ```
 
-## ✅ 完成！
+## 添加插件
 
-现在你有了一个完整的插件市场：
-
-- ✅ 零成本（GitHub + jsDelivr 免费）
-- ✅ 全球 CDN 加速
-- ✅ 自动更新
-- ✅ 版本控制
-
-## 📝 下一步
-
-### 添加你的第一个插件
-
-1. **构建插件**
-   ```bash
-   cd examples/modern-vue-plugin
-   npm run build
-   npm run package
-   ```
-
-2. **发布到 GitHub Release**
-   - 创建 Release
-   - 上传 `plugin.zip`
-   - 复制下载链接
-
-3. **更新市场**
-   
-   编辑 `plugins.json`：
-   ```json
-   {
-     "plugins": [
-       {
-         "id": "com.unihub.modern-vue",
-         "name": "Modern Vue Plugin",
-         "downloadUrl": "https://github.com/yourname/modern-vue-plugin/releases/download/v1.0.0/plugin.zip",
-         // ... 其他字段
-       }
-     ]
-   }
-   ```
-
-4. **推送更新**
-   ```bash
-   git add plugins.json
-   git commit -m "Add: Modern Vue Plugin"
-   git push
-   ```
-
-5. **等待 CDN 更新**（约 5-10 分钟）
-
-6. **在应用中刷新**
-   - 点击"刷新"按钮
-   - 应该能看到新插件！
-
-## 🎯 接受插件提交
-
-### 启用 PR 模板
-
-创建 `.github/PULL_REQUEST_TEMPLATE.md`：
-
-```markdown
-## 插件信息
-
-- **插件名称**：
-- **插件 ID**：
-- **版本**：
-- **分类**：
-- **作者**：
-
-## 检查清单
-
-- [ ] JSON 格式正确
-- [ ] 下载链接有效
-- [ ] 插件已测试
-- [ ] 遵循开发指南
-```
-
-### 启用自动验证
-
-复制 `.github/workflows/validate.yml` 到你的仓库。
-
-## 💡 提示
-
-### 1. 使用 jsDelivr 缓存
-
-```
-# 默认 URL（有缓存）
-https://cdn.jsdelivr.net/gh/yourname/unihub-plugins@main/plugins.json
-
-# 强制刷新（无缓存）
-https://cdn.jsdelivr.net/gh/yourname/unihub-plugins@main/plugins.json?v=123456
-```
-
-### 2. 使用 Git 标签
+### 1. 构建插件
 
 ```bash
-# 发布稳定版本
-git tag v1.0.0
-git push origin v1.0.0
-
-# 使用标签版本的 CDN
-https://cdn.jsdelivr.net/gh/yourname/unihub-plugins@v1.0.0/plugins.json
+cd examples/modern-vue-plugin
+npm run build
+npm run package
 ```
 
-### 3. 本地测试
+### 2. 发布到 GitHub Release
+
+- 创建 Release
+- 上传 `plugin.zip`
+- 复制下载链接
+
+### 3. 更新插件列表
+
+编辑 `marketplace/plugins.json`，添加插件信息。
+
+### 4. 推送更新
 
 ```bash
-# 启动本地服务器
-cd unihub-plugins
-python -m http.server 8000
-
-# 修改 MARKETPLACE_URL
-const MARKETPLACE_URL = 'http://localhost:8000/plugins.json'
+git add marketplace/plugins.json
+git commit -m "Add: Modern Vue Plugin"
+git push
 ```
 
-## 🐛 常见问题
+### 5. 等待 CDN 更新（5-10 分钟）
 
-### Q: CDN 没有更新？
+jsDelivr 会自动索引更新。
 
-A: jsDelivr 有缓存，等待 5-10 分钟或使用 `?v=timestamp` 强制刷新。
+## 常见问题
 
-### Q: 插件下载失败？
+**Q: CDN 没有更新？**  
+A: 等待 5-10 分钟或使用 `?v=timestamp` 强制刷新。
 
+**Q: 插件下载失败？**  
 A: 检查下载链接是否正确，确保 GitHub Release 是公开的。
 
-### Q: 如何添加截图？
+## 相关文档
 
-A: 
-```bash
-# 1. 添加截图到仓库
-mkdir -p screenshots/myplugin
-cp screenshot.png screenshots/myplugin/1.png
-
-# 2. 更新插件配置
-"screenshots": [
-  "https://cdn.jsdelivr.net/gh/yourname/unihub-plugins@main/screenshots/myplugin/1.png"
-]
-```
-
-## 📚 相关文档
-
-- [完整部署指南](./docs/MARKETPLACE_DEPLOYMENT.md)
 - [插件市场指南](./docs/MARKETPLACE_GUIDE.md)
+- [市场部署指南](./docs/MARKETPLACE_DEPLOYMENT.md)
 - [提交指南](./marketplace/CONTRIBUTING.md)
 
 ---
 
-**5 分钟搞定！开始使用吧！** 🎉
+**5 分钟搞定！** 🎉

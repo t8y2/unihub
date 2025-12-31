@@ -1,206 +1,174 @@
 # UniHub
 
-一个现代化的 Electron 插件平台，支持热重载、Sidecar 模式和完善的权限系统。
+一个现代化的 Electron 应用，支持强大的插件系统。
 
-## ✨ 核心特性
+## ✨ 特性
 
-- 🔍 **全局搜索**：快速搜索和启动插件（⌘K / Ctrl+K）
-- 🔒 **权限系统**：细粒度权限控制，保护用户数据安全
-- ⚡ **热重载**：开发模式支持实时预览
-- 🚀 **Sidecar 支持**：集成 Go/Rust/C++ 原生程序
-- 🎨 **现代化 UI**：基于 Vue 3 + Tailwind CSS
-- ⌨️ **全局快捷键**：⌘⇧Space 快速唤起（类似 Spotlight）
-- 📦 **标准化配置**：使用 package.json，符合 npm 生态
+- 🔌 **插件系统** - 支持 Vue/React/原生 JS 开发插件
+- 🛡️ **权限管理** - 细粒度的插件权限控制
+- 🔒 **插件隔离** - 进程、数据、文件系统完全隔离
+- 🏪 **插件市场** - 零成本的插件分发系统（GitHub + jsDelivr）
+- 🔍 **全局搜索** - ⌘K/Ctrl+K 快速搜索插件
+- ⚡ **热重载** - 开发模式支持插件热重载
+- 🎨 **现代 UI** - 基于 Vue 3 + Tailwind CSS
 
 ## 🚀 快速开始
 
+### 安装依赖
+
 ```bash
-# 安装依赖
 pnpm install
+```
 
-# 开发模式
+### 开发
+
+```bash
 pnpm dev
+```
 
-# 构建（编译代码）
+### 构建
+
+```bash
+# 构建所有平台
 pnpm build
 
-# 打包应用
-pnpm build:unpack    # 打包但不生成安装包（用于测试）
-pnpm build:mac       # 打包 macOS 应用
-pnpm build:win       # 打包 Windows 应用
-pnpm build:linux     # 打包 Linux 应用
-
-# 代码检查
-pnpm lint            # ESLint 检查
-pnpm typecheck       # TypeScript 类型检查
-pnpm format          # Prettier 格式化
+# 构建特定平台
+pnpm build:mac
+pnpm build:win
+pnpm build:linux
 ```
 
-## 插件开发
+## 📦 插件开发
 
-### 快速开始
-
-查看 [快速开始指南](./docs/QUICK_START.md) 了解如何在 5 分钟内创建你的第一个插件。
-
-### 1. 创建插件
+### 创建插件
 
 ```bash
-npm create vite@latest my-plugin -- --template vue-ts
-cd my-plugin
-npm install
+node tools/create-plugin.js
 ```
 
-### 2. 配置 vite.config.ts
+### 插件结构
 
-```typescript
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-
-export default defineConfig({
-  plugins: [vue()],
-  base: './', // 🔥 关键：使用相对路径
-  build: {
-    outDir: 'dist',
-    assetsDir: 'assets'
-  }
-})
+```
+my-plugin/
+├── package.json          # 插件配置
+├── index.html           # 入口文件
+├── src/
+│   ├── main.ts         # 主逻辑
+│   └── App.vue         # Vue 组件
+└── sidecar/            # 后端程序（可选）
+    └── main.go
 ```
 
-### 3. 配置 package.json
+### 插件配置
+
+在 `package.json` 中配置插件信息：
 
 ```json
 {
   "name": "my-plugin",
   "version": "1.0.0",
   "unihub": {
-    "id": "com.example.my-plugin",
-    "icon": "🚀",
+    "id": "com.example.myplugin",
+    "name": "我的插件",
+    "description": "插件描述",
     "category": "tool",
-    "entry": "dist/index.html",
-    "permissions": ["fs", "clipboard", "http"],
-    "keywords": ["工具", "效率", "clipboard"],
-    "dev": {
-      "enabled": false,
-      "url": "http://localhost:5173",
-      "autoReload": true
-    }
+    "icon": "🚀",
+    "permissions": ["fs", "clipboard", "http"]
   }
 }
 ```
 
-**权限说明**：
+### 可用权限
+
 - `fs` - 文件系统访问
 - `clipboard` - 剪贴板访问
-- `http` - HTTP 请求
+- `http` - 网络请求
 - `notification` - 系统通知
-- `spawn` - 子进程执行（Sidecar）
+- `spawn` - 执行外部程序
 - `system` - 系统信息
 
-### 4. 使用 API
+### 插件 API
 
 ```typescript
-// 打开插件（在独立窗口中）
-await window.api.plugin.open('com.example.my-plugin')
-
-// 关闭插件窗口
-await window.api.plugin.close('com.example.my-plugin')
-
-// 在插件窗口中使用 API
 // 文件系统
-const result = await window.node.fs.readFile('./data.json')
-await window.node.fs.writeFile('./output.txt', 'Hello')
-
-// 数据库
-await window.unihub.db.put('key', { value: 123 })
-const data = await window.unihub.db.get('key')
+await window.api.fs.readFile(path)
+await window.api.fs.writeFile(path, content)
 
 // 剪贴板
-await window.unihub.clipboard.writeText('Hello')
-const text = await window.unihub.clipboard.readText()
+await window.api.clipboard.writeText(text)
+const text = await window.api.clipboard.readText()
 
-// HTTP
-const data = await window.unihub.http.get('https://api.example.com')
+// HTTP 请求
+const response = await window.api.http.request({ url, method, body })
 
-// Sidecar（可选）
-const result = await window.node.spawn('./sidecar/main', [], {
-  input: JSON.stringify({ action: 'process' })
-})
+// 通知
+await window.api.notification.show({ title, body })
+
+// 执行程序
+await window.api.spawn.execute(command, args)
 ```
 
-## 架构设计
+## 🏪 插件市场
 
-### 三等公民制度
+### 配置市场
 
-1. **第一公民：JavaScript/TypeScript（80%）**
-   - 进程内，< 1ms
-   - 零依赖，内置支持
-   - 推荐用于 UI、文件处理、HTTP 请求
+1. 推送 `marketplace/` 目录到 GitHub
+2. 编辑 `src/renderer/src/components/PluginMarketplace.vue`
+3. 更新 `MARKETPLACE_URL` 为你的 CDN 地址：
 
-2. **第二公民：Go/Rust/C++（15%）**
-   - Sidecar 模式，50-200ms
-   - 编译成 .exe
-   - 推荐用于图像处理、视频转码
+```typescript
+const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
+```
 
-3. **第三公民：Python/Shell（5%）**
-   - 不推荐，环境依赖
-   - 需打包成 .exe
+### 提交插件
 
-### 为什么用多文件模式？
+查看 [marketplace/CONTRIBUTING.md](./marketplace/CONTRIBUTING.md)
 
-1. **安全性**：避免 `unsafe-inline`，防止 XSS
-2. **性能**：避免 Base64 膨胀 33%
-3. **稳定性**：工具链默认支持
+## 📚 文档
 
-## 文档
-
-- [快速开始指南](./docs/QUICK_START.md) - 5 分钟上手
-- [改进说明](./docs/IMPROVEMENTS.md) - 新功能和改进
-- [插件 API 参考](./docs/PLUGIN_API.md) - 完整 API 文档
-- [插件开发指南](./docs/PLUGIN_DEVELOPMENT.md) - 详细开发教程
-- [热重载指南](./docs/HOT_RELOAD.md) - 开发模式配置
 - [架构设计](./docs/ARCHITECTURE.md) - 系统架构说明
+- [插件开发](./docs/PLUGIN_DEVELOPMENT.md) - 插件开发指南
+- [插件 API](./docs/PLUGIN_API.md) - API 文档
+- [插件隔离](./docs/ISOLATION_DEMO.md) - 隔离机制说明
+- [市场指南](./docs/MARKETPLACE_GUIDE.md) - 插件市场使用指南
+- [市场部署](./docs/MARKETPLACE_DEPLOYMENT.md) - 市场部署指南
+- [快速开始](./MARKETPLACE_QUICKSTART.md) - 5 分钟搭建市场
 
-## 快捷键
+## 🔧 开发工具
 
-| 快捷键 | 功能 |
-|--------|------|
-| `⌘K` / `Ctrl+K` | 打开全局搜索 |
-| `⌘P` / `Ctrl+P` | 打开全局搜索 |
-| `⌘T` / `Ctrl+T` | 新建标签页 |
-| `⌘W` / `Ctrl+W` | 关闭当前标签 |
-| `⌘B` / `Ctrl+B` | 切换侧边栏 |
-| `⌘⇧Space` / `Ctrl+Shift+Space` | 显示/隐藏主窗口 |
+### 全局快捷键
 
-## 与竞品对比
+- `⌘⇧Space` / `Ctrl+Shift+Space` - 显示/隐藏主窗口
+- `⌘K` / `Ctrl+K` - 全局搜索
+- `⌘T` / `Ctrl+T` - 新建标签
+- `⌘W` / `Ctrl+W` - 关闭标签
+- `⌘B` / `Ctrl+B` - 切换侧边栏
 
-| 功能 | uTools | Rubick | UniHub |
-|------|--------|--------|--------|
-| 全局搜索 | ✅ | ✅ | ✅ |
-| 权限系统 | ✅ | ❌ | ✅ |
-| 热重载 | ✅ | ❌ | ✅ |
-| Sidecar | ❌ | ❌ | ✅ |
-| 开源 | ❌ | ✅ | ✅ |
-| 标准配置 | ❌ | ❌ | ✅ |
+### 开发模式
 
-## 文档
+在插件管理页面点击「开发模式」按钮，可以：
 
-- [插件 API 参考](./docs/PLUGIN_API.md)
-- [插件开发指南](./docs/PLUGIN_DEVELOPMENT.md)
-- [热重载指南](./docs/HOT_RELOAD.md)
-- [架构设计](./docs/ARCHITECTURE.md)
+- 查看已安装插件
+- 重载插件
+- 查看插件日志
+- 测试插件功能
 
-## 示例
+## 🛡️ 安全性
 
-参考 `examples/modern-vue-plugin/` 目录。
+- ✅ 插件进程隔离（WebContentsView + contextIsolation）
+- ✅ 权限系统（运行时验证）
+- ✅ 路径遍历攻击防护
+- ✅ 数据隔离（每个插件独立存储）
+- ✅ 插件 ID 验证
 
-```bash
-cd examples/modern-vue-plugin
-npm install
-npm run dev      # 开发模式
-npm run build    # 构建
-npm run package  # 打包成 .zip
-```
-
-## License
+## 📄 许可证
 
 MIT
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
+**让我们一起打造更好的插件生态！** 🎉
