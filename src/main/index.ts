@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
 import { join } from 'path'
+import { existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { PluginManager } from './plugin-manager'
@@ -8,6 +9,7 @@ import { NodeAPI } from './node-api'
 import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
+import { pathToFileURL } from 'url'
 
 // 标记是否有活动的第三方插件
 let hasActiveThirdPartyPlugin = false
@@ -16,6 +18,20 @@ let hasActiveThirdPartyPlugin = false
 if (is.dev) {
   process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 }
+
+// 注册自定义协议权限（必须在 app ready 之前）
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'plugin',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true
+    }
+  }
+])
 
 let mainWindow: BrowserWindow | null = null
 const pluginManager = new PluginManager()
@@ -82,8 +98,8 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.unihub.app')
 
-  // 注册自定义协议（必须在 ready 之后立即注册）
-  protocol.registerFileProtocol('plugin', (request, callback) => {
+  // 使用新的 protocol.handle API 注册自定义协议
+  protocol.handle('plugin', (request) => {
     try {
       let url = request.url.substring('plugin://'.length)
       const queryIndex = url.indexOf('?')
@@ -94,10 +110,18 @@ app.whenReady().then(async () => {
       const filePath = pathParts.join('/')
       const pluginDir = join(app.getPath('userData'), 'plugins', pluginId)
       const fullPath = join(pluginDir, filePath)
-      callback({ path: fullPath })
+
+      // 检查文件是否存在
+      if (!existsSync(fullPath)) {
+        console.error('❌ 插件文件不存在:', fullPath)
+        return new Response('File not found', { status: 404 })
+      }
+
+      // 使用 net.fetch 加载本地文件
+      return net.fetch(pathToFileURL(fullPath).href)
     } catch (error) {
       console.error('❌ 加载插件资源失败:', error)
-      callback({ error: -2 })
+      return new Response('Internal error', { status: 500 })
     }
   })
 

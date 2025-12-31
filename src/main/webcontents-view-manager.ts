@@ -48,6 +48,13 @@ export class WebContentsViewManager {
 
     // 加载插件 URL（异步，不阻塞）
     view.webContents.loadURL(urlWithPluginId).catch((err) => {
+      // 忽略常见的非致命错误：
+      // ERR_ABORTED (-3): 导航被取消
+      // ERR_FAILED (-2): 通用失败，但页面可能已加载
+      const ignoredErrors = ['ERR_ABORTED', 'ERR_FAILED']
+      if (ignoredErrors.includes(err.code)) {
+        return
+      }
       console.error(`加载插件 ${pluginId} 失败:`, err)
     })
 
@@ -83,10 +90,18 @@ export class WebContentsViewManager {
       })
     }
 
-    // 监听加载错误
-    view.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
-      console.error(`[Plugin ${pluginId}] 加载失败:`, errorCode, errorDescription)
-    })
+    // 监听加载错误（只记录主框架的严重错误）
+    view.webContents.on(
+      'did-fail-load',
+      (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+        // 忽略非主框架的加载错误
+        // 忽略 ERR_ABORTED (-3) 和 ERR_FAILED (-2)，这些通常是非致命的
+        if (!isMainFrame || errorCode === -3 || errorCode === -2) {
+          return
+        }
+        console.error(`[Plugin ${pluginId}] 加载失败:`, errorCode, errorDescription, validatedURL)
+      }
+    )
 
     // 拦截插件视图中的 Cmd+W / Ctrl+W 快捷键
     view.webContents.on('before-input-event', (event, input) => {
