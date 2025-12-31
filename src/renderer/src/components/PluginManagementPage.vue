@@ -66,7 +66,7 @@ const loadOfficialPlugins = async (): Promise<void> => {
     loadingOfficialPlugins.value = true
     
     // 正式环境使用官方 API
-    const apiUrl = import.meta.env.VITE_PLUGIN_STORE_API || 'https://api.unihub.dev'
+    const apiUrl = import.meta.env.VITE_PLUGIN_STORE_API || 'https://api.unihub.'
     const response = await fetch(`${apiUrl}/v1/plugins?featured=true&limit=50`)
     
     if (!response.ok) {
