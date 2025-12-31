@@ -1,7 +1,6 @@
 import type { Plugin } from '@/types/plugin'
 import JsonFormatter from '@/components/JsonFormatter.vue'
 import CodeFormatter from '@/components/CodeFormatter.vue'
-import H5Formatter from '@/components/H5Formatter.vue'
 import JwtTool from '@/components/JwtTool.vue'
 import DataConverter from '@/components/DataConverter.vue'
 import TwoFactorAuth from '@/components/TwoFactorAuth.vue'
@@ -71,20 +70,6 @@ export const builtinPlugins: Plugin[] = [
     component: CodeFormatter,
     enabled: true,
     config: { language: 'html', title: 'HTML' }
-  },
-  {
-    metadata: {
-      id: 'h5',
-      name: 'H5 页面',
-      description: 'H5 页面格式化与压缩',
-      version: '1.0.0',
-      author: 'UniHub',
-      icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9',
-      category: 'formatter',
-      keywords: ['h5', 'html5', 'web', '格式化']
-    },
-    component: H5Formatter,
-    enabled: true
   },
 
   // 工具

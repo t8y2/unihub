@@ -128,7 +128,7 @@ export class PluginManager {
 
         manifest = {
           id: pkg.unihub.id,
-          name: pkg.name,
+          name: pkg.unihub.name || pkg.name,
           version: pkg.version,
           description: pkg.description,
           author: pkg.author,

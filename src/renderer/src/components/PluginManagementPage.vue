@@ -288,8 +288,55 @@ const getSourceLabel = (source: string): string => {
     <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
       <!-- 已安装插件标签页 -->
       <div v-show="activeTab === 'installed'" class="space-y-6 pt-4">
+        <!-- 第三方插件 -->
+        <div v-if="installedPlugins.length > 0">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            第三方插件
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
+              {{ installedPlugins.length }} 个已安装
+            </span>
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <div
+              v-for="plugin in installedPlugins"
+              :key="plugin.id"
+              class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+            >
+              <!-- 信息 -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    {{ plugin.metadata.name }}
+                  </h4>
+                  <Badge variant="secondary" class="text-xs"> v{{ plugin.version }} </Badge>
+                  <Badge variant="outline" class="text-xs">
+                    {{ getSourceLabel(plugin.source) }}
+                  </Badge>
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                  {{ plugin.metadata.description }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                  安装于 {{ formatDate(plugin.installedAt) }}
+                </p>
+              </div>
+
+              <!-- 操作按钮 -->
+              <Button
+                size="sm"
+                variant="outline"
+                class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                @click="uninstallPlugin(plugin.id)"
+              >
+                卸载
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <!-- 内置插件 -->
-        <div>
+        <div :class="{ 'pt-6 border-t border-gray-200 dark:border-gray-700': installedPlugins.length > 0 }">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             内置插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -353,56 +400,6 @@ const getSourceLabel = (source: string): string => {
                   />
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 第三方插件 -->
-        <div
-          v-if="installedPlugins.length > 0"
-          class="pt-6 border-t border-gray-200 dark:border-gray-700"
-        >
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            第三方插件
-            <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-              {{ installedPlugins.length }} 个已安装
-            </span>
-          </h2>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            <div
-              v-for="plugin in installedPlugins"
-              :key="plugin.id"
-              class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-            >
-              <!-- 信息 -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-1">
-                  <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {{ plugin.metadata.name }}
-                  </h4>
-                  <Badge variant="secondary" class="text-xs"> v{{ plugin.version }} </Badge>
-                  <Badge variant="outline" class="text-xs">
-                    {{ getSourceLabel(plugin.source) }}
-                  </Badge>
-                </div>
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  {{ plugin.metadata.description }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  安装于 {{ formatDate(plugin.installedAt) }}
-                </p>
-              </div>
-
-              <!-- 操作按钮 -->
-              <Button
-                size="sm"
-                variant="outline"
-                class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                @click="uninstallPlugin(plugin.id)"
-              >
-                卸载
-              </Button>
             </div>
           </div>
         </div>

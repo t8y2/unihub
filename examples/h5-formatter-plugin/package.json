@@ -1,0 +1,50 @@
+{
+  "name": "h5-formatter-plugin",
+  "version": "1.0.0",
+  "description": "H5 页面格式化与压缩工具 - 支持 HTML/CSS/JavaScript 的美化和压缩",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "package": "node scripts/package.js"
+  },
+  "unihub": {
+    "id": "com.unihub.h5-formatter",
+    "name": "H5 格式化工具",
+    "version": "1.0.0",
+    "description": "H5 页面格式化与压缩工具 - 支持 HTML/CSS/JavaScript 的美化和压缩",
+    "author": {
+      "name": "UniHub Team",
+      "email": "team@unihub.dev",
+      "url": "https://github.com/unihub"
+    },
+    "icon": "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9",
+    "category": "formatter",
+    "keywords": [
+      "h5",
+      "html",
+      "formatter",
+      "beautify",
+      "minify",
+      "格式化",
+      "压缩"
+    ],
+    "permissions": [
+      "clipboard"
+    ],
+    "entry": "dist/index.html"
+  },
+  "dependencies": {
+    "highlight.js": "^11.10.0",
+    "prettier": "^3.4.2",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "archiver": "^7.0.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "vite": "^6.0.3"
+  }
+}
