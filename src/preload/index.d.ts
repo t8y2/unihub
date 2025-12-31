@@ -12,9 +12,13 @@ declare global {
         ) => Promise<{ success: boolean; message: string }>
         uninstall: (pluginId: string) => Promise<{ success: boolean; message: string }>
         list: () => Promise<Array<Record<string, unknown>>>
-        load: (
-          pluginId: string
-        ) => Promise<{ success: boolean; htmlPath?: string; devUrl?: string; pluginUrl?: string; message?: string }>
+        load: (pluginId: string) => Promise<{
+          success: boolean
+          htmlPath?: string
+          devUrl?: string
+          pluginUrl?: string
+          message?: string
+        }>
         open: (pluginId: string) => Promise<{ success: boolean; message?: string }>
         close: (pluginId: string) => Promise<{ success: boolean }>
         updateBounds: (
@@ -53,9 +57,7 @@ declare global {
         ) => Promise<{ success: boolean; error?: string }>
         readdir: (dirPath: string) => Promise<{ success: boolean; data?: string[]; error?: string }>
         exists: (filePath: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
-        stat: (
-          filePath: string
-        ) => Promise<{
+        stat: (filePath: string) => Promise<{
           success: boolean
           data?: { isFile: boolean; isDirectory: boolean; size: number; mtime: string }
           error?: string
@@ -76,6 +78,87 @@ declare global {
         error?: string
       }>
       getPluginDir: () => Promise<{ success: boolean; data?: string; error?: string }>
+    }
+    // UniHub API（插件专用的简化 API）
+    unihub: {
+      db: {
+        get: (key: string) => Promise<unknown>
+        set: (key: string, value: unknown) => Promise<void>
+        delete: (key: string) => Promise<void>
+        keys: () => Promise<string[]>
+        clear: () => Promise<void>
+      }
+      clipboard: {
+        readText: () => Promise<string>
+        writeText: (text: string) => Promise<void>
+        readImage: () => Promise<string | null>
+        writeImage: (dataUrl: string) => Promise<void>
+      }
+      fs: {
+        readFile: (path: string) => Promise<string | null>
+        writeFile: (path: string, content: string) => Promise<boolean>
+        readDir: (path: string) => Promise<string[]>
+        exists: (path: string) => Promise<boolean>
+        stat: (path: string) => Promise<{
+          isFile: boolean
+          isDirectory: boolean
+          size: number
+          mtime: string
+        } | null>
+        mkdir: (path: string) => Promise<boolean>
+        selectFile: () => Promise<string | null>
+        selectDirectory: () => Promise<string | null>
+      }
+      http: {
+        get: (url: string, options?: Record<string, unknown>) => Promise<unknown>
+        post: (url: string, data: unknown, options?: Record<string, unknown>) => Promise<unknown>
+        request: (options: Record<string, unknown>) => Promise<unknown>
+      }
+      system: {
+        getInfo: () => Promise<{
+          platform: string
+          arch: string
+          version: string
+          appPath: string
+          userDataPath: string
+          tempPath: string
+        } | null>
+        openExternal: (url: string) => Promise<boolean>
+        showInFolder: (path: string) => Promise<boolean>
+      }
+      notification: {
+        show: (options: { title: string; body: string; icon?: string }) => Promise<void>
+      }
+    }
+    // Node.js API（底层 API）
+    node: {
+      fs: {
+        readFile: (filePath: string) => Promise<{ success: boolean; data?: string; error?: string }>
+        writeFile: (
+          filePath: string,
+          content: string
+        ) => Promise<{ success: boolean; error?: string }>
+        readdir: (dirPath: string) => Promise<{ success: boolean; data?: string[]; error?: string }>
+        exists: (filePath: string) => Promise<{ success: boolean; data?: boolean; error?: string }>
+        stat: (filePath: string) => Promise<{
+          success: boolean
+          data?: { isFile: boolean; isDirectory: boolean; size: number; mtime: string }
+          error?: string
+        }>
+        mkdir: (dirPath: string) => Promise<{ success: boolean; error?: string }>
+        selectFile: () => Promise<{ success: boolean; data?: string | null; error?: string }>
+        selectDirectory: () => Promise<{ success: boolean; data?: string | null; error?: string }>
+      }
+      spawn: (
+        command: string,
+        args?: string[],
+        options?: { timeout?: number; input?: string; env?: Record<string, string> }
+      ) => Promise<{
+        stdout: string
+        stderr: string
+        exitCode: number
+      }>
+      getPluginDir: () => Promise<string>
     }
   }
 }

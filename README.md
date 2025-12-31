@@ -44,7 +44,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  base: './',  // 🔥 关键：使用相对路径
+  base: './', // 🔥 关键：使用相对路径
   build: {
     outDir: 'dist',
     assetsDir: 'assets'

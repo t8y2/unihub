@@ -23,7 +23,7 @@ import {
 
 // 确保 Buffer 在全局可用
 if (typeof window !== 'undefined') {
-  ;(window as any).Buffer = Buffer
+  ;(window as Record<string, unknown>).Buffer = Buffer
 }
 
 hljs.registerLanguage('json', json)
@@ -52,7 +52,7 @@ const highlightedOutput = computed(() => {
 })
 
 // 解析输入
-const parseInput = (text: string, format: Format): any => {
+const parseInput = (text: string, format: Format): unknown => {
   switch (format) {
     case 'json':
       return JSON.parse(text)
@@ -60,16 +60,17 @@ const parseInput = (text: string, format: Format): any => {
       return yaml.load(text)
     case 'toml':
       return parseToml(text)
-    case 'xml':
+    case 'xml': {
       const jsonStr = xml2json(text, { compact: true, spaces: 0 })
       return JSON.parse(jsonStr)
+    }
     default:
       throw new Error('不支持的格式')
   }
 }
 
 // 序列化输出
-const serializeOutput = (data: any, format: Format): string => {
+const serializeOutput = (data: unknown, format: Format): string => {
   switch (format) {
     case 'json':
       return JSON.stringify(data, null, indent.value)
@@ -77,16 +78,17 @@ const serializeOutput = (data: any, format: Format): string => {
       return yaml.dump(data, { indent: indent.value })
     case 'toml':
       return stringifyToml(data)
-    case 'xml':
+    case 'xml': {
       const jsonStr = JSON.stringify(data)
       return json2xml(jsonStr, { compact: true, spaces: indent.value })
+    }
     default:
       throw new Error('不支持的格式')
   }
 }
 
 // 转换
-const convert = () => {
+const convert = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -96,8 +98,8 @@ const convert = () => {
 
     const data = parseInput(input.value, fromFormat.value)
     output.value = serializeOutput(data, toFormat.value)
-  } catch (e: any) {
-    error.value = `转换失败: ${e.message}`
+  } catch (e) {
+    error.value = `转换失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
@@ -113,30 +115,30 @@ watch([input, fromFormat, toFormat, indent], () => {
     const data = parseInput(input.value, fromFormat.value)
     output.value = serializeOutput(data, toFormat.value)
     error.value = ''
-  } catch (e: any) {
+  } catch {
     error.value = ''
   }
 })
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
 
-const clearAll = () => {
+const clearAll = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
 }
 
-const swapFormats = () => {
+const swapFormats = (): void => {
   const temp = fromFormat.value
   fromFormat.value = toFormat.value
   toFormat.value = temp
@@ -169,7 +171,7 @@ const swapFormats = () => {
         </Select>
       </div>
 
-      <Button @click="swapFormats" size="icon" variant="ghost" title="交换格式">
+      <Button size="icon" variant="ghost" title="交换格式" @click="swapFormats">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -197,9 +199,9 @@ const swapFormats = () => {
 
       <div class="h-8 w-px bg-gray-300"></div>
 
-      <Button @click="convert" size="sm"> 转换 </Button>
+      <Button size="sm" @click="convert"> 转换 </Button>
 
-      <Button @click="clearAll" size="sm" variant="ghost"> 清空 </Button>
+      <Button size="sm" variant="ghost" @click="clearAll"> 清空 </Button>
 
       <div class="ml-auto flex items-center gap-4">
         <Label class="flex items-center gap-2 text-sm text-gray-600 font-normal cursor-pointer">
@@ -248,9 +250,9 @@ const swapFormats = () => {
           </span>
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -285,7 +287,7 @@ const swapFormats = () => {
             v-if="output"
             class="p-4 text-sm"
             :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"
-          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          ><code class="hljs" v-html="highlightedOutput"></code></pre>
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
             转换结果...
           </div>
@@ -313,10 +315,10 @@ const swapFormats = () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

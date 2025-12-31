@@ -1,5 +1,4 @@
 import type { InstalledPluginInfo } from '@/types/marketplace'
-import type { Plugin } from '@/types/plugin'
 
 /**
  * 插件存储管理器
@@ -15,8 +14,7 @@ export class PluginStorage {
     try {
       const data = localStorage.getItem(this.STORAGE_KEY)
       return data ? JSON.parse(data) : []
-    } catch (error) {
-      console.error('读取已安装插件失败:', error)
+    } catch {
       return []
     }
   }
@@ -70,7 +68,7 @@ export class PluginStorage {
     const key = `plugin-code-${pluginId}`
     try {
       localStorage.setItem(key, code)
-    } catch (error) {
+    } catch {
       throw new Error('保存插件代码失败，可能超出存储限制')
     }
   }
@@ -94,7 +92,7 @@ export class PluginStorage {
   /**
    * 保存插件元数据
    */
-  savePluginMetadata(pluginId: string, metadata: any): void {
+  savePluginMetadata(pluginId: string, metadata: unknown): void {
     const key = `plugin-metadata-${pluginId}`
     localStorage.setItem(key, JSON.stringify(metadata))
   }
@@ -102,7 +100,7 @@ export class PluginStorage {
   /**
    * 获取插件元数据
    */
-  getPluginMetadata(pluginId: string): any | null {
+  getPluginMetadata(pluginId: string): unknown | null {
     const key = `plugin-metadata-${pluginId}`
     const data = localStorage.getItem(key)
     return data ? JSON.parse(data) : null

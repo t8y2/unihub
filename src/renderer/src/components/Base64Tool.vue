@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 
 const mode = ref<'encode' | 'decode'>('encode')
@@ -8,7 +8,7 @@ const output = ref('')
 const error = ref('')
 const copied = ref(false)
 
-const encode = () => {
+const encode = (): void => {
   try {
     error.value = ''
     if (!input.value) {
@@ -16,12 +16,12 @@ const encode = () => {
       return
     }
     output.value = btoa(unescape(encodeURIComponent(input.value)))
-  } catch (e: any) {
-    error.value = `编码失败: ${e.message}`
+  } catch (e) {
+    error.value = `编码失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const decode = () => {
+const decode = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -29,30 +29,30 @@ const decode = () => {
       return
     }
     output.value = decodeURIComponent(escape(atob(input.value.trim())))
-  } catch (e: any) {
-    error.value = `解码失败: ${e.message}`
+  } catch (e) {
+    error.value = `解码失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
 
-const clearAll = () => {
+const clearAll = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
 }
 
-const swapContent = () => {
+const swapContent = (): void => {
   const temp = input.value
   input.value = output.value
   output.value = temp
@@ -68,16 +68,16 @@ const swapContent = () => {
     >
       <div class="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-md p-1">
         <Button
-          @click="mode = 'encode'"
           size="sm"
           :variant="mode === 'encode' ? 'default' : 'ghost'"
+          @click="mode = 'encode'"
         >
           编码
         </Button>
         <Button
-          @click="mode = 'decode'"
           size="sm"
           :variant="mode === 'decode' ? 'default' : 'ghost'"
+          @click="mode = 'decode'"
         >
           解码
         </Button>
@@ -85,11 +85,11 @@ const swapContent = () => {
 
       <div class="h-8 w-px bg-gray-300"></div>
 
-      <Button @click="mode === 'encode' ? encode() : decode()" size="sm">
+      <Button size="sm" @click="mode === 'encode' ? encode() : decode()">
         {{ mode === 'encode' ? '编码' : '解码' }}
       </Button>
 
-      <Button @click="swapContent" size="sm" variant="secondary" :disabled="!output">
+      <Button size="sm" variant="secondary" :disabled="!output" @click="swapContent">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -100,7 +100,7 @@ const swapContent = () => {
         </svg>
       </Button>
 
-      <Button @click="clearAll" size="sm" variant="ghost"> 清空 </Button>
+      <Button size="sm" variant="ghost" @click="clearAll"> 清空 </Button>
     </div>
 
     <!-- 编辑器区域 -->
@@ -139,9 +139,9 @@ const swapContent = () => {
           </span>
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -197,10 +197,10 @@ const swapContent = () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

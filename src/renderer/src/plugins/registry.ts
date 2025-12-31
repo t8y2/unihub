@@ -7,7 +7,7 @@ class PluginRegistry {
   // 响应式版本号，用于触发外部组件更新
   public version = ref(0)
 
-  register(plugin: Plugin) {
+  register(plugin: Plugin): void {
     console.log(`[Registry] 注册插件: ${plugin.metadata.id}, enabled: ${plugin.enabled}`)
     // 使用 markRaw 避免 Vue 对组件进行深度响应式处理
     const pluginWithRawComponent = {
@@ -18,7 +18,7 @@ class PluginRegistry {
     this.version.value++
   }
 
-  unregister(id: string) {
+  unregister(id: string): void {
     this.plugins.delete(id)
     this.version.value++
   }
@@ -39,7 +39,7 @@ class PluginRegistry {
     return this.getEnabled().filter((p) => p.metadata.category === category)
   }
 
-  toggle(id: string) {
+  toggle(id: string): void {
     const plugin = this.plugins.get(id)
     if (plugin) {
       const wasEnabled = plugin.enabled
@@ -50,7 +50,7 @@ class PluginRegistry {
     }
   }
 
-  enable(id: string) {
+  enable(id: string): void {
     const plugin = this.plugins.get(id)
     if (plugin) {
       plugin.enabled = true
@@ -59,7 +59,7 @@ class PluginRegistry {
     }
   }
 
-  disable(id: string) {
+  disable(id: string): void {
     const plugin = this.plugins.get(id)
     if (plugin) {
       plugin.enabled = false
@@ -69,7 +69,7 @@ class PluginRegistry {
   }
 
   // 保存插件启用状态到 localStorage
-  private saveToLocalStorage() {
+  private saveToLocalStorage(): void {
     const enabledPlugins = this.getAll()
       .filter((p) => p.enabled)
       .map((p) => p.metadata.id)
@@ -77,7 +77,7 @@ class PluginRegistry {
   }
 
   // 从 localStorage 恢复插件启用状态
-  loadFromLocalStorage() {
+  loadFromLocalStorage(): void {
     try {
       const saved = localStorage.getItem('enabled-plugins')
       console.log(`[Registry] localStorage 数据: ${saved}`)
@@ -109,7 +109,7 @@ class PluginRegistry {
   }
 
   // 重置所有插件为启用状态
-  resetAll() {
+  resetAll(): void {
     this.getAll().forEach((plugin) => {
       plugin.enabled = true
     })

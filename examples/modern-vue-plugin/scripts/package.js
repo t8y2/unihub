@@ -40,7 +40,7 @@ output.on('close', () => {
   const bytes = archive.pointer()
   const sizeMB = (bytes / 1024 / 1024).toFixed(2)
   const sizeKB = (bytes / 1024).toFixed(2)
-  
+
   console.log('✅ 打包完成!')
   console.log(`📦 文件: plugin.zip`)
   console.log(`📊 大小: ${sizeMB} MB (${sizeKB} KB)`)
@@ -72,8 +72,14 @@ archive.directory(path.join(rootDir, 'dist'), 'dist')
 
 // 添加后端文件（可选）
 if (fs.existsSync(path.join(rootDir, 'backend'))) {
-  console.log('�  添加 backend/')
+  console.log('🔧 添加 backend/')
   archive.directory(path.join(rootDir, 'backend'), 'backend')
+}
+
+// 添加 sidecar 文件（可选）
+if (fs.existsSync(path.join(rootDir, 'sidecar'))) {
+  console.log('🚀 添加 sidecar/')
+  archive.directory(path.join(rootDir, 'sidecar'), 'sidecar')
 }
 
 // 添加 README（可选）

@@ -13,14 +13,14 @@ export class PluginAPI {
     this.registerHandlers()
   }
 
-  private registerHandlers() {
+  private registerHandlers(): void {
     // 文件系统 API
     ipcMain.handle('plugin-api:fs:readFile', async (_, path: string) => {
       try {
         const content = await readFile(path, 'utf-8')
         return { success: true, data: content }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -28,8 +28,8 @@ export class PluginAPI {
       try {
         await writeFile(path, content, 'utf-8')
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -37,8 +37,8 @@ export class PluginAPI {
       try {
         const files = await readdir(path)
         return { success: true, data: files }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -58,8 +58,8 @@ export class PluginAPI {
             mtime: stats.mtime.toISOString()
           }
         }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -67,8 +67,8 @@ export class PluginAPI {
       try {
         await mkdir(path, { recursive: true })
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -78,8 +78,8 @@ export class PluginAPI {
           properties: ['openFile']
         })
         return { success: true, data: result.filePaths[0] || null }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -89,8 +89,8 @@ export class PluginAPI {
           properties: ['openDirectory']
         })
         return { success: true, data: result.filePaths[0] || null }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -117,8 +117,8 @@ export class PluginAPI {
         const image = nativeImage.createFromDataURL(dataUrl)
         clipboard.writeImage(image)
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -141,8 +141,8 @@ export class PluginAPI {
       try {
         await shell.openExternal(url)
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -150,17 +150,17 @@ export class PluginAPI {
       try {
         shell.showItemInFolder(path)
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
     // HTTP API（避免 CORS）
-    ipcMain.handle('plugin-api:http:request', async (_, options: any) => {
+    ipcMain.handle('plugin-api:http:request', async (_, options: Record<string, unknown>) => {
       try {
-        const response = await fetch(options.url, {
-          method: options.method || 'GET',
-          headers: options.headers,
+        const response = await fetch(options.url as string, {
+          method: (options.method as string) || 'GET',
+          headers: options.headers as Record<string, string>,
           body: options.body ? JSON.stringify(options.body) : undefined
         })
 
@@ -174,8 +174,8 @@ export class PluginAPI {
             body: data
           }
         }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -195,17 +195,17 @@ export class PluginAPI {
         const content = await readFile(filePath, 'utf-8')
         const data = JSON.parse(content)
         return { success: true, data: data[key] || null }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
     ipcMain.handle(
       'plugin-api:storage:set',
-      async (_, pluginId: string, key: string, value: any) => {
+      async (_, pluginId: string, key: string, value: unknown) => {
         try {
           const filePath = join(storageDir, `${pluginId}.json`)
-          let data = {}
+          let data: Record<string, unknown> = {}
 
           if (existsSync(filePath)) {
             const content = await readFile(filePath, 'utf-8')
@@ -215,8 +215,8 @@ export class PluginAPI {
           data[key] = value
           await writeFile(filePath, JSON.stringify(data, null, 2))
           return { success: true }
-        } catch (error: any) {
-          return { success: false, error: error.message }
+        } catch (error: unknown) {
+          return { success: false, error: (error as Error).message }
         }
       }
     )
@@ -229,12 +229,12 @@ export class PluginAPI {
         }
 
         const content = await readFile(filePath, 'utf-8')
-        const data = JSON.parse(content)
+        const data = JSON.parse(content) as Record<string, unknown>
         delete data[key]
         await writeFile(filePath, JSON.stringify(data, null, 2))
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -248,8 +248,8 @@ export class PluginAPI {
         const content = await readFile(filePath, 'utf-8')
         const data = JSON.parse(content)
         return { success: true, data: Object.keys(data) }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
@@ -260,23 +260,23 @@ export class PluginAPI {
           await writeFile(filePath, '{}')
         }
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
 
     // 通知 API
-    ipcMain.handle('plugin-api:notification:show', async (_, options: any) => {
+    ipcMain.handle('plugin-api:notification:show', async (_, options: Record<string, unknown>) => {
       try {
         const { Notification } = await import('electron')
         new Notification({
-          title: options.title,
-          body: options.body,
-          icon: options.icon
+          title: options.title as string,
+          body: options.body as string,
+          icon: options.icon as string
         }).show()
         return { success: true }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
       }
     })
   }

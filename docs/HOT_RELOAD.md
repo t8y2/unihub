@@ -11,6 +11,7 @@ npm run dev
 ```
 
 你会看到：
+
 ```
 VITE v5.0.0  ready in 500 ms
 
@@ -34,6 +35,7 @@ VITE v5.0.0  ready in 500 ms
 在 UniHub 主界面，点击插件列表中的 **"现代化 Vue 插件"**
 
 你会看到：
+
 - 插件窗口左上角显示 `🔥 DEV MODE` 标签
 - 插件内容来自开发服务器
 
@@ -46,7 +48,8 @@ VITE v5.0.0  ready in 500 ms
   <div class="app">
     <header class="app-header">
       <h1>🚀 现代化 Vue 插件</h1>
-      <p>修改这里试试！</p>  <!-- 修改这行 -->
+      <p>修改这里试试！</p>
+      <!-- 修改这行 -->
     </header>
     <!-- ... -->
   </div>
@@ -57,14 +60,14 @@ VITE v5.0.0  ready in 500 ms
 
 ## 🎯 效率对比
 
-| 操作 | 传统方式 | 热重载 |
-|------|---------|--------|
-| 修改代码 | 1s | 1s |
-| 构建 | 5s | - |
-| 打包 | 2s | - |
-| 安装 | 3s | - |
-| 刷新 | 1s | 0.5s |
-| **总计** | **12s** | **1.5s** |
+| 操作     | 传统方式 | 热重载   |
+| -------- | -------- | -------- |
+| 修改代码 | 1s       | 1s       |
+| 构建     | 5s       | -        |
+| 打包     | 2s       | -        |
+| 安装     | 3s       | -        |
+| 刷新     | 1s       | 0.5s     |
+| **总计** | **12s**  | **1.5s** |
 
 **节省 87% 的时间！** ⚡
 
@@ -79,6 +82,7 @@ VITE v5.0.0  ready in 500 ms
 ### 端口被占用？
 
 修改端口：
+
 ```bash
 npm run dev -- --port 5174
 ```
@@ -97,4 +101,3 @@ npm run dev -- --port 5174
 - 查看完整文档：[HOT_RELOAD_GUIDE.md](HOT_RELOAD_GUIDE.md)
 - 学习插件开发：[PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)
 - 查看 API 文档：[PLUGIN_API_REFERENCE.md](PLUGIN_API_REFERENCE.md)
-

@@ -35,7 +35,7 @@ const currentDate = computed(() => {
   })
 })
 
-const timestampToDate = () => {
+const timestampToDate = (): void => {
   try {
     if (!timestampInput.value.trim()) {
       dateResult.value = '请输入时间戳'
@@ -65,12 +65,12 @@ const timestampToDate = () => {
       second: '2-digit',
       hour12: false
     })
-  } catch (e: any) {
-    dateResult.value = `转换失败: ${e.message}`
+  } catch (e) {
+    dateResult.value = `转换失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const dateToTimestamp = () => {
+const dateToTimestamp = (): void => {
   try {
     if (!dateInput.value.trim()) {
       timestampResult.value = '请输入日期时间'
@@ -88,12 +88,12 @@ const dateToTimestamp = () => {
     const timestampMs = date.getTime()
 
     timestampResult.value = `秒级: ${timestamp}\n毫秒级: ${timestampMs}`
-  } catch (e: any) {
-    timestampResult.value = `转换失败: ${e.message}`
+  } catch (e) {
+    timestampResult.value = `转换失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const copyToClipboard = async (text: string) => {
+const copyToClipboard = async (text: string): Promise<void> => {
   try {
     await navigator.clipboard.writeText(text)
     copied.value = true
@@ -105,12 +105,12 @@ const copyToClipboard = async (text: string) => {
   }
 }
 
-const useCurrentTimestamp = () => {
+const useCurrentTimestamp = (): void => {
   timestampInput.value = currentTimestamp.value.toString()
   timestampToDate()
 }
 
-const useCurrentDate = () => {
+const useCurrentDate = (): void => {
   const now = new Date()
   dateInput.value = now.toISOString().slice(0, 16)
   dateToTimestamp()
@@ -131,8 +131,8 @@ const useCurrentDate = () => {
             <div class="text-2xl font-mono font-bold flex items-center justify-between">
               <span>{{ currentTimestamp }}</span>
               <button
-                @click="copyToClipboard(currentTimestamp.toString())"
                 class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
+                @click="copyToClipboard(currentTimestamp.toString())"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -150,8 +150,8 @@ const useCurrentDate = () => {
             <div class="text-2xl font-mono font-bold flex items-center justify-between">
               <span>{{ currentTimestampMs }}</span>
               <button
-                @click="copyToClipboard(currentTimestampMs.toString())"
                 class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
+                @click="copyToClipboard(currentTimestampMs.toString())"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -201,7 +201,7 @@ const useCurrentDate = () => {
                 class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                 @keyup.enter="timestampToDate"
               />
-              <Button @click="useCurrentTimestamp" variant="secondary"> 使用当前 </Button>
+              <Button variant="secondary" @click="useCurrentTimestamp"> 使用当前 </Button>
               <Button @click="timestampToDate"> 转换 </Button>
             </div>
             <div
@@ -211,8 +211,8 @@ const useCurrentDate = () => {
               <div class="flex items-center justify-between">
                 <span class="font-mono text-lg">{{ dateResult }}</span>
                 <button
-                  @click="copyToClipboard(dateResult)"
                   class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
+                  @click="copyToClipboard(dateResult)"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -254,7 +254,7 @@ const useCurrentDate = () => {
                 class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 @change="dateToTimestamp"
               />
-              <Button @click="useCurrentDate" variant="secondary"> 使用当前 </Button>
+              <Button variant="secondary" @click="useCurrentDate"> 使用当前 </Button>
               <Button @click="dateToTimestamp"> 转换 </Button>
             </div>
             <div
@@ -264,8 +264,8 @@ const useCurrentDate = () => {
               <div class="flex items-center justify-between">
                 <pre class="font-mono text-sm">{{ timestampResult }}</pre>
                 <button
-                  @click="copyToClipboard(timestampResult)"
                   class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
+                  @click="copyToClipboard(timestampResult)"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path

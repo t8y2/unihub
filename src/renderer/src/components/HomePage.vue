@@ -20,11 +20,12 @@ const filteredPlugins = computed(() => {
   if (!searchQuery.value.trim()) {
     return enabledPlugins.value
   }
-  
+
   const query = searchQuery.value.toLowerCase()
-  return enabledPlugins.value.filter(plugin => 
-    plugin.metadata.name.toLowerCase().includes(query) ||
-    plugin.metadata.description.toLowerCase().includes(query)
+  return enabledPlugins.value.filter(
+    (plugin) =>
+      plugin.metadata.name.toLowerCase().includes(query) ||
+      plugin.metadata.description.toLowerCase().includes(query)
   )
 })
 
@@ -43,8 +44,8 @@ const pluginsByCategory = computed(() => {
 // 最近访问的插件（过滤掉不存在或未启用的）
 const recentPluginsList = computed(() => {
   return props.recentPlugins
-    .map(id => pluginRegistry.get(id))
-    .filter(plugin => plugin && plugin.enabled)
+    .map((id) => pluginRegistry.get(id))
+    .filter((plugin) => plugin && plugin.enabled)
     .slice(0, 6) // 最多显示6个
 })
 
@@ -101,7 +102,12 @@ const clearSearch = (): void => {
       <div class="mb-8">
         <div class="relative max-w-md mx-auto">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -118,10 +124,15 @@ const clearSearch = (): void => {
           />
           <button
             v-if="searchQuery"
-            @click="clearSearch"
             class="absolute inset-y-0 right-0 pr-3 flex items-center"
+            @click="clearSearch"
           >
-            <svg class="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -135,7 +146,9 @@ const clearSearch = (): void => {
 
       <!-- 最近访问 -->
       <div v-if="recentPluginsList.length > 0 && !searchQuery" class="mb-8">
-        <h2 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+        <h2
+          class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"
+        >
           <div class="w-1 h-5 bg-green-500 rounded-full"></div>
           最近访问
         </h2>
@@ -143,8 +156,8 @@ const clearSearch = (): void => {
           <button
             v-for="plugin in recentPluginsList"
             :key="plugin.metadata.id"
-            @click="emit('openTool', plugin.metadata.id)"
             class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left"
+            @click="emit('openTool', plugin.metadata.id)"
           >
             <div class="flex items-start gap-3">
               <div
@@ -181,7 +194,9 @@ const clearSearch = (): void => {
 
       <!-- 搜索结果提示 -->
       <div v-if="searchQuery && filteredPlugins.length === 0" class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+        <div
+          class="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center"
+        >
           <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -211,8 +226,8 @@ const clearSearch = (): void => {
             <button
               v-for="plugin in plugins"
               :key="plugin.metadata.id"
-              @click="emit('openTool', plugin.metadata.id)"
               class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left"
+              @click="emit('openTool', plugin.metadata.id)"
             >
               <div class="flex items-start gap-3">
                 <div

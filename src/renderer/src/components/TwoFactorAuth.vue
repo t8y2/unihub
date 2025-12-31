@@ -41,14 +41,14 @@ const generateToken = (totp: OTPAuth.TOTP): string => {
   return totp.generate()
 }
 
-const addAccount = () => {
+const addAccount = (): void => {
   if (!newAccount.value.name || !newAccount.value.secret) {
     alert('请填写账户名称和密钥')
     return
   }
 
   const secret = newAccount.value.secret.replace(/\s/g, '').toUpperCase()
-  
+
   try {
     const totp = new OTPAuth.TOTP({
       issuer: newAccount.value.issuer || 'Unknown',
@@ -70,19 +70,19 @@ const addAccount = () => {
     saveAccounts()
     newAccount.value = { name: '', issuer: '', secret: '' }
     showAddDialog.value = false
-  } catch (e: any) {
-    alert(`添加失败: ${e.message}`)
+  } catch (e) {
+    alert(`添加失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const removeAccount = (id: string) => {
+const removeAccount = (id: string): void => {
   if (confirm('确定要删除这个账户吗？')) {
-    accounts.value = accounts.value.filter(acc => acc.id !== id)
+    accounts.value = accounts.value.filter((acc) => acc.id !== id)
     saveAccounts()
   }
 }
 
-const testGenerateToken = () => {
+const testGenerateToken = (): void => {
   try {
     testError.value = ''
     if (!testSecret.value.trim()) {
@@ -91,7 +91,7 @@ const testGenerateToken = () => {
     }
 
     const secret = testSecret.value.replace(/\s/g, '').toUpperCase()
-    
+
     const totp = new OTPAuth.TOTP({
       issuer: 'Quick',
       label: 'Quick',
@@ -103,21 +103,21 @@ const testGenerateToken = () => {
 
     testToken.value = totp.generate()
     testTotp.value = totp
-  } catch (e: any) {
-    testError.value = `生成失败: ${e.message}`
+  } catch (e) {
+    testError.value = `生成失败: ${e instanceof Error ? e.message : String(e)}`
     testToken.value = ''
     testTotp.value = null
   }
 }
 
-const copyToken = async (token: string, id: string) => {
+const copyToken = async (token: string, id: string): Promise<void> => {
   try {
     await navigator.clipboard.writeText(token)
     copied.value = id
     setTimeout(() => {
       copied.value = null
     }, 2000)
-  } catch (e) {
+  } catch {
     alert('复制失败')
   }
 }
@@ -126,21 +126,21 @@ const generateQRCodeImage = (text: string): string => {
   const qr = qrcode(0, 'M')
   qr.addData(text)
   qr.make()
-  
+
   const size = 4
   const canvas = document.createElement('canvas')
   const moduleCount = qr.getModuleCount()
-  
+
   const canvasSize = moduleCount * size
   canvas.width = canvasSize
   canvas.height = canvasSize
-  
+
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('无法创建 canvas context')
-  
+
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, canvasSize, canvasSize)
-  
+
   ctx.fillStyle = '#000000'
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
@@ -149,15 +149,15 @@ const generateQRCodeImage = (text: string): string => {
       }
     }
   }
-  
+
   return canvas.toDataURL('image/png')
 }
 
-const showQRCode = async (account: Account) => {
+const showQRCode = async (account: Account): Promise<void> => {
   try {
     const uri = account.totp.toString()
     const qrDataUrl = generateQRCodeImage(uri)
-    
+
     qrCodeData.value = {
       dataUrl: qrDataUrl,
       name: account.name,
@@ -165,18 +165,18 @@ const showQRCode = async (account: Account) => {
       secret: account.secret
     }
     showQRDialog.value = true
-  } catch (e: any) {
-    alert(`显示二维码失败: ${e.message || e}`)
+  } catch (e) {
+    alert(`显示二维码失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const showTestQRCode = async () => {
+const showTestQRCode = async (): Promise<void> => {
   if (!testTotp.value) return
-  
+
   try {
     const uri = testTotp.value.toString()
     const qrDataUrl = generateQRCodeImage(uri)
-    
+
     qrCodeData.value = {
       dataUrl: qrDataUrl,
       name: '快速获取',
@@ -184,13 +184,15 @@ const showTestQRCode = async () => {
       secret: testSecret.value.replace(/\s/g, '').toUpperCase()
     }
     showQRDialog.value = true
-  } catch (e: any) {
-    alert(`生成二维码失败: ${e.message || e}`)
+  } catch (e) {
+    alert(`生成二维码失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const importFromUri = () => {
-  const uri = prompt('请输入 otpauth:// URI:\n\n例如: otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example')
+const importFromUri = (): void => {
+  const uri = prompt(
+    '请输入 otpauth:// URI:\n\n例如: otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example'
+  )
   if (!uri) return
 
   try {
@@ -210,13 +212,13 @@ const importFromUri = () => {
 
     saveAccounts()
     alert('导入成功！')
-  } catch (e: any) {
-    alert(`导入失败: ${e.message}`)
+  } catch (e) {
+    alert(`导入失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const saveAccounts = () => {
-  const data = accounts.value.map(acc => ({
+const saveAccounts = (): void => {
+  const data = accounts.value.map((acc) => ({
     id: acc.id,
     name: acc.name,
     issuer: acc.issuer,
@@ -225,30 +227,32 @@ const saveAccounts = () => {
   localStorage.setItem('2fa-accounts', JSON.stringify(data))
 }
 
-const loadAccounts = () => {
+const loadAccounts = (): void => {
   const data = localStorage.getItem('2fa-accounts')
   if (!data) return
 
   try {
     const saved = JSON.parse(data)
-    accounts.value = saved.map((acc: any) => {
-      const totp = new OTPAuth.TOTP({
-        issuer: acc.issuer,
-        label: acc.name,
-        algorithm: 'SHA1',
-        digits: 6,
-        period: 30,
-        secret: acc.secret
-      })
+    accounts.value = saved.map(
+      (acc: { id: string; name: string; issuer: string; secret: string }) => {
+        const totp = new OTPAuth.TOTP({
+          issuer: acc.issuer,
+          label: acc.name,
+          algorithm: 'SHA1',
+          digits: 6,
+          period: 30,
+          secret: acc.secret
+        })
 
-      return {
-        id: acc.id,
-        name: acc.name,
-        issuer: acc.issuer,
-        secret: acc.secret,
-        totp
+        return {
+          id: acc.id,
+          name: acc.name,
+          issuer: acc.issuer,
+          secret: acc.secret,
+          totp
+        }
       }
-    })
+    )
   } catch (e) {
     console.error('加载账户失败:', e)
   }
@@ -272,33 +276,32 @@ onUnmounted(() => {
 
 <template>
   <div class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-800">
-    <div class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0">
+    <div
+      class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
+    >
       <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100">双因素验证 (2FA)</h2>
-      
+
       <div class="ml-auto flex items-center gap-2">
-        <Button
-          @click="showTestDialog = true"
-          size="sm"
-          variant="secondary"
-        >
+        <Button size="sm" variant="secondary" @click="showTestDialog = true">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
           </svg>
           快速获取
         </Button>
-        <Button
-          @click="importFromUri"
-          size="sm"
-          variant="secondary"
-        >
-          导入 URI
-        </Button>
-        <Button
-          @click="showAddDialog = true"
-          size="sm"
-        >
+        <Button size="sm" variant="secondary" @click="importFromUri"> 导入 URI </Button>
+        <Button size="sm" @click="showAddDialog = true">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           添加账户
         </Button>
@@ -306,9 +309,17 @@ onUnmounted(() => {
     </div>
 
     <div class="flex-1 overflow-auto p-4">
-      <div v-if="accounts.length === 0" class="flex flex-col items-center justify-center h-full text-gray-500">
+      <div
+        v-if="accounts.length === 0"
+        class="flex flex-col items-center justify-center h-full text-gray-500"
+      >
         <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
         </svg>
         <p class="text-lg">还没有添加任何账户</p>
         <p class="text-sm mt-2">点击右上角"添加账户"开始使用</p>
@@ -326,24 +337,29 @@ onUnmounted(() => {
               <p class="text-xs text-gray-500 truncate">{{ account.name }}</p>
             </div>
             <div class="flex gap-1 ml-2">
-              <Button
-                @click="showQRCode(account)"
-                size="icon"
-                variant="ghost"
-                title="显示二维码"
-              >
+              <Button size="icon" variant="ghost" title="显示二维码" @click="showQRCode(account)">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                  />
                 </svg>
               </Button>
-              <Button
-                @click="removeAccount(account.id)"
-                size="icon"
-                variant="ghost"
-                title="删除"
-              >
-                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <Button size="icon" variant="ghost" title="删除" @click="removeAccount(account.id)">
+                <svg
+                  class="w-4 h-4 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               </Button>
             </div>
@@ -354,17 +370,39 @@ onUnmounted(() => {
               {{ generateToken(account.totp) }}
             </div>
             <Button
-              @click="copyToken(generateToken(account.totp), account.id)"
               size="icon"
               variant="ghost"
               class="absolute right-0 top-1/2 -translate-y-1/2"
               :title="copied === account.id ? '已复制' : '复制'"
+              @click="copyToken(generateToken(account.totp), account.id)"
             >
-              <svg v-if="copied !== account.id" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <svg
+                v-if="copied !== account.id"
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
               </svg>
-              <svg v-else class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              <svg
+                v-else
+                class="w-4 h-4 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </Button>
           </div>
@@ -376,7 +414,9 @@ onUnmounted(() => {
                 :style="{ width: `${timeProgress}%` }"
               ></div>
             </div>
-            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono w-6 text-right">{{ remainingSeconds }}s</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400 font-mono w-6 text-right"
+              >{{ remainingSeconds }}s</span
+            >
           </div>
         </div>
       </div>
@@ -396,20 +436,12 @@ onUnmounted(() => {
         <div class="px-6 py-4 space-y-4">
           <div>
             <Label class="mb-1">账户名称 *</Label>
-            <Input
-              v-model="newAccount.name"
-              type="text"
-              placeholder="例如: user@example.com"
-            />
+            <Input v-model="newAccount.name" type="text" placeholder="例如: user@example.com" />
           </div>
 
           <div>
             <Label class="mb-1">发行者</Label>
-            <Input
-              v-model="newAccount.issuer"
-              type="text"
-              placeholder="例如: Google, GitHub"
-            />
+            <Input v-model="newAccount.issuer" type="text" placeholder="例如: Google, GitHub" />
           </div>
 
           <div>
@@ -425,17 +457,8 @@ onUnmounted(() => {
         </div>
 
         <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
-          <Button
-            @click="showAddDialog = false"
-            variant="ghost"
-          >
-            取消
-          </Button>
-          <Button
-            @click="addAccount"
-          >
-            添加
-          </Button>
+          <Button variant="ghost" @click="showAddDialog = false"> 取消 </Button>
+          <Button @click="addAccount"> 添加 </Button>
         </div>
       </div>
     </div>
@@ -478,22 +501,15 @@ onUnmounted(() => {
                     :style="{ width: `${timeProgress}%` }"
                   ></div>
                 </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400 font-mono">{{ remainingSeconds }}s</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 font-mono"
+                  >{{ remainingSeconds }}s</span
+                >
               </div>
               <div class="flex gap-2 justify-center">
-                <Button
-                  @click="copyToken(testToken, 'test')"
-                  size="sm"
-                >
+                <Button size="sm" @click="copyToken(testToken, 'test')">
                   {{ copied === 'test' ? '已复制' : '复制验证码' }}
                 </Button>
-                <Button
-                  @click="showTestQRCode"
-                  size="sm"
-                  variant="secondary"
-                >
-                  显示二维码
-                </Button>
+                <Button size="sm" variant="secondary" @click="showTestQRCode"> 显示二维码 </Button>
               </div>
             </div>
           </div>
@@ -504,15 +520,23 @@ onUnmounted(() => {
 
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p class="text-xs text-blue-900">
-              <strong>提示：</strong>这是快速获取功能，关闭后不会保存。如需长期使用，请点击"添加账户"保存。
+              <strong>提示：</strong
+              >这是快速获取功能，关闭后不会保存。如需长期使用，请点击"添加账户"保存。
             </p>
           </div>
         </div>
 
         <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
           <Button
-            @click="showTestDialog = false; testSecret = ''; testToken = ''; testError = ''"
             variant="ghost"
+            @click="
+              () => {
+                showTestDialog = false
+                testSecret = ''
+                testToken = ''
+                testError = ''
+              }
+            "
           >
             关闭
           </Button>
@@ -524,7 +548,11 @@ onUnmounted(() => {
     <div
       v-if="showQRDialog"
       class="fixed inset-0 flex items-center justify-center z-50"
-      style="backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background-color: rgba(0, 0, 0, 0.3);"
+      style="
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        background-color: rgba(0, 0, 0, 0.3);
+      "
       @click.self="showQRDialog = false"
     >
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm mx-4">
@@ -534,25 +562,22 @@ onUnmounted(() => {
         </div>
 
         <div class="px-6 py-6 flex flex-col items-center">
-          <img 
-            :src="qrCodeData.dataUrl" 
-            alt="QR Code" 
+          <img
+            :src="qrCodeData.dataUrl"
+            alt="QR Code"
             class="rounded-lg shadow-sm w-48 h-48"
-            style="image-rendering: pixelated;"
+            style="image-rendering: pixelated"
           />
           <div class="mt-4 w-full bg-gray-50 rounded-lg p-3">
             <p class="text-xs text-gray-500 mb-1 text-center">密钥</p>
-            <p class="font-mono text-sm text-gray-900 text-center break-all">{{ qrCodeData.secret }}</p>
+            <p class="font-mono text-sm text-gray-900 text-center break-all">
+              {{ qrCodeData.secret }}
+            </p>
           </div>
         </div>
 
         <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-          <Button
-            @click="showQRDialog = false"
-            variant="ghost"
-          >
-            关闭
-          </Button>
+          <Button variant="ghost" @click="showQRDialog = false"> 关闭 </Button>
         </div>
       </div>
     </div>

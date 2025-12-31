@@ -8,6 +8,9 @@ import { NodeAPI } from './node-api'
 import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
 
+// 标记是否有活动的第三方插件
+let hasActiveThirdPartyPlugin = false
+
 // 在开发环境中禁用安全警告
 if (is.dev) {
   process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
@@ -45,6 +48,20 @@ function createWindow(): void {
     }
   })
 
+  // 拦截 Cmd+W / Ctrl+W 快捷键
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    // 检查是否是 Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
+    if (input.type === 'keyDown' && input.key === 'w' && (input.meta || input.control)) {
+      // 如果有活动的第三方插件，阻止默认行为
+      if (hasActiveThirdPartyPlugin) {
+        event.preventDefault()
+        console.log('🚫 阻止 Cmd+W 关闭窗口（第三方插件正在运行）')
+        // 通知渲染进程处理关闭标签
+        mainWindow?.webContents.send('handle-close-tab')
+      }
+    }
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -63,8 +80,15 @@ app.whenReady().then(() => {
   // 注册自定义协议 plugin:// (标准协议，支持相对路径)
   protocol.registerFileProtocol('plugin', (request, callback) => {
     try {
-      // URL 示例: plugin://com.unihub.modern-vue/dist/index.html
-      const url = request.url.substring('plugin://'.length)
+      // URL 示例: plugin://com.unihub.modern-vue/dist/index.html?__plugin_id=xxx
+      let url = request.url.substring('plugin://'.length)
+
+      // 移除 URL 参数
+      const queryIndex = url.indexOf('?')
+      if (queryIndex !== -1) {
+        url = url.substring(0, queryIndex)
+      }
+
       const [pluginId, ...pathParts] = url.split('/')
       const filePath = pathParts.join('/')
 
@@ -169,19 +193,33 @@ function setupIpcHandlers(): void {
     webContentsViewManager.createPluginView(pluginId, pluginUrl)
     webContentsViewManager.showPluginView(pluginId)
 
+    // 标记有活动的第三方插件
+    hasActiveThirdPartyPlugin = true
+
     return { success: true }
   })
 
   // 关闭插件
   ipcMain.handle('plugin:close', async (_, pluginId: string) => {
     webContentsViewManager.hidePluginView(pluginId)
+
+    // 检查是否还有其他活动的插件视图
+    const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
+    if (!hasOtherActiveViews) {
+      hasActiveThirdPartyPlugin = false
+    }
+
     return { success: true }
   })
 
   // 更新插件视图位置
   ipcMain.handle(
     'plugin:updateBounds',
-    async (_, pluginId: string, bounds: { x: number; y: number; width: number; height: number }) => {
+    async (
+      _,
+      pluginId: string,
+      bounds: { x: number; y: number; width: number; height: number }
+    ) => {
       webContentsViewManager.updatePluginViewBounds(pluginId, bounds)
       return { success: true }
     }

@@ -48,7 +48,7 @@ const highlightedOutput = computed(() => {
 })
 
 // 获取 Prettier 配置
-const getPrettierOptions = () => {
+const getPrettierOptions = (): Record<string, unknown> => {
   const baseOptions = {
     tabWidth: indent.value,
     useTabs: false,
@@ -81,7 +81,7 @@ const getPrettierOptions = () => {
 }
 
 // 格式化代码
-const formatCode = async () => {
+const formatCode = async (): Promise<void> => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -91,13 +91,13 @@ const formatCode = async () => {
 
     const formatted = await prettier.format(input.value, getPrettierOptions())
     output.value = formatted.trim()
-  } catch (e: any) {
-    error.value = `格式化失败: ${e.message}`
+  } catch (e) {
+    error.value = `格式化失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
 // 压缩代码
-const compressCode = () => {
+const compressCode = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -112,33 +112,33 @@ const compressCode = () => {
       .trim()
 
     output.value = compressed
-  } catch (e: any) {
-    error.value = `压缩失败: ${e.message}`
+  } catch (e) {
+    error.value = `压缩失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
 // 清空
-const clearInput = () => {
+const clearInput = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
 }
 
 // 复制
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
 
 // 粘贴处理
-const handlePaste = async (event: ClipboardEvent) => {
+const handlePaste = async (event: ClipboardEvent): Promise<void> => {
   const pastedText = event.clipboardData?.getData('text')
   if (!pastedText) return
 
@@ -150,7 +150,7 @@ const handlePaste = async (event: ClipboardEvent) => {
       const formatted = await prettier.format(pastedText, getPrettierOptions())
       output.value = formatted.trim()
       error.value = ''
-    } catch (e: any) {
+    } catch {
       error.value = ''
     }
   }, 10)
@@ -168,7 +168,7 @@ watch([input, indent, semiColons, singleQuote], async () => {
     const formatted = await prettier.format(input.value, getPrettierOptions())
     output.value = formatted.trim()
     error.value = ''
-  } catch (e: any) {
+  } catch {
     error.value = ''
   }
 })
@@ -180,7 +180,7 @@ watch([input, indent, semiColons, singleQuote], async () => {
     <div
       class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
     >
-      <Button @click="formatCode" size="sm">
+      <Button size="sm" @click="formatCode">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -192,7 +192,7 @@ watch([input, indent, semiColons, singleQuote], async () => {
         格式化
       </Button>
 
-      <Button @click="compressCode" size="sm" variant="secondary">
+      <Button size="sm" variant="secondary" @click="compressCode">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -204,7 +204,7 @@ watch([input, indent, semiColons, singleQuote], async () => {
         压缩
       </Button>
 
-      <Button @click="clearInput" size="sm" variant="ghost">
+      <Button size="sm" variant="ghost" @click="clearInput">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -260,9 +260,9 @@ watch([input, indent, semiColons, singleQuote], async () => {
         <div class="flex-1 overflow-auto min-h-0">
           <textarea
             v-model="input"
-            @paste="handlePaste"
             :placeholder="`粘贴或输入 ${title} 代码...`"
             class="w-full h-full p-4 bg-white text-sm font-mono resize-none focus:outline-none"
+            @paste="handlePaste"
           />
         </div>
       </div>
@@ -280,9 +280,9 @@ watch([input, indent, semiColons, singleQuote], async () => {
           </div>
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -317,7 +317,7 @@ watch([input, indent, semiColons, singleQuote], async () => {
             v-if="output"
             class="p-4 text-sm"
             :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"
-          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          ><code class="hljs" v-html="highlightedOutput"></code></pre>
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
             格式化结果...
           </div>
@@ -345,10 +345,10 @@ watch([input, indent, semiColons, singleQuote], async () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

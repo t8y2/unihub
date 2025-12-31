@@ -2,7 +2,7 @@ import { pluginRegistry } from './registry'
 import { builtinPlugins } from './builtin'
 
 // 初始化插件系统
-export function initPlugins() {
+export function initPlugins(): void {
   // 注册所有内置插件
   builtinPlugins.forEach((plugin) => {
     pluginRegistry.register(plugin)

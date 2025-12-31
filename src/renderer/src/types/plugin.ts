@@ -9,10 +9,11 @@ export interface PluginMetadata {
   icon: string // SVG path
   category: 'formatter' | 'tool' | 'encoder' | 'custom'
   keywords: string[]
+  isThirdParty?: boolean // 标记是否为第三方插件
 }
 
 export interface PluginConfig {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface Plugin {

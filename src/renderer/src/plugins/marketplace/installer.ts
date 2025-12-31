@@ -2,6 +2,22 @@ import { pluginRegistry } from '../registry'
 import { markRaw } from 'vue'
 
 /**
+ * Component instance type for Vue components
+ */
+interface ComponentInstance {
+  pluginId: string
+  pluginName: string
+  loading: boolean
+  error: string
+  isActive: boolean
+  $refs: {
+    pluginContainer?: HTMLElement
+  }
+  $nextTick: (callback: () => void) => void
+  updateViewBounds: () => void
+}
+
+/**
  * 插件安装器（Electron 版本）
  * 使用 WebContentsView 加载插件
  */
@@ -83,19 +99,28 @@ export class PluginInstaller {
       for (const pluginInfo of plugins) {
         if (!pluginInfo.enabled) continue
 
-        const metadata = pluginInfo.metadata as any
+        const metadata = pluginInfo.metadata as Record<string, unknown>
+        const author = metadata.author as Record<string, unknown> | string
+        const authorName =
+          typeof author === 'string' ? author : (author?.name as string) || 'Unknown'
+        const category = metadata.category as string
+        const validCategory: 'formatter' | 'tool' | 'encoder' | 'custom' =
+          category === 'formatter' || category === 'tool' || category === 'encoder'
+            ? category
+            : 'custom'
 
         // 创建插件组件（使用 WebContentsView）
         const plugin = {
           metadata: {
-            id: metadata.id,
-            name: metadata.name,
-            description: metadata.description,
-            version: metadata.version,
-            author: metadata.author.name || metadata.author,
-            icon: metadata.icon || 'M12 4v16m8-8H4',
-            category: metadata.category,
-            keywords: metadata.keywords || []
+            id: metadata.id as string,
+            name: metadata.name as string,
+            description: metadata.description as string,
+            version: metadata.version as string,
+            author: authorName,
+            icon: (metadata.icon as string) || 'M12 4v16m8-8H4',
+            category: validCategory,
+            keywords: (metadata.keywords as string[]) || [],
+            isThirdParty: true // 标记为第三方插件
           },
           component: markRaw({
             template: `
@@ -124,17 +149,17 @@ export class PluginInstaller {
             `,
             data() {
               return {
-                pluginName: metadata.name,
-                pluginId: metadata.id,
+                pluginName: metadata.name as string,
+                pluginId: metadata.id as string,
                 loading: true,
                 error: '',
                 isActive: false
               }
             },
-            async mounted(this: any) {
+            async mounted(this: ComponentInstance) {
               try {
                 const result = await window.api.plugin.open(this.pluginId)
-                
+
                 if (!result.success) {
                   this.error = result.message || '加载插件失败'
                   this.loading = false
@@ -156,15 +181,15 @@ export class PluginInstaller {
                 this.loading = false
               }
             },
-            beforeUnmount(this: any) {
+            beforeUnmount(this: ComponentInstance) {
               if (this.isActive) {
                 window.api.plugin.close(this.pluginId)
                 window.removeEventListener('resize', this.updateViewBounds)
               }
             },
             methods: {
-              updateViewBounds(this: any) {
-                const container = this.$refs.pluginContainer
+              updateViewBounds(this: ComponentInstance) {
+                const container = this.$refs.pluginContainer as HTMLElement
                 if (!container) return
 
                 const rect = container.getBoundingClientRect()
@@ -178,7 +203,7 @@ export class PluginInstaller {
             }
           }),
           enabled: true,
-          hasBackend: metadata.permissions?.includes('backend') || false
+          hasBackend: (metadata.permissions as string[])?.includes('backend') || false
         }
 
         pluginRegistry.register(plugin)

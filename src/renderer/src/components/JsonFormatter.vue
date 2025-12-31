@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 
+// Note: invoke is not available in this context, Rust backend disabled
+// const { invoke } = window.electron || {}
+
 // 注册 JSON 语言
 hljs.registerLanguage('json', json)
 
@@ -36,14 +39,18 @@ const highlightedOutput = computed(() => {
 })
 
 // 检查是否应该使用 Rust 后端
-const shouldUseRust = (text: string) => {
+const shouldUseRust = (text: string): boolean => {
   const size = new Blob([text]).size
   return size > RUST_THRESHOLD
 }
 
-// 使用 Rust 后端格式化
-const formatWithRust = async (text: string, indentSize: number | null) => {
+// 使用 Rust 后端格式化 (currently disabled)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const formatWithRust = async (_text: string, _indentSize: number | null): Promise<void> => {
   try {
+    // Rust backend not available in this context
+    error.value = 'Rust backend not available'
+    /*
     const result = await invoke<{ success: boolean; output?: string; error?: string }>(
       'format_json',
       {
@@ -63,23 +70,24 @@ const formatWithRust = async (text: string, indentSize: number | null) => {
     } else {
       error.value = result.error || '格式化失败'
     }
-  } catch (e: any) {
-    error.value = `Rust 后端错误: ${e}`
+    */
+  } catch (e) {
+    error.value = `Rust 后端错误: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
 // JSON 转换函数（前端）
-const stringifyJson = (obj: any, space?: number) => {
+const stringifyJson = (obj: unknown, space?: number): string => {
   if (sortKeys.value) {
     // 递归排序对象键
-    const sortObject = (obj: any): any => {
+    const sortObject = (obj: unknown): unknown => {
       if (Array.isArray(obj)) {
         return obj.map(sortObject)
       } else if (obj !== null && typeof obj === 'object') {
         return Object.keys(obj)
           .sort()
-          .reduce((result: any, key) => {
-            result[key] = sortObject(obj[key])
+          .reduce((result: Record<string, unknown>, key) => {
+            result[key] = sortObject((obj as Record<string, unknown>)[key])
             return result
           }, {})
       }
@@ -121,14 +129,14 @@ watch([input, indent, escapeUnicode, sortKeys], async () => {
     output.value = stringifyJson(parsed, indent.value)
     error.value = ''
     useRustBackend.value = false
-  } catch (e: any) {
+  } catch {
     // 输入时如果 JSON 不完整，不显示错误，只在手动操作时显示
     error.value = ''
     useRustBackend.value = false
   }
 })
 
-const formatJson = async () => {
+const formatJson = async (): Promise<void> => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -146,12 +154,12 @@ const formatJson = async () => {
     const parsed = JSON.parse(input.value)
     output.value = stringifyJson(parsed, indent.value)
     useRustBackend.value = false
-  } catch (e: any) {
-    error.value = `格式化失败: ${e.message}`
+  } catch (e) {
+    error.value = `格式化失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const compressJson = async () => {
+const compressJson = async (): Promise<void> => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -169,19 +177,19 @@ const compressJson = async () => {
     const parsed = JSON.parse(input.value)
     output.value = stringifyJson(parsed)
     useRustBackend.value = false
-  } catch (e: any) {
-    error.value = `压缩失败: ${e.message}`
+  } catch (e) {
+    error.value = `压缩失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const expandAll = async () => {
+const expandAll = async (): Promise<void> => {
   collapsed.value = false
   if (input.value.trim()) {
     await formatJson()
   }
 }
 
-const collapseAll = () => {
+const collapseAll = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -192,7 +200,7 @@ const collapseAll = () => {
     // 创建一个只显示第一层的版本
     const preview = JSON.stringify(
       parsed,
-      (key, value) => {
+      (key, value: unknown) => {
         if (key && typeof value === 'object' && value !== null) {
           if (Array.isArray(value)) {
             return `[${value.length} items]`
@@ -205,18 +213,18 @@ const collapseAll = () => {
     )
     output.value = preview
     collapsed.value = true
-  } catch (e: any) {
-    error.value = `折叠失败: ${e.message}`
+  } catch (e) {
+    error.value = `折叠失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const clearInput = () => {
+const clearInput = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
 }
 
-const handlePaste = (event: ClipboardEvent) => {
+const handlePaste = (event: ClipboardEvent): void => {
   // 获取粘贴的文本
   const pastedText = event.clipboardData?.getData('text')
   if (!pastedText) return
@@ -233,21 +241,21 @@ const handlePaste = (event: ClipboardEvent) => {
       const parsed = JSON.parse(pastedText)
       output.value = JSON.stringify(parsed, null, indent.value)
       error.value = ''
-    } catch (e: any) {
+    } catch (e) {
       // 如果解析失败，只显示错误但不清空输入
-      error.value = `自动格式化失败: ${e.message}`
+      error.value = `自动格式化失败: ${e instanceof Error ? e.message : String(e)}`
     }
   }, 10)
 }
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
@@ -259,7 +267,7 @@ const copyToClipboard = async () => {
     <div
       class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
     >
-      <Button @click="formatJson" size="sm">
+      <Button size="sm" @click="formatJson">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -271,7 +279,7 @@ const copyToClipboard = async () => {
         格式化
       </Button>
 
-      <Button @click="compressJson" size="sm" variant="secondary">
+      <Button size="sm" variant="secondary" @click="compressJson">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -283,7 +291,7 @@ const copyToClipboard = async () => {
         压缩
       </Button>
 
-      <Button @click="expandAll" size="sm" variant="outline">
+      <Button size="sm" variant="outline" @click="expandAll">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -295,14 +303,14 @@ const copyToClipboard = async () => {
         展开
       </Button>
 
-      <Button @click="collapseAll" size="sm" variant="outline">
+      <Button size="sm" variant="outline" @click="collapseAll">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
         </svg>
         折叠
       </Button>
 
-      <Button @click="clearInput" size="sm" variant="ghost">
+      <Button size="sm" variant="ghost" @click="clearInput">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -352,9 +360,9 @@ const copyToClipboard = async () => {
         <div class="flex-1 overflow-auto min-h-0">
           <textarea
             v-model="input"
-            @paste="handlePaste"
             placeholder="粘贴或输入 JSON 代码..."
             class="w-full h-full p-4 bg-white text-sm font-mono resize-none focus:outline-none"
+            @paste="handlePaste"
           />
         </div>
       </div>
@@ -378,9 +386,9 @@ const copyToClipboard = async () => {
           </div>
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -415,7 +423,7 @@ const copyToClipboard = async () => {
             v-if="output"
             class="p-4 text-sm"
             :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"
-          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          ><code class="hljs" v-html="highlightedOutput"></code></pre>
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
             格式化结果...
           </div>
@@ -440,10 +448,10 @@ const copyToClipboard = async () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

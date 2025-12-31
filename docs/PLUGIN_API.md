@@ -214,10 +214,10 @@ console.log(response.body)
 POST 请求
 
 ```javascript
-const response = await window.unihub.http.post(
-  'https://api.example.com/submit',
-  { name: 'Alice', age: 25 }
-)
+const response = await window.unihub.http.post('https://api.example.com/submit', {
+  name: 'Alice',
+  age: 25
+})
 console.log(response.body)
 ```
 
@@ -317,69 +317,80 @@ console.log(result)
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>TODO 插件</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .todo-item { padding: 10px; border-bottom: 1px solid #eee; }
-    button { padding: 8px 16px; margin: 5px; }
-  </style>
-</head>
-<body>
-  <h1>📝 TODO List</h1>
-  
-  <input id="input" type="text" placeholder="添加任务..." />
-  <button onclick="addTodo()">添加</button>
-  
-  <div id="list"></div>
+  <head>
+    <title>TODO 插件</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      .todo-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📝 TODO List</h1>
 
-  <script>
-    const PLUGIN_ID = 'com.example.todo'
-    
-    // 加载任务列表
-    async function loadTodos() {
-      const todos = await window.unihub.db.get('todos') || []
-      renderTodos(todos)
-    }
-    
-    // 添加任务
-    async function addTodo() {
-      const input = document.getElementById('input')
-      const text = input.value.trim()
-      
-      if (!text) return
-      
-      const todos = await window.unihub.db.get('todos') || []
-      todos.push({ id: Date.now(), text, done: false })
-      
-      await window.unihub.db.put('todos', todos)
-      input.value = ''
-      loadTodos()
-    }
-    
-    // 切换完成状态
-    async function toggleTodo(id) {
-      const todos = await window.unihub.db.get('todos') || []
-      const todo = todos.find(t => t.id === id)
-      if (todo) {
-        todo.done = !todo.done
+    <input id="input" type="text" placeholder="添加任务..." />
+    <button onclick="addTodo()">添加</button>
+
+    <div id="list"></div>
+
+    <script>
+      const PLUGIN_ID = 'com.example.todo'
+
+      // 加载任务列表
+      async function loadTodos() {
+        const todos = (await window.unihub.db.get('todos')) || []
+        renderTodos(todos)
+      }
+
+      // 添加任务
+      async function addTodo() {
+        const input = document.getElementById('input')
+        const text = input.value.trim()
+
+        if (!text) return
+
+        const todos = (await window.unihub.db.get('todos')) || []
+        todos.push({ id: Date.now(), text, done: false })
+
+        await window.unihub.db.put('todos', todos)
+        input.value = ''
+        loadTodos()
+      }
+
+      // 切换完成状态
+      async function toggleTodo(id) {
+        const todos = (await window.unihub.db.get('todos')) || []
+        const todo = todos.find((t) => t.id === id)
+        if (todo) {
+          todo.done = !todo.done
+          await window.unihub.db.put('todos', todos)
+          loadTodos()
+        }
+      }
+
+      // 删除任务
+      async function deleteTodo(id) {
+        let todos = (await window.unihub.db.get('todos')) || []
+        todos = todos.filter((t) => t.id !== id)
         await window.unihub.db.put('todos', todos)
         loadTodos()
       }
-    }
-    
-    // 删除任务
-    async function deleteTodo(id) {
-      let todos = await window.unihub.db.get('todos') || []
-      todos = todos.filter(t => t.id !== id)
-      await window.unihub.db.put('todos', todos)
-      loadTodos()
-    }
-    
-    // 渲染列表
-    function renderTodos(todos) {
-      const list = document.getElementById('list')
-      list.innerHTML = todos.map(todo => `
+
+      // 渲染列表
+      function renderTodos(todos) {
+        const list = document.getElementById('list')
+        list.innerHTML = todos
+          .map(
+            (todo) => `
         <div class="todo-item">
           <input 
             type="checkbox" 
@@ -391,13 +402,15 @@ console.log(result)
           </span>
           <button onclick="deleteTodo(${todo.id})">删除</button>
         </div>
-      `).join('')
-    }
-    
-    // 初始化
-    loadTodos()
-  </script>
-</body>
+      `
+          )
+          .join('')
+      }
+
+      // 初始化
+      loadTodos()
+    </script>
+  </body>
 </html>
 ```
 
@@ -405,20 +418,20 @@ console.log(result)
 
 ### 与 Rubick 的对比
 
-| Rubick | UniHub | 说明 |
-|--------|--------|------|
-| `window.rubick.db.put()` | `window.unihub.db.put()` | 存储数据 |
-| `window.rubick.db.get()` | `window.unihub.db.get()` | 获取数据 |
+| Rubick                      | UniHub                      | 说明     |
+| --------------------------- | --------------------------- | -------- |
+| `window.rubick.db.put()`    | `window.unihub.db.put()`    | 存储数据 |
+| `window.rubick.db.get()`    | `window.unihub.db.get()`    | 获取数据 |
 | `window.rubick.db.remove()` | `window.unihub.db.remove()` | 删除数据 |
 
 ### 与 uTools 的对比
 
-| uTools | UniHub | 说明 |
-|--------|--------|------|
-| `utools.db.put()` | `window.unihub.db.put()` | 存储数据 |
-| `utools.db.get()` | `window.unihub.db.get()` | 获取数据 |
-| `utools.copyText()` | `window.unihub.clipboard.writeText()` | 复制文本 |
-| `utools.showNotification()` | `window.unihub.notification.show()` | 显示通知 |
+| uTools                      | UniHub                                | 说明     |
+| --------------------------- | ------------------------------------- | -------- |
+| `utools.db.put()`           | `window.unihub.db.put()`              | 存储数据 |
+| `utools.db.get()`           | `window.unihub.db.get()`              | 获取数据 |
+| `utools.copyText()`         | `window.unihub.clipboard.writeText()` | 复制文本 |
+| `utools.showNotification()` | `window.unihub.notification.show()`   | 显示通知 |
 
 ## 🎯 最佳实践
 
@@ -430,7 +443,7 @@ console.log(result)
 ```javascript
 // ✅ 好的实践
 try {
-  const data = await window.unihub.db.get('settings') || { theme: 'light' }
+  const data = (await window.unihub.db.get('settings')) || { theme: 'light' }
   console.log(data.theme)
 } catch (error) {
   console.error('读取设置失败:', error)

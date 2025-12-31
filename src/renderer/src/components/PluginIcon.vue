@@ -2,19 +2,8 @@
   <span v-if="isEmojiIcon" :class="emojiClass">
     {{ icon }}
   </span>
-  <svg
-    v-else
-    :class="svgClass"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      :d="icon"
-    />
+  <svg v-else :class="svgClass" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icon" />
   </svg>
 </template>
 

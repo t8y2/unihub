@@ -39,6 +39,7 @@ interface PluginMetadata {
   category: string
   keywords?: string[]
   permissions?: string[]
+  isThirdParty?: boolean // 标记是否为第三方插件
   dev?: {
     enabled?: boolean
     url?: string

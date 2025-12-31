@@ -51,33 +51,35 @@ const builtInPlugins = computed(() => {
 })
 
 // 已安装的第三方插件
-const installedPlugins = ref<Array<{
-  id: string
-  version: string
-  source: string
-  installedAt: string
-  metadata: {
-    name: string
-    description: string
-  }
-}>>([])
+const installedPlugins = ref<
+  Array<{
+    id: string
+    version: string
+    source: string
+    installedAt: string
+    metadata: {
+      name: string
+      description: string
+    }
+  }>
+>([])
 
 // 加载官方插件列表
 const loadOfficialPlugins = async (): Promise<void> => {
   try {
     loadingOfficialPlugins.value = true
-    
+
     // 正式环境使用官方 API
     const apiUrl = import.meta.env.VITE_PLUGIN_STORE_API || 'https://api.unihub.'
     const response = await fetch(`${apiUrl}/v1/plugins?featured=true&limit=50`)
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
-    
+
     const data = await response.json()
     officialPlugins.value = data.plugins || []
-    
+
     // 开发环境回退到测试数据
     if (officialPlugins.value.length === 0) {
       console.warn('使用测试数据，请配置 VITE_PLUGIN_STORE_API 环境变量')
@@ -96,31 +98,31 @@ const loadOfficialPlugins = async (): Promise<void> => {
 // 测试数据
 const getTestPlugins = (): OfficialPlugin[] => [
   {
-    id: "com.unihub.hash-tool",
-    name: "哈希工具",
-    description: "计算文件和文本的 MD5、SHA256 等哈希值，支持拖拽文件批量处理",
-    version: "1.2.0",
-    author: { name: "UniHub Team" },
-    category: "tool",
-    keywords: ["hash", "md5", "sha256", "crypto", "security"],
-    icon: "M12 4v16m8-8H4",
-    downloadUrl: "http://localhost:8080/hash-tool.zip",
-    homepage: "https://github.com/unihub-team/hash-tool",
+    id: 'com.unihub.hash-tool',
+    name: '哈希工具',
+    description: '计算文件和文本的 MD5、SHA256 等哈希值，支持拖拽文件批量处理',
+    version: '1.2.0',
+    author: { name: 'UniHub Team' },
+    category: 'tool',
+    keywords: ['hash', 'md5', 'sha256', 'crypto', 'security'],
+    icon: 'M12 4v16m8-8H4',
+    downloadUrl: 'http://localhost:8080/hash-tool.zip',
+    homepage: 'https://github.com/unihub-team/hash-tool',
     downloads: 1250,
     rating: 4.8,
     verified: true
   },
   {
-    id: "com.community.json-formatter",
-    name: "JSON 格式化器",
-    description: "美化和压缩 JSON 数据，支持语法高亮和错误检测",
-    version: "2.1.0",
-    author: { name: "张三" },
-    category: "formatter",
-    keywords: ["json", "format", "beautify", "minify"],
-    icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
-    downloadUrl: "http://localhost:8080/json-formatter.zip",
-    homepage: "https://github.com/zhangsan/json-formatter",
+    id: 'com.community.json-formatter',
+    name: 'JSON 格式化器',
+    description: '美化和压缩 JSON 数据，支持语法高亮和错误检测',
+    version: '2.1.0',
+    author: { name: '张三' },
+    category: 'formatter',
+    keywords: ['json', 'format', 'beautify', 'minify'],
+    icon: 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+    downloadUrl: 'http://localhost:8080/json-formatter.zip',
+    homepage: 'https://github.com/zhangsan/json-formatter',
     downloads: 890,
     rating: 4.5,
     verified: false
@@ -130,22 +132,23 @@ const getTestPlugins = (): OfficialPlugin[] => [
 // 过滤官方插件
 const filteredOfficialPlugins = computed(() => {
   let plugins = officialPlugins.value
-  
+
   // 按分类过滤
   if (selectedCategory.value !== 'all') {
     plugins = plugins.filter((p) => p.category === selectedCategory.value)
   }
-  
+
   // 按搜索关键词过滤
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
-    plugins = plugins.filter((p) => 
-      p.name.toLowerCase().includes(query) ||
-      p.description.toLowerCase().includes(query) ||
-      p.keywords.some((k: string) => k.toLowerCase().includes(query))
+    plugins = plugins.filter(
+      (p) =>
+        p.name.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.keywords.some((k: string) => k.toLowerCase().includes(query))
     )
   }
-  
+
   return plugins
 })
 
@@ -190,7 +193,7 @@ const pluginsByCategory = computed(() => {
   // 触发响应式更新
   const plugins = builtInPlugins.value
   void refreshKey.value // 访问以触发重新计算
-  
+
   plugins.forEach((plugin) => {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
@@ -421,15 +424,9 @@ const getSourceLabel = (source: string): string => {
           开发指南
         </button>
       </div>
-      
+
       <!-- 开发模式按钮 -->
-      <Button
-        @click="showDevMode = true"
-        variant="outline"
-        size="sm"
-      >
-        开发模式
-      </Button>
+      <Button variant="outline" size="sm" @click="showDevMode = true"> 开发模式 </Button>
     </div>
 
     <!-- 内容区 -->
@@ -506,7 +503,10 @@ const getSourceLabel = (source: string): string => {
         </div>
 
         <!-- 第三方插件 -->
-        <div v-if="installedPlugins.length > 0" class="pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div
+          v-if="installedPlugins.length > 0"
+          class="pt-6 border-t border-gray-200 dark:border-gray-700"
+        >
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             第三方插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -543,8 +543,8 @@ const getSourceLabel = (source: string): string => {
               <Button
                 size="sm"
                 variant="outline"
-                @click="uninstallPlugin(plugin.id)"
                 class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                @click="uninstallPlugin(plugin.id)"
               >
                 卸载
               </Button>
@@ -560,15 +560,13 @@ const getSourceLabel = (source: string): string => {
           class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
         >
           <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">官方插件商店</h3>
-            
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              官方插件商店
+            </h3>
+
             <!-- 搜索和过滤 -->
             <div class="flex gap-3">
-              <Input
-                v-model="searchQuery"
-                placeholder="搜索插件..."
-                class="flex-1"
-              />
+              <Input v-model="searchQuery" placeholder="搜索插件..." class="flex-1" />
               <select
                 v-model="selectedCategory"
                 class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
@@ -621,7 +619,11 @@ const getSourceLabel = (source: string): string => {
                       <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {{ plugin.name }}
                       </h4>
-                      <Badge v-if="plugin.verified" variant="secondary" class="text-xs flex-shrink-0">
+                      <Badge
+                        v-if="plugin.verified"
+                        variant="secondary"
+                        class="text-xs flex-shrink-0"
+                      >
                         ✓ 官方
                       </Badge>
                     </div>
@@ -719,16 +721,16 @@ const getSourceLabel = (source: string): string => {
 
           <!-- 拖拽区域 -->
           <div
-            @drop="handleDrop"
-            @dragover.prevent
-            @dragenter.prevent
-            @click="triggerFileSelect"
             :class="[
               'border-2 border-dashed rounded-lg p-8 mb-4 text-center transition-colors cursor-pointer',
               isDragging
                 ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50'
             ]"
+            @drop="handleDrop"
+            @dragover.prevent
+            @dragenter.prevent
+            @click="triggerFileSelect"
             @dragenter="isDragging = true"
             @dragleave="isDragging = false"
           >
@@ -757,8 +759,8 @@ const getSourceLabel = (source: string): string => {
             ref="fileInput"
             type="file"
             accept=".zip"
-            @change="handleFileSelect"
             class="hidden"
+            @change="handleFileSelect"
           />
 
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -843,28 +845,42 @@ const getSourceLabel = (source: string): string => {
           <p class="text-sm text-blue-800 dark:text-blue-200 mb-4">
             UniHub 支持完全开放的插件系统，你可以使用任意前端框架和后端语言开发插件。
           </p>
-          
+
           <div class="space-y-4">
             <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">📚 文档资源</h4>
-              <ul class="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside ml-4">
+              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                📚 文档资源
+              </h4>
+              <ul
+                class="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside ml-4"
+              >
                 <li>
-                  完整指南：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded">PLUGIN_GUIDE.md</code>
+                  完整指南：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
+                    >PLUGIN_GUIDE.md</code
+                  >
                 </li>
                 <li>
-                  架构设计：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded">PLUGIN_ARCHITECTURE.md</code>
+                  架构设计：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
+                    >PLUGIN_ARCHITECTURE.md</code
+                  >
                 </li>
                 <li>
-                  示例代码：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded">examples/</code>
+                  示例代码：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
+                    >examples/</code
+                  >
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">🎨 支持的技术栈</h4>
+              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                🎨 支持的技术栈
+              </h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">前端框架</h5>
+                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    前端框架
+                  </h5>
                   <ul class="text-xs text-blue-600 dark:text-blue-400 space-y-0.5 ml-2">
                     <li>• 原生 JavaScript</li>
                     <li>• Vue 3</li>
@@ -873,7 +889,9 @@ const getSourceLabel = (source: string): string => {
                   </ul>
                 </div>
                 <div>
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">后端语言</h5>
+                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    后端语言
+                  </h5>
                   <ul class="text-xs text-blue-600 dark:text-blue-400 space-y-0.5 ml-2">
                     <li>• Python</li>
                     <li>• Go</li>
@@ -885,9 +903,13 @@ const getSourceLabel = (source: string): string => {
             </div>
 
             <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">🚀 快速开始</h4>
+              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                🚀 快速开始
+              </h4>
               <div class="bg-blue-100 dark:bg-blue-900/30 rounded p-3">
-                <pre class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"><code># 1. 查看示例插件
+                <pre
+                  class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"
+                ><code># 1. 查看示例插件
 cd examples/vanilla-go-plugin
 
 # 2. 构建插件
@@ -902,9 +924,13 @@ python3 -m http.server 8080
             </div>
 
             <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">📦 插件结构</h4>
+              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                📦 插件结构
+              </h4>
               <div class="bg-blue-100 dark:bg-blue-900/30 rounded p-3">
-                <pre class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"><code>plugin.zip
+                <pre
+                  class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"
+                ><code>plugin.zip
 ├── manifest.json      # 插件元数据
 ├── frontend/          # 前端代码
 │   └── index.html    # 入口文件

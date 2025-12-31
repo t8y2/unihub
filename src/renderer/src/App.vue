@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
@@ -75,6 +75,13 @@ onMounted(async () => {
 
   // 添加键盘快捷键监听
   window.addEventListener('keydown', handleKeyDown)
+
+  // 监听主进程的关闭标签事件
+  window.electron.ipcRenderer.on('handle-close-tab', () => {
+    if (activeTabId.value) {
+      closeTab(activeTabId.value)
+    }
+  })
 })
 
 onUnmounted(() => {
@@ -82,6 +89,17 @@ onUnmounted(() => {
 })
 
 const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
+  // 如果焦点在插件视图中，不处理快捷键
+  // 检查是否有活动的第三方插件标签
+  const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
+  if (activeTab && activeTab.type === 'plugin') {
+    const plugin = pluginRegistry.get(activeTab.pluginId)
+    if (plugin?.metadata.isThirdParty) {
+      // 第三方插件正在显示，不处理快捷键
+      return
+    }
+  }
+
   // Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
   if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
     e.preventDefault()
@@ -137,6 +155,37 @@ interface Tab {
 const tabs = ref<Tab[]>([])
 const activeTabId = ref('')
 
+// 监听 activeTabId 变化，自动显示/隐藏第三方插件视图
+watch(activeTabId, (newTabId, oldTabId) => {
+  console.log('🔄 标签切换:', { oldTabId, newTabId })
+
+  // 隐藏旧标签的插件视图
+  if (oldTabId) {
+    const oldTab = tabs.value.find((t) => t.id === oldTabId)
+    if (oldTab && oldTab.type === 'plugin') {
+      const oldPlugin = pluginRegistry.get(oldTab.pluginId)
+      console.log('🔍 旧插件:', oldTab.pluginId, 'isThirdParty:', oldPlugin?.metadata.isThirdParty)
+      if (oldPlugin?.metadata.isThirdParty) {
+        console.log('🔒 隐藏插件视图:', oldTab.pluginId)
+        window.api.plugin.close(oldTab.pluginId)
+      }
+    }
+  }
+
+  // 显示新标签的插件视图
+  if (newTabId) {
+    const newTab = tabs.value.find((t) => t.id === newTabId)
+    if (newTab && newTab.type === 'plugin') {
+      const newPlugin = pluginRegistry.get(newTab.pluginId)
+      console.log('🔍 新插件:', newTab.pluginId, 'isThirdParty:', newPlugin?.metadata.isThirdParty)
+      if (newPlugin?.metadata.isThirdParty) {
+        console.log('👁️ 显示插件视图:', newTab.pluginId)
+        window.api.plugin.open(newTab.pluginId)
+      }
+    }
+  }
+})
+
 // 获取所有启用的插件
 const enabledPlugins = computed(() => {
   // 依赖 version 来触发重新计算
@@ -178,6 +227,10 @@ const openTab = (pluginId: string): void => {
   const existingTab = tabs.value.find((t) => t.pluginId === pluginId && t.type === 'plugin')
   if (existingTab) {
     activeTabId.value = existingTab.id
+    // 如果是第三方插件，显示其视图
+    if (plugin.metadata.isThirdParty) {
+      window.api.plugin.open(pluginId)
+    }
     return
   }
 
@@ -190,6 +243,11 @@ const openTab = (pluginId: string): void => {
   }
   tabs.value.push(newTab)
   activeTabId.value = newTab.id
+
+  // 如果是第三方插件，打开其视图
+  if (plugin.metadata.isThirdParty) {
+    window.api.plugin.open(pluginId)
+  }
 }
 
 const openPluginManagement = (): void => {
@@ -234,6 +292,16 @@ const closeTab = (tabId: string): void => {
   const index = tabs.value.findIndex((t) => t.id === tabId)
   if (index === -1) return
 
+  const tab = tabs.value[index]
+
+  // 如果是第三方插件，关闭其视图
+  if (tab.type === 'plugin') {
+    const plugin = pluginRegistry.get(tab.pluginId)
+    if (plugin?.metadata.isThirdParty) {
+      window.api.plugin.close(tab.pluginId)
+    }
+  }
+
   // 如果关闭的是当前标签，切换到相邻标签
   if (activeTabId.value === tabId) {
     if (tabs.value.length > 1) {
@@ -252,6 +320,16 @@ const closeTab = (tabId: string): void => {
 }
 
 const goHome = (): void => {
+  // 关闭所有第三方插件视图
+  tabs.value.forEach((tab) => {
+    if (tab.type === 'plugin') {
+      const plugin = pluginRegistry.get(tab.pluginId)
+      if (plugin?.metadata.isThirdParty) {
+        window.api.plugin.close(tab.pluginId)
+      }
+    }
+  })
+
   // 关闭所有标签，回到首页
   tabs.value = []
   activeTabId.value = ''
@@ -300,10 +378,15 @@ const addHomeTab = (): void => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
               sidebarCollapsed ? 'justify-center' : ''
             ]"
-            @click="goHome"
             :title="sidebarCollapsed ? '首页' : ''"
+            @click="goHome"
           >
-            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              class="w-4 h-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -332,10 +415,15 @@ const addHomeTab = (): void => {
                   : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
                 sidebarCollapsed ? 'justify-center' : ''
               ]"
-              @click="openTab(plugin.metadata.id)"
               :title="sidebarCollapsed ? plugin.metadata.name : ''"
+              @click="openTab(plugin.metadata.id)"
             >
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                class="w-4 h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -343,7 +431,9 @@ const addHomeTab = (): void => {
                   :d="plugin.metadata.icon"
                 />
               </svg>
-              <span v-show="!sidebarCollapsed" class="whitespace-nowrap">{{ plugin.metadata.name }}</span>
+              <span v-show="!sidebarCollapsed" class="whitespace-nowrap">{{
+                plugin.metadata.name
+              }}</span>
             </button>
           </template>
         </div>
@@ -359,8 +449,8 @@ const addHomeTab = (): void => {
               : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
             sidebarCollapsed ? 'justify-center' : ''
           ]"
-          @click="openPluginManagement"
           :title="sidebarCollapsed ? '插件管理' : ''"
+          @click="openPluginManagement"
         >
           <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -507,7 +597,7 @@ const addHomeTab = (): void => {
               </svg>
             </button>
           </div>
-          
+
           <!-- 新增标签页按钮 -->
           <button
             class="h-full px-3 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors no-drag flex-shrink-0"
@@ -543,7 +633,7 @@ const addHomeTab = (): void => {
       <div class="flex-1 flex flex-col min-h-0">
         <!-- 首页（无标签时） -->
         <div v-if="tabs.length === 0" class="flex-1 bg-white dark:bg-gray-900">
-          <HomePage @open-tool="openTab" :recent-plugins="recentPlugins" />
+          <HomePage :recent-plugins="recentPlugins" @open-tool="openTab" />
         </div>
 
         <!-- 工具标签页 -->
@@ -551,11 +641,14 @@ const addHomeTab = (): void => {
           <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
             <!-- 主页标签 -->
             <div v-if="tab.pluginId === 'home'" class="flex-1 bg-white dark:bg-gray-900">
-              <HomePage @open-tool="openTab" :recent-plugins="recentPlugins" />
+              <HomePage :recent-plugins="recentPlugins" @open-tool="openTab" />
             </div>
 
             <!-- 插件管理页面 -->
-            <div v-else-if="tab.type === 'management'" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900">
+            <div
+              v-else-if="tab.type === 'management'"
+              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
+            >
               <PluginManagementPage />
             </div>
 
@@ -566,8 +659,8 @@ const addHomeTab = (): void => {
 
             <!-- 普通插件 - 无背景，让插件自己控制样式 -->
             <component
-              v-else
               :is="pluginRegistry.get(tab.pluginId)?.component"
+              v-else
               v-bind="pluginRegistry.get(tab.pluginId)?.config || {}"
               class="flex-1"
             />

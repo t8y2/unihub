@@ -30,7 +30,7 @@ const highlightedOutput = computed(() => {
   }
 })
 
-const formatCode = async () => {
+const formatCode = async (): Promise<void> => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -48,12 +48,12 @@ const formatCode = async () => {
     })
 
     output.value = formatted
-  } catch (e: any) {
-    error.value = `格式化失败: ${e.message}`
+  } catch (e) {
+    error.value = `格式化失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const compressCode = () => {
+const compressCode = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -64,25 +64,25 @@ const compressCode = () => {
     const compressed = input.value.replace(/>\s+</g, '><').replace(/\s+/g, ' ').trim()
 
     output.value = compressed
-  } catch (e: any) {
-    error.value = `压缩失败: ${e.message}`
+  } catch (e) {
+    error.value = `压缩失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const clearInput = () => {
+const clearInput = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
 }
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
@@ -93,7 +93,7 @@ const copyToClipboard = async () => {
     <div
       class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
     >
-      <Button @click="formatCode" size="sm">
+      <Button size="sm" @click="formatCode">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -105,7 +105,7 @@ const copyToClipboard = async () => {
         格式化
       </Button>
 
-      <Button @click="compressCode" size="sm" variant="secondary">
+      <Button size="sm" variant="secondary" @click="compressCode">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -117,7 +117,7 @@ const copyToClipboard = async () => {
         压缩
       </Button>
 
-      <Button @click="clearInput" size="sm" variant="ghost">
+      <Button size="sm" variant="ghost" @click="clearInput">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -171,10 +171,10 @@ const copyToClipboard = async () => {
           >
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             :variant="copied ? 'default' : 'default'"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -209,7 +209,7 @@ const copyToClipboard = async () => {
             v-if="output"
             class="p-4 text-sm"
             :class="wordWrap ? 'whitespace-pre-wrap break-words' : 'whitespace-pre'"
-          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          ><code class="hljs" v-html="highlightedOutput"></code></pre>
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">
             格式化结果...
           </div>
@@ -236,10 +236,10 @@ const copyToClipboard = async () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

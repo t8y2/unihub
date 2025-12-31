@@ -11,6 +11,10 @@ const api = {
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),
     open: (pluginId: string) => ipcRenderer.invoke('plugin:open', pluginId),
     close: (pluginId: string) => ipcRenderer.invoke('plugin:close', pluginId),
+    updateBounds: (
+      pluginId: string,
+      bounds: { x: number; y: number; width: number; height: number }
+    ) => ipcRenderer.invoke('plugin:updateBounds', pluginId, bounds),
     // 开发模式 API
     dev: {
       register: (pluginId: string, devUrl: string, autoReload?: boolean) =>
@@ -69,54 +73,53 @@ const api = {
 const unihubAPI = {
   // 数据库 API（简化版，自动使用当前插件 ID）
   db: {
-    put: async (key: string, value: unknown) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
-      const result = await ipcRenderer.invoke('plugin-api:storage:set', pluginId, key, value)
-      return result.success
-    },
     get: async (key: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       const result = await ipcRenderer.invoke('plugin-api:storage:get', pluginId, key)
-      return result.success ? result.data : null
+      if (!result.success) throw new Error(result.error || '读取失败')
+      return result.data
     },
-    remove: async (key: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+    set: async (key: string, value: unknown) => {
+      const pluginId = getPluginId()
+      const result = await ipcRenderer.invoke('plugin-api:storage:set', pluginId, key, value)
+      if (!result.success) throw new Error(result.error || '保存失败')
+    },
+    delete: async (key: string) => {
+      const pluginId = getPluginId()
       const result = await ipcRenderer.invoke('plugin-api:storage:delete', pluginId, key)
-      return result.success
+      if (!result.success) throw new Error(result.error || '删除失败')
     },
-    allKeys: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+    keys: async () => {
+      const pluginId = getPluginId()
       const result = await ipcRenderer.invoke('plugin-api:storage:allKeys', pluginId)
-      return result.success ? result.data : []
+      if (!result.success) throw new Error(result.error || '获取键列表失败')
+      return result.data || []
     },
     clear: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       const result = await ipcRenderer.invoke('plugin-api:storage:clear', pluginId)
-      return result.success
+      if (!result.success) throw new Error(result.error || '清空失败')
     }
   },
   // 剪贴板 API
   clipboard: {
     readText: async () => {
       const result = await ipcRenderer.invoke('plugin-api:clipboard:readText')
-      return result.success ? result.data : ''
+      if (!result.success) throw new Error(result.error || '读取剪贴板失败')
+      return result.data || ''
     },
     writeText: async (text: string) => {
       const result = await ipcRenderer.invoke('plugin-api:clipboard:writeText', text)
-      return result.success
+      if (!result.success) throw new Error(result.error || '写入剪贴板失败')
     },
     readImage: async () => {
       const result = await ipcRenderer.invoke('plugin-api:clipboard:readImage')
-      return result.success ? result.data : null
+      if (!result.success) throw new Error(result.error || '读取图片失败')
+      return result.data || null
     },
     writeImage: async (dataUrl: string) => {
       const result = await ipcRenderer.invoke('plugin-api:clipboard:writeImage', dataUrl)
-      return result.success
+      if (!result.success) throw new Error(result.error || '写入图片失败')
     }
   },
   // 文件系统 API
@@ -197,7 +200,7 @@ const unihubAPI = {
   notification: {
     show: async (options: { title: string; body: string; icon?: string }) => {
       const result = await ipcRenderer.invoke('plugin-api:notification:show', options)
-      return result.success
+      if (!result.success) throw new Error(result.error || '显示通知失败')
     }
   }
 }
@@ -207,33 +210,27 @@ const nodeAPI = {
   // 文件系统 API（限制在插件目录内）
   fs: {
     readFile: async (filePath: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:readFile', pluginId, filePath)
     },
     writeFile: async (filePath: string, content: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:writeFile', pluginId, filePath, content)
     },
     readdir: async (dirPath: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:readdir', pluginId, dirPath)
     },
     exists: async (filePath: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:exists', pluginId, filePath)
     },
     stat: async (filePath: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:stat', pluginId, filePath)
     },
     mkdir: async (dirPath: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
+      const pluginId = getPluginId()
       return await ipcRenderer.invoke('node-api:fs:mkdir', pluginId, dirPath)
     },
     selectFile: async () => {
@@ -247,18 +244,53 @@ const nodeAPI = {
   spawn: async (
     command: string,
     args: string[] = [],
-    options: Record<string, unknown> = {}
+    options: { timeout?: number; input?: string; env?: Record<string, string> } = {}
   ) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
-    return await ipcRenderer.invoke('node-api:spawn', pluginId, command, args, options)
+    const pluginId = getPluginId()
+    console.log('🚀 Spawn 调用 - 插件 ID:', pluginId, '命令:', command)
+    const result = await ipcRenderer.invoke('node-api:spawn', pluginId, command, args, options)
+    if (!result.success) {
+      throw new Error(result.error || '进程执行失败')
+    }
+    return {
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      exitCode: result.exitCode || 0
+    }
   },
   // 获取插件目录
   getPluginDir: async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pluginId = (window as any).__UNIHUB_PLUGIN_ID__ || 'unknown'
-    return await ipcRenderer.invoke('node-api:getPluginDir', pluginId)
+    const pluginId = getPluginId()
+    const result = await ipcRenderer.invoke('node-api:getPluginDir', pluginId)
+    if (!result.success) {
+      throw new Error(result.error || '获取插件目录失败')
+    }
+    return result.data
   }
+}
+
+// 辅助函数：获取插件 ID
+function getPluginId(): string {
+  // 尝试从 URL 参数读取
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const pluginId = params.get('__plugin_id')
+    if (pluginId) {
+      return pluginId
+    }
+  } catch (error) {
+    console.error('从 URL 读取插件 ID 失败:', error)
+  }
+
+  // 尝试从 window 对象读取
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const windowPluginId = (window as any).__UNIHUB_PLUGIN_ID__
+  if (windowPluginId) {
+    return windowPluginId
+  }
+
+  console.warn('⚠️ 无法获取插件 ID，使用 unknown')
+  return 'unknown'
 }
 
 if (process.contextIsolated) {

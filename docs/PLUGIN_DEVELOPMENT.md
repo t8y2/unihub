@@ -70,6 +70,7 @@ npm run package  # 打包成 plugin.zip
 ### 字段说明
 
 **标准字段（package.json）**
+
 - `name`: 插件名称（必需）
 - `version`: 版本号，遵循 semver（必需）
 - `description`: 描述（必需）
@@ -80,6 +81,7 @@ npm run package  # 打包成 plugin.zip
 - `repository`: 代码仓库
 
 **UniHub 扩展字段（unihub）**
+
 - `id`: 唯一标识符（必需，格式：com.author.name）
 - `icon`: 图标（emoji 或 SVG path）
 - `category`: 分类（tool/productivity/entertainment/developer）
@@ -103,6 +105,7 @@ npm run package  # 打包成 plugin.zip
 ```
 
 **后端类型**：
+
 - `python` - Python 脚本
 - `node` - Node.js 脚本
 - `go` - Go 程序（需编译）
@@ -132,6 +135,7 @@ dist/
 ```
 
 **关键要求**：
+
 - `index.html` 必须是自包含的
 - 所有依赖已打包（无外部依赖）
 - 可以直接在浏览器中打开运行
@@ -295,24 +299,35 @@ const result = await window.unihub.backend.call('functionName', {
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>TODO</title>
-  <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .todo { padding: 10px; border-bottom: 1px solid #eee; }
-    button { padding: 8px 16px; margin: 5px; }
-  </style>
-</head>
-<body>
-  <h1>📝 TODO List</h1>
-  <input id="input" type="text" placeholder="添加任务..." />
-  <button onclick="addTodo()">添加</button>
-  <div id="list"></div>
+  <head>
+    <title>TODO</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 20px;
+      }
+      .todo {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+      }
+      button {
+        padding: 8px 16px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📝 TODO List</h1>
+    <input id="input" type="text" placeholder="添加任务..." />
+    <button onclick="addTodo()">添加</button>
+    <div id="list"></div>
 
-  <script>
-    async function loadTodos() {
-      const todos = await window.unihub.db.get('todos') || []
-      document.getElementById('list').innerHTML = todos.map(todo => `
+    <script>
+      async function loadTodos() {
+        const todos = (await window.unihub.db.get('todos')) || []
+        document.getElementById('list').innerHTML = todos
+          .map(
+            (todo) => `
         <div class="todo">
           <input type="checkbox" ${todo.done ? 'checked' : ''} 
                  onchange="toggleTodo(${todo.id})">
@@ -321,41 +336,43 @@ const result = await window.unihub.backend.call('functionName', {
           </span>
           <button onclick="deleteTodo(${todo.id})">删除</button>
         </div>
-      `).join('')
-    }
-    
-    async function addTodo() {
-      const input = document.getElementById('input')
-      const text = input.value.trim()
-      if (!text) return
-      
-      const todos = await window.unihub.db.get('todos') || []
-      todos.push({ id: Date.now(), text, done: false })
-      await window.unihub.db.put('todos', todos)
-      input.value = ''
-      loadTodos()
-    }
-    
-    async function toggleTodo(id) {
-      const todos = await window.unihub.db.get('todos') || []
-      const todo = todos.find(t => t.id === id)
-      if (todo) {
-        todo.done = !todo.done
+      `
+          )
+          .join('')
+      }
+
+      async function addTodo() {
+        const input = document.getElementById('input')
+        const text = input.value.trim()
+        if (!text) return
+
+        const todos = (await window.unihub.db.get('todos')) || []
+        todos.push({ id: Date.now(), text, done: false })
+        await window.unihub.db.put('todos', todos)
+        input.value = ''
+        loadTodos()
+      }
+
+      async function toggleTodo(id) {
+        const todos = (await window.unihub.db.get('todos')) || []
+        const todo = todos.find((t) => t.id === id)
+        if (todo) {
+          todo.done = !todo.done
+          await window.unihub.db.put('todos', todos)
+          loadTodos()
+        }
+      }
+
+      async function deleteTodo(id) {
+        let todos = (await window.unihub.db.get('todos')) || []
+        todos = todos.filter((t) => t.id !== id)
         await window.unihub.db.put('todos', todos)
         loadTodos()
       }
-    }
-    
-    async function deleteTodo(id) {
-      let todos = await window.unihub.db.get('todos') || []
-      todos = todos.filter(t => t.id !== id)
-      await window.unihub.db.put('todos', todos)
+
       loadTodos()
-    }
-    
-    loadTodos()
-  </script>
-</body>
+    </script>
+  </body>
 </html>
 ```
 
@@ -458,6 +475,7 @@ unihub-plugins/
 ```
 
 **优势**：
+
 - ✅ 零成本（使用 GitHub）
 - ✅ 去中心化（开发者自己托管文件）
 - ✅ 透明（所有提交都是 PR）
@@ -474,7 +492,7 @@ unihub-plugins/
 ```javascript
 // ✅ 好的实践
 try {
-  const settings = await window.unihub.db.get('settings') || { theme: 'light' }
+  const settings = (await window.unihub.db.get('settings')) || { theme: 'light' }
   console.log(settings.theme)
 } catch (error) {
   console.error('读取失败:', error)
@@ -487,14 +505,14 @@ console.log(settings.theme) // 如果为 null 会报错
 
 ## 🆚 与其他平台对比
 
-| 功能 | Rubick | uTools | UniHub |
-|------|--------|--------|--------|
-| 配置文件 | package.json | plugin.json | package.json ✅ |
-| 打包方式 | 源码 | .upx | .zip ✅ |
-| 数据存储 | window.rubick.db | utools.db | window.unihub.db ✅ |
-| 文件系统 | ❌ | ✅ | window.unihub.fs ✅ |
-| HTTP 请求 | ❌ | ❌ | window.unihub.http ✅ |
-| 后端支持 | ❌ | ❌ | 可选 ✅ |
+| 功能      | Rubick           | uTools      | UniHub                |
+| --------- | ---------------- | ----------- | --------------------- |
+| 配置文件  | package.json     | plugin.json | package.json ✅       |
+| 打包方式  | 源码             | .upx        | .zip ✅               |
+| 数据存储  | window.rubick.db | utools.db   | window.unihub.db ✅   |
+| 文件系统  | ❌               | ✅          | window.unihub.fs ✅   |
+| HTTP 请求 | ❌               | ❌          | window.unihub.http ✅ |
+| 后端支持  | ❌               | ❌          | 可选 ✅               |
 
 ## 🔗 相关链接
 

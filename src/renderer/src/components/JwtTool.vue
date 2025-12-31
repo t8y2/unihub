@@ -50,7 +50,7 @@ const parseExpiresIn = (exp: string): number | undefined => {
   return value * (multipliers[unit] || 1)
 }
 
-const decodeJwt = () => {
+const decodeJwt = (): void => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -68,12 +68,12 @@ const decodeJwt = () => {
     }
 
     output.value = JSON.stringify(result, null, 2)
-  } catch (e: any) {
-    error.value = `解码失败: ${e.message}`
+  } catch (e) {
+    error.value = `解码失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const verifyJwt = async () => {
+const verifyJwt = async (): Promise<void> => {
   try {
     error.value = ''
     if (!input.value.trim()) {
@@ -90,12 +90,12 @@ const verifyJwt = async () => {
     const { payload: decoded } = await jose.jwtVerify(input.value, secretKey)
 
     output.value = JSON.stringify(decoded, null, 2)
-  } catch (e: any) {
-    error.value = `验证失败: ${e.message}`
+  } catch (e) {
+    error.value = `验证失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const encodeJwt = async () => {
+const encodeJwt = async (): Promise<void> => {
   try {
     error.value = ''
     if (!payload.value.trim()) {
@@ -120,24 +120,24 @@ const encodeJwt = async () => {
 
     const token = await jwt.sign(secretKey)
     output.value = token
-  } catch (e: any) {
-    error.value = `编码失败: ${e.message}`
+  } catch (e) {
+    error.value = `编码失败: ${e instanceof Error ? e.message : String(e)}`
   }
 }
 
-const copyToClipboard = async () => {
+const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
     copied.value = true
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (e) {
+  } catch {
     error.value = '复制失败'
   }
 }
 
-const clearAll = () => {
+const clearAll = (): void => {
   input.value = ''
   output.value = ''
   error.value = ''
@@ -152,16 +152,16 @@ const clearAll = () => {
     >
       <div class="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-md p-1">
         <Button
-          @click="mode = 'decode'"
           size="sm"
           :variant="mode === 'decode' ? 'default' : 'ghost'"
+          @click="mode = 'decode'"
         >
           解码
         </Button>
         <Button
-          @click="mode = 'encode'"
           size="sm"
           :variant="mode === 'encode' ? 'default' : 'ghost'"
+          @click="mode = 'encode'"
         >
           编码
         </Button>
@@ -169,15 +169,15 @@ const clearAll = () => {
 
       <div class="h-8 w-px bg-gray-300"></div>
 
-      <Button v-if="mode === 'decode'" @click="decodeJwt" size="sm"> 解码 Token </Button>
+      <Button v-if="mode === 'decode'" size="sm" @click="decodeJwt"> 解码 Token </Button>
 
-      <Button v-if="mode === 'decode'" @click="verifyJwt" size="sm" variant="secondary">
+      <Button v-if="mode === 'decode'" size="sm" variant="secondary" @click="verifyJwt">
         验证 Token
       </Button>
 
-      <Button v-if="mode === 'encode'" @click="encodeJwt" size="sm"> 生成 Token </Button>
+      <Button v-if="mode === 'encode'" size="sm" @click="encodeJwt"> 生成 Token </Button>
 
-      <Button @click="clearAll" size="sm" variant="ghost"> 清空 </Button>
+      <Button size="sm" variant="ghost" @click="clearAll"> 清空 </Button>
 
       <div v-if="mode === 'encode'" class="ml-auto flex items-center gap-4">
         <div class="flex items-center gap-2">
@@ -253,9 +253,9 @@ const clearAll = () => {
           </span>
           <Button
             v-if="output"
-            @click="copyToClipboard"
             size="sm"
             class="flex items-center gap-1.5"
+            @click="copyToClipboard"
           >
             <svg
               v-if="!copied"
@@ -286,7 +286,7 @@ const clearAll = () => {
           <pre
             v-if="output && mode === 'decode'"
             class="p-4 text-sm whitespace-pre-wrap break-words"
-          ><code v-html="highlightedOutput" class="hljs"></code></pre>
+          ><code class="hljs" v-html="highlightedOutput"></code></pre>
           <pre
             v-else-if="output"
             class="p-4 text-sm text-green-400 font-mono whitespace-pre-wrap break-all"
@@ -317,10 +317,10 @@ const clearAll = () => {
       </svg>
       <span class="text-sm text-red-900 flex-1">{{ error }}</span>
       <Button
-        @click="error = ''"
         size="icon"
         variant="ghost"
         class="text-red-400 hover:text-red-600"
+        @click="error = ''"
       >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

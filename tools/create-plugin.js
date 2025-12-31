@@ -5,7 +5,9 @@
  * 用法: node create-plugin.js <plugin-name>
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fs = require('fs')
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const path = require('path')
 
 const pluginName = process.argv[2]
@@ -73,10 +75,7 @@ const packageJson = {
   }
 }
 
-fs.writeFileSync(
-  path.join(pluginDir, 'package.json'),
-  JSON.stringify(packageJson, null, 2)
-)
+fs.writeFileSync(path.join(pluginDir, 'package.json'), JSON.stringify(packageJson, null, 2))
 
 // 创建 vite.config.ts
 console.log('⚙️  创建 vite.config.ts...')
@@ -378,10 +377,7 @@ const tsconfig = {
   references: [{ path: './tsconfig.node.json' }]
 }
 
-fs.writeFileSync(
-  path.join(pluginDir, 'tsconfig.json'),
-  JSON.stringify(tsconfig, null, 2)
-)
+fs.writeFileSync(path.join(pluginDir, 'tsconfig.json'), JSON.stringify(tsconfig, null, 2))
 
 // 创建 tsconfig.node.json
 const tsconfigNode = {
@@ -395,10 +391,7 @@ const tsconfigNode = {
   include: ['vite.config.ts']
 }
 
-fs.writeFileSync(
-  path.join(pluginDir, 'tsconfig.node.json'),
-  JSON.stringify(tsconfigNode, null, 2)
-)
+fs.writeFileSync(path.join(pluginDir, 'tsconfig.node.json'), JSON.stringify(tsconfigNode, null, 2))
 
 console.log('\n✅ 插件创建成功!\n')
 console.log('📋 下一步:')

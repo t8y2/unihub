@@ -17,9 +17,9 @@ export class NodeAPI {
     this.registerHandlers()
   }
 
-  private registerHandlers() {
+  private registerHandlers(): void {
     // ==================== 文件系统 API ====================
-    
+
     // 读取文件（限制在插件目录内）
     ipcMain.handle('node-api:fs:readFile', async (_, pluginId: string, filePath: string) => {
       try {
@@ -32,15 +32,18 @@ export class NodeAPI {
     })
 
     // 写入文件（限制在插件目录内）
-    ipcMain.handle('node-api:fs:writeFile', async (_, pluginId: string, filePath: string, content: string) => {
-      try {
-        const safePath = this.getSafePath(pluginId, filePath)
-        await writeFile(safePath, content, 'utf-8')
-        return { success: true }
-      } catch (error) {
-        return { success: false, error: (error as Error).message }
+    ipcMain.handle(
+      'node-api:fs:writeFile',
+      async (_, pluginId: string, filePath: string, content: string) => {
+        try {
+          const safePath = this.getSafePath(pluginId, filePath)
+          await writeFile(safePath, content, 'utf-8')
+          return { success: true }
+        } catch (error) {
+          return { success: false, error: (error as Error).message }
+        }
       }
-    })
+    )
 
     // 读取目录（限制在插件目录内）
     ipcMain.handle('node-api:fs:readdir', async (_, pluginId: string, dirPath: string) => {
@@ -119,32 +122,41 @@ export class NodeAPI {
     })
 
     // ==================== 子进程 API ====================
-    
+
     // 执行命令（限制在插件目录内的可执行文件）
-    ipcMain.handle('node-api:spawn', async (_, pluginId: string, command: string, args: string[], options: any = {}) => {
-      try {
-        // 安全检查：只允许执行插件目录内的文件
-        if (!command.startsWith('./') && !command.startsWith('.\\')) {
-          throw new Error('只能执行插件目录内的文件（必须以 ./ 或 .\\ 开头）')
+    ipcMain.handle(
+      'node-api:spawn',
+      async (
+        _,
+        pluginId: string,
+        command: string,
+        args: string[],
+        options: Record<string, unknown> = {}
+      ) => {
+        try {
+          // 安全检查：只允许执行插件目录内的文件
+          if (!command.startsWith('./') && !command.startsWith('.\\')) {
+            throw new Error('只能执行插件目录内的文件（必须以 ./ 或 .\\ 开头）')
+          }
+
+          const pluginDir = join(this.pluginsDir, pluginId)
+          const safePath = resolve(pluginDir, command)
+
+          // 确保路径在插件目录内
+          if (!safePath.startsWith(pluginDir)) {
+            throw new Error('路径遍历攻击检测：不允许访问插件目录外的文件')
+          }
+
+          return await this.executeProcess(safePath, args, {
+            cwd: pluginDir,
+            timeout: (options.timeout as number) || 30000,
+            input: options.input as string | undefined
+          })
+        } catch (error) {
+          return { success: false, error: (error as Error).message }
         }
-
-        const pluginDir = join(this.pluginsDir, pluginId)
-        const safePath = resolve(pluginDir, command)
-
-        // 确保路径在插件目录内
-        if (!safePath.startsWith(pluginDir)) {
-          throw new Error('路径遍历攻击检测：不允许访问插件目录外的文件')
-        }
-
-        return await this.executeProcess(safePath, args, {
-          cwd: pluginDir,
-          timeout: options.timeout || 30000,
-          input: options.input
-        })
-      } catch (error) {
-        return { success: false, error: (error as Error).message }
       }
-    })
+    )
 
     // 获取插件目录路径
     ipcMain.handle('node-api:getPluginDir', async (_, pluginId: string) => {
@@ -179,7 +191,13 @@ export class NodeAPI {
       timeout: number
       input?: string
     }
-  ): Promise<{ success: boolean; stdout?: string; stderr?: string; exitCode?: number; error?: string }> {
+  ): Promise<{
+    success: boolean
+    stdout?: string
+    stderr?: string
+    exitCode?: number
+    error?: string
+  }> {
     return new Promise((resolve) => {
       const process = spawn(command, args, {
         cwd: options.cwd,

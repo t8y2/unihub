@@ -11,28 +11,36 @@
 ## 🛠️ 开发流程
 
 ### 1. 安装依赖
+
 ```bash
 cd examples/modern-vue-plugin
 npm install
 ```
 
 ### 2. 开发模式
+
 ```bash
 npm run dev
 ```
+
 这会启动 Vite 开发服务器，支持热更新。
 
 ### 3. 构建生产版本
+
 ```bash
 npm run build
 ```
+
 构建后的文件会输出到 `dist/` 目录，所有资源都会内联到单个 HTML 文件中。
 
 ### 4. 打包插件
+
 ```bash
 npm run package
 ```
+
 或者直接运行：
+
 ```bash
 ./package.sh
 ```
@@ -40,10 +48,12 @@ npm run package
 ## 🎯 功能特色
 
 ### 编码/解码
+
 - Base64 编码/解码
 - URL 编码/解码
 
 ### 加密/解密
+
 - 凯撒密码（可调整偏移量）
 - ROT13 加密
 - 反转加密
@@ -51,11 +61,13 @@ npm run package
 - SHA256 哈希
 
 ### 数据压缩
+
 - Gzip 压缩
 - Zlib 压缩
 - 简单行程编码
 
 ### 用户体验
+
 - 响应式设计
 - 实时结果显示
 - 执行历史记录
@@ -73,7 +85,7 @@ export default defineConfig({
       output: {
         // 将所有资源内联到 HTML 中
         inlineDynamicImports: true,
-        manualChunks: undefined,
+        manualChunks: undefined
       }
     }
   }
@@ -88,28 +100,31 @@ export default defineConfig({
 
 ### 与 CDN 方式对比
 
-| 方式 | CDN 引入 | 现代构建 |
-|------|----------|----------|
-| **依赖管理** | 手动管理版本 | npm/pnpm 自动管理 |
-| **类型支持** | 无 | 完整 TypeScript 支持 |
-| **组件化** | 全局组件 | 模块化组件 |
-| **构建优化** | 无 | Tree-shaking, 压缩 |
-| **开发体验** | 基础 | 热更新, 错误提示 |
-| **文件大小** | 多个文件 | 单个优化文件 |
+| 方式         | CDN 引入     | 现代构建             |
+| ------------ | ------------ | -------------------- |
+| **依赖管理** | 手动管理版本 | npm/pnpm 自动管理    |
+| **类型支持** | 无           | 完整 TypeScript 支持 |
+| **组件化**   | 全局组件     | 模块化组件           |
+| **构建优化** | 无           | Tree-shaking, 压缩   |
+| **开发体验** | 基础         | 热更新, 错误提示     |
+| **文件大小** | 多个文件     | 单个优化文件         |
 
 ## 🔧 自定义开发
 
 ### 添加新功能
+
 1. 在 `src/App.vue` 中添加新的 TaskCard
 2. 在 `backend/main.py` 中添加对应的处理函数
 3. 更新类型定义 `src/types/plugin.ts`
 
 ### 样式定制
+
 - 修改 `src/App.vue` 中的 CSS
 - 支持 CSS 变量和现代特性
 - 响应式设计
 
 ### 构建定制
+
 - 修改 `vite.config.ts`
 - 支持插件、别名、环境变量等
 

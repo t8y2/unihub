@@ -24,7 +24,7 @@ const loading = ref(false)
 const message = ref('')
 
 // 加载开发模式插件列表
-const loadDevPlugins = async () => {
+const loadDevPlugins = async (): Promise<void> => {
   try {
     const result = await window.api.plugin.dev.list()
     if (result.success) {
@@ -36,7 +36,7 @@ const loadDevPlugins = async () => {
 }
 
 // 注册开发模式插件
-const registerDevPlugin = async () => {
+const registerDevPlugin = async (): Promise<void> => {
   if (!pluginId.value.trim() || !devUrl.value.trim()) {
     message.value = '请填写插件 ID 和开发服务器 URL'
     return
@@ -67,7 +67,7 @@ const registerDevPlugin = async () => {
 }
 
 // 取消注册开发模式插件
-const unregisterDevPlugin = async (id: string) => {
+const unregisterDevPlugin = async (id: string): Promise<void> => {
   try {
     const result = await window.api.plugin.dev.unregister(id)
     if (result.success) {
@@ -98,11 +98,7 @@ onMounted(() => {
       <div class="space-y-4 py-4">
         <div class="space-y-2">
           <label class="text-sm font-medium">插件 ID</label>
-          <Input
-            v-model="pluginId"
-            placeholder="com.example.myplugin"
-            :disabled="loading"
-          />
+          <Input v-model="pluginId" placeholder="com.example.myplugin" :disabled="loading" />
           <p class="text-xs text-gray-500">
             插件的唯一标识符，需要与 package.json 中的 unihub.id 一致
           </p>
@@ -110,14 +106,8 @@ onMounted(() => {
 
         <div class="space-y-2">
           <label class="text-sm font-medium">开发服务器 URL</label>
-          <Input
-            v-model="devUrl"
-            placeholder="http://localhost:5173"
-            :disabled="loading"
-          />
-          <p class="text-xs text-gray-500">
-            Vite 开发服务器的地址，通常是 http://localhost:5173
-          </p>
+          <Input v-model="devUrl" placeholder="http://localhost:5173" :disabled="loading" />
+          <p class="text-xs text-gray-500">Vite 开发服务器的地址，通常是 http://localhost:5173</p>
         </div>
 
         <div class="flex items-center gap-2">
@@ -128,16 +118,18 @@ onMounted(() => {
             class="w-4 h-4"
             :disabled="loading"
           />
-          <label for="autoReload" class="text-sm">
-            自动重载（文件变化时自动刷新）
-          </label>
+          <label for="autoReload" class="text-sm"> 自动重载（文件变化时自动刷新） </label>
         </div>
 
-        <Button @click="registerDevPlugin" :disabled="loading" class="w-full">
+        <Button :disabled="loading" class="w-full" @click="registerDevPlugin">
           {{ loading ? '注册中...' : '注册开发模式' }}
         </Button>
 
-        <p v-if="message" class="text-sm" :class="message.startsWith('✅') ? 'text-green-600' : 'text-red-600'">
+        <p
+          v-if="message"
+          class="text-sm"
+          :class="message.startsWith('✅') ? 'text-green-600' : 'text-red-600'"
+        >
           {{ message }}
         </p>
       </div>
@@ -158,12 +150,7 @@ onMounted(() => {
               </div>
               <p class="text-xs text-gray-500 mt-1 truncate">{{ plugin.url }}</p>
             </div>
-            <Button
-              @click="unregisterDevPlugin(plugin.id)"
-              variant="ghost"
-              size="sm"
-              class="ml-2"
-            >
+            <Button variant="ghost" size="sm" class="ml-2" @click="unregisterDevPlugin(plugin.id)">
               取消
             </Button>
           </div>
@@ -174,7 +161,10 @@ onMounted(() => {
       <div class="border-t pt-4 text-xs text-gray-600 dark:text-gray-400 space-y-2">
         <p><strong>使用步骤：</strong></p>
         <ol class="list-decimal list-inside space-y-1 ml-2">
-          <li>在插件目录运行 <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">npm run dev</code></li>
+          <li>
+            在插件目录运行
+            <code class="bg-gray-100 dark:bg-gray-800 px-1 rounded">npm run dev</code>
+          </li>
           <li>在上方输入插件 ID 和开发服务器 URL</li>
           <li>点击"注册开发模式"</li>
           <li>在主界面打开插件，即可看到开发服务器的内容</li>
@@ -183,7 +173,7 @@ onMounted(() => {
       </div>
 
       <DialogFooter>
-        <Button @click="emit('close')" variant="outline">关闭</Button>
+        <Button variant="outline" @click="emit('close')">关闭</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

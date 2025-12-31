@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -27,30 +28,30 @@ func main() {
 	}
 
 	// 处理请求
+	var result string
+	var err error
+
 	switch req.Action {
-	case "reverse":
-		// 反转字符串
-		result := reverseString(req.Data)
-		sendSuccess(result)
-	case "uppercase":
-		// 转大写
-		result := toUpperCase(req.Data)
-		sendSuccess(result)
+	case "base64_encode":
+		result = base64.StdEncoding.EncodeToString([]byte(req.Data))
+	case "base64_decode":
+		decoded, e := base64.StdEncoding.DecodeString(req.Data)
+		if e != nil {
+			err = e
+		} else {
+			result = string(decoded)
+		}
 	default:
 		sendError(fmt.Sprintf("未知操作: %s", req.Action))
+		return
 	}
-}
 
-func reverseString(s string) string {
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
+	if err != nil {
+		sendError(err.Error())
+		return
 	}
-	return string(runes)
-}
 
-func toUpperCase(s string) string {
-	return fmt.Sprintf("%s", s)
+	sendSuccess(result)
 }
 
 func sendSuccess(result string) {

@@ -21,7 +21,7 @@ const errorLevel = ref<'L' | 'M' | 'Q' | 'H'>('M')
 const decodeResult = ref('')
 const decodeError = ref('')
 
-const generateQRCode = () => {
+const generateQRCode = (): void => {
   if (!inputText.value.trim()) {
     alert('请输入要生成二维码的内容')
     return
@@ -56,12 +56,12 @@ const generateQRCode = () => {
     }
 
     qrCodeDataUrl.value = canvas.toDataURL('image/png')
-  } catch (e: any) {
-    alert(`生成失败: ${e.message}`)
+  } catch (e) {
+    alert(`生成失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const downloadQRCode = () => {
+const downloadQRCode = (): void => {
   if (!qrCodeDataUrl.value) {
     alert('请先生成二维码')
     return
@@ -74,12 +74,12 @@ const downloadQRCode = () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  } catch (e: any) {
-    alert(`下载失败: ${e.message}`)
+  } catch (e) {
+    alert(`下载失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const copyQRCode = async () => {
+const copyQRCode = async (): Promise<void> => {
   if (!qrCodeDataUrl.value) {
     alert('请先生成二维码')
     return
@@ -98,19 +98,19 @@ const copyQRCode = async () => {
     ])
 
     alert('已复制到剪贴板')
-  } catch (e: any) {
+  } catch (e) {
     console.error('复制失败:', e)
     // 如果 Clipboard API 失败，尝试复制 data URL
     try {
       await navigator.clipboard.writeText(qrCodeDataUrl.value)
       alert('已复制图片链接到剪贴板')
-    } catch (e2) {
+    } catch {
       alert('复制失败，请使用下载功能')
     }
   }
 }
 
-const handleImageUpload = (event: Event) => {
+const handleImageUpload = (event: Event): void => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
@@ -119,9 +119,9 @@ const handleImageUpload = (event: Event) => {
   decodeResult.value = ''
 
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = (e): void => {
     const img = new Image()
-    img.onload = () => {
+    img.onload = (): void => {
       const canvas = document.createElement('canvas')
       canvas.width = img.width
       canvas.height = img.height
@@ -144,21 +144,21 @@ const handleImageUpload = (event: Event) => {
       }
     }
 
-    img.onerror = () => {
+    img.onerror = (): void => {
       decodeError.value = '图片加载失败'
     }
 
     img.src = e.target?.result as string
   }
 
-  reader.onerror = () => {
+  reader.onerror = (): void => {
     decodeError.value = '文件读取失败'
   }
 
   reader.readAsDataURL(file)
 }
 
-const pasteAndDecode = async () => {
+const pasteAndDecode = async (): Promise<void> => {
   try {
     const items = await navigator.clipboard.read()
 
@@ -168,9 +168,9 @@ const pasteAndDecode = async () => {
         const blob = await item.getType(imageType)
 
         const reader = new FileReader()
-        reader.onload = (e) => {
+        reader.onload = (e): void => {
           const img = new Image()
-          img.onload = () => {
+          img.onload = (): void => {
             const canvas = document.createElement('canvas')
             canvas.width = img.width
             canvas.height = img.height
@@ -201,18 +201,18 @@ const pasteAndDecode = async () => {
     }
 
     alert('剪贴板中没有图片')
-  } catch (e: any) {
-    alert(`粘贴失败: ${e.message}`)
+  } catch (e) {
+    alert(`粘贴失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-const copyDecodeResult = async () => {
+const copyDecodeResult = async (): Promise<void> => {
   if (!decodeResult.value) return
 
   try {
     await navigator.clipboard.writeText(decodeResult.value)
     alert('已复制')
-  } catch (e) {
+  } catch {
     alert('复制失败')
   }
 }
@@ -284,7 +284,7 @@ const copyDecodeResult = async () => {
               </div>
             </div>
 
-            <Button @click="generateQRCode" class="w-full"> 生成二维码 </Button>
+            <Button class="w-full" @click="generateQRCode"> 生成二维码 </Button>
 
             <div v-if="qrCodeDataUrl" class="border-t border-gray-200 pt-4">
               <div class="flex flex-col items-center">
@@ -295,8 +295,8 @@ const copyDecodeResult = async () => {
                   style="image-rendering: pixelated"
                 />
                 <div class="flex gap-2 mt-4">
-                  <Button @click="downloadQRCode" variant="default"> 下载 </Button>
-                  <Button @click="copyQRCode" variant="secondary"> 复制图片 </Button>
+                  <Button variant="default" @click="downloadQRCode"> 下载 </Button>
+                  <Button variant="secondary" @click="copyQRCode"> 复制图片 </Button>
                 </div>
               </div>
             </div>
@@ -323,8 +323,8 @@ const copyDecodeResult = async () => {
               <input
                 type="file"
                 accept="image/*"
-                @change="handleImageUpload"
                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                @change="handleImageUpload"
               />
             </div>
 
@@ -337,7 +337,7 @@ const copyDecodeResult = async () => {
               </div>
             </div>
 
-            <Button @click="pasteAndDecode" variant="secondary" class="w-full">
+            <Button variant="secondary" class="w-full" @click="pasteAndDecode">
               从剪贴板粘贴图片
             </Button>
 
@@ -350,11 +350,11 @@ const copyDecodeResult = async () => {
                   class="h-40 resize-none bg-gray-50 font-mono text-sm"
                 />
                 <Button
-                  @click="copyDecodeResult"
                   size="icon"
                   variant="ghost"
                   class="absolute top-2 right-2"
                   title="复制"
+                  @click="copyDecodeResult"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
