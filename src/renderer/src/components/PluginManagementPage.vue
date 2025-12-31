@@ -65,72 +65,65 @@ const loadOfficialPlugins = async (): Promise<void> => {
   try {
     loadingOfficialPlugins.value = true
     
-    // 临时使用本地测试数据
-    const testData = {
-      plugins: [
-        {
-          id: "com.unihub.hash-tool",
-          name: "哈希工具",
-          description: "计算文件和文本的 MD5、SHA256 等哈希值，支持拖拽文件批量处理",
-          version: "1.2.0",
-          author: { name: "UniHub Team" },
-          category: "tool",
-          keywords: ["hash", "md5", "sha256", "crypto", "security"],
-          icon: "M12 4v16m8-8H4",
-          downloadUrl: "http://localhost:8080/hash-tool.zip",
-          homepage: "https://github.com/unihub-team/hash-tool",
-          downloads: 1250,
-          rating: 4.8,
-          verified: true
-        },
-        {
-          id: "com.community.json-formatter",
-          name: "JSON 格式化器",
-          description: "美化和压缩 JSON 数据，支持语法高亮和错误检测",
-          version: "2.1.0",
-          author: { name: "张三" },
-          category: "formatter",
-          keywords: ["json", "format", "beautify", "minify"],
-          icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
-          downloadUrl: "http://localhost:8080/json-formatter.zip",
-          homepage: "https://github.com/zhangsan/json-formatter",
-          downloads: 890,
-          rating: 4.5,
-          verified: false
-        },
-        {
-          id: "com.community.base64-encoder",
-          name: "Base64 编码器",
-          description: "Base64 编码和解码工具，支持文本和文件处理",
-          version: "1.0.3",
-          author: { name: "李四" },
-          category: "encoder",
-          keywords: ["base64", "encode", "decode", "text"],
-          icon: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z",
-          downloadUrl: "http://localhost:8080/base64-encoder.zip",
-          downloads: 456,
-          rating: 4.2,
-          verified: false
-        }
-      ]
+    // 正式环境使用官方 API
+    const apiUrl = import.meta.env.VITE_PLUGIN_STORE_API || 'https://api.unihub.dev'
+    const response = await fetch(`${apiUrl}/v1/plugins?featured=true&limit=50`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     
-    // 模拟网络延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const data = await response.json()
+    officialPlugins.value = data.plugins || []
     
-    officialPlugins.value = testData.plugins || []
-    
-    // 正式版本使用这个：
-    // const response = await fetch('https://raw.githubusercontent.com/awesome-unihub-plugins/main/plugins.json')
-    // const data = await response.json()
-    // officialPlugins.value = data.plugins || []
+    // 开发环境回退到测试数据
+    if (officialPlugins.value.length === 0) {
+      console.warn('使用测试数据，请配置 VITE_PLUGIN_STORE_API 环境变量')
+      officialPlugins.value = getTestPlugins()
+    }
   } catch (err) {
     console.error('加载官方插件失败:', err)
-    error.value = '加载官方插件列表失败'
+    // 回退到测试数据
+    officialPlugins.value = getTestPlugins()
+    error.value = '无法连接到插件商店，显示本地测试数据'
   } finally {
     loadingOfficialPlugins.value = false
   }
 }
+
+// 测试数据
+const getTestPlugins = (): OfficialPlugin[] => [
+  {
+    id: "com.unihub.hash-tool",
+    name: "哈希工具",
+    description: "计算文件和文本的 MD5、SHA256 等哈希值，支持拖拽文件批量处理",
+    version: "1.2.0",
+    author: { name: "UniHub Team" },
+    category: "tool",
+    keywords: ["hash", "md5", "sha256", "crypto", "security"],
+    icon: "M12 4v16m8-8H4",
+    downloadUrl: "http://localhost:8080/hash-tool.zip",
+    homepage: "https://github.com/unihub-team/hash-tool",
+    downloads: 1250,
+    rating: 4.8,
+    verified: true
+  },
+  {
+    id: "com.community.json-formatter",
+    name: "JSON 格式化器",
+    description: "美化和压缩 JSON 数据，支持语法高亮和错误检测",
+    version: "2.1.0",
+    author: { name: "张三" },
+    category: "formatter",
+    keywords: ["json", "format", "beautify", "minify"],
+    icon: "M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+    downloadUrl: "http://localhost:8080/json-formatter.zip",
+    homepage: "https://github.com/zhangsan/json-formatter",
+    downloads: 890,
+    rating: 4.5,
+    verified: false
+  }
+]
 
 // 过滤官方插件
 const filteredOfficialPlugins = computed(() => {
