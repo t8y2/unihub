@@ -15,7 +15,10 @@ const encode = (): void => {
       error.value = '请输入要编码的内容'
       return
     }
-    output.value = btoa(unescape(encodeURIComponent(input.value)))
+    // 使用现代 API 替代已废弃的 unescape/escape
+    const encoder = new TextEncoder()
+    const data = encoder.encode(input.value)
+    output.value = btoa(String.fromCharCode(...data))
   } catch (e) {
     error.value = `编码失败: ${e instanceof Error ? e.message : String(e)}`
   }
@@ -28,7 +31,14 @@ const decode = (): void => {
       error.value = '请输入要解码的 Base64 字符串'
       return
     }
-    output.value = decodeURIComponent(escape(atob(input.value.trim())))
+    // 使用现代 API 替代已废弃的 escape/unescape
+    const decoded = atob(input.value.trim())
+    const bytes = new Uint8Array(decoded.length)
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i)
+    }
+    const decoder = new TextDecoder()
+    output.value = decoder.decode(bytes)
   } catch (e) {
     error.value = `解码失败: ${e instanceof Error ? e.message : String(e)}`
   }

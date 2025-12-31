@@ -157,16 +157,12 @@ const activeTabId = ref('')
 
 // 监听 activeTabId 变化，自动显示/隐藏第三方插件视图
 watch(activeTabId, (newTabId, oldTabId) => {
-  console.log('🔄 标签切换:', { oldTabId, newTabId })
-
   // 隐藏旧标签的插件视图
   if (oldTabId) {
     const oldTab = tabs.value.find((t) => t.id === oldTabId)
     if (oldTab && oldTab.type === 'plugin') {
       const oldPlugin = pluginRegistry.get(oldTab.pluginId)
-      console.log('🔍 旧插件:', oldTab.pluginId, 'isThirdParty:', oldPlugin?.metadata.isThirdParty)
       if (oldPlugin?.metadata.isThirdParty) {
-        console.log('🔒 隐藏插件视图:', oldTab.pluginId)
         window.api.plugin.close(oldTab.pluginId)
       }
     }
@@ -177,9 +173,7 @@ watch(activeTabId, (newTabId, oldTabId) => {
     const newTab = tabs.value.find((t) => t.id === newTabId)
     if (newTab && newTab.type === 'plugin') {
       const newPlugin = pluginRegistry.get(newTab.pluginId)
-      console.log('🔍 新插件:', newTab.pluginId, 'isThirdParty:', newPlugin?.metadata.isThirdParty)
       if (newPlugin?.metadata.isThirdParty) {
-        console.log('👁️ 显示插件视图:', newTab.pluginId)
         window.api.plugin.open(newTab.pluginId)
       }
     }

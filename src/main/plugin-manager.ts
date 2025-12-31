@@ -60,6 +60,7 @@ interface InstalledPlugin {
 export class PluginManager {
   private pluginsDir: string
   private pluginsDataFile: string
+  private cachedPlugins: InstalledPlugin[] | null = null
 
   constructor() {
     const userDataPath = app.getPath('userData')
@@ -213,6 +214,9 @@ export class PluginManager {
       const filtered = installed.filter((p) => p.id !== pluginId)
       writeFileSync(this.pluginsDataFile, JSON.stringify(filtered, null, 2))
 
+      // 清除缓存
+      this.cachedPlugins = null
+
       return { success: true, message: '插件已卸载' }
     } catch (error) {
       return { success: false, message: (error as Error).message }
@@ -266,15 +270,23 @@ export class PluginManager {
   }
 
   private getInstalledPlugins(): InstalledPlugin[] {
+    // 使用缓存
+    if (this.cachedPlugins !== null) {
+      return this.cachedPlugins as InstalledPlugin[]
+    }
+
     if (!existsSync(this.pluginsDataFile)) {
-      return []
+      this.cachedPlugins = []
+      return this.cachedPlugins as InstalledPlugin[]
     }
 
     try {
       const data = readFileSync(this.pluginsDataFile, 'utf-8')
-      return JSON.parse(data)
+      this.cachedPlugins = JSON.parse(data) as InstalledPlugin[]
+      return this.cachedPlugins as InstalledPlugin[]
     } catch {
-      return []
+      this.cachedPlugins = []
+      return this.cachedPlugins as InstalledPlugin[]
     }
   }
 
@@ -282,5 +294,8 @@ export class PluginManager {
     const installed = this.getInstalledPlugins()
     installed.push(plugin)
     writeFileSync(this.pluginsDataFile, JSON.stringify(installed, null, 2))
+
+    // 清除缓存
+    this.cachedPlugins = null
   }
 }

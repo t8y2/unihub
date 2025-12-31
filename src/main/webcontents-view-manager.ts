@@ -44,19 +44,13 @@ export class WebContentsViewManager {
     // 加载插件 URL
     view.webContents.loadURL(urlWithPluginId)
 
-    // 在页面加载前注入插件 ID（多重保险）
-    view.webContents.on('dom-ready', () => {
+    // 只在 dom-ready 时注入一次（更早且足够）
+    view.webContents.once('dom-ready', () => {
       const script = `
         (function() {
-          // 从 URL 参数读取
           const params = new URLSearchParams(window.location.search);
           const pluginId = params.get('__plugin_id') || '${pluginId}';
           
-          // 设置到 window 对象
-          window.__UNIHUB_PLUGIN_ID__ = pluginId;
-          console.log('✅ 插件 ID 已注入 (dom-ready):', pluginId);
-          
-          // 确保在所有脚本执行前设置
           Object.defineProperty(window, '__UNIHUB_PLUGIN_ID__', {
             value: pluginId,
             writable: false,
@@ -66,25 +60,7 @@ export class WebContentsViewManager {
       `
 
       view.webContents.executeJavaScript(script).catch((err) => {
-        console.error('注入插件 ID 失败 (dom-ready):', err)
-      })
-    })
-
-    // 备用注入（did-finish-load）
-    view.webContents.on('did-finish-load', () => {
-      const script = `
-        (function() {
-          if (!window.__UNIHUB_PLUGIN_ID__) {
-            const params = new URLSearchParams(window.location.search);
-            const pluginId = params.get('__plugin_id') || '${pluginId}';
-            window.__UNIHUB_PLUGIN_ID__ = pluginId;
-            console.log('✅ 插件 ID 已注入 (did-finish-load):', pluginId);
-          }
-        })();
-      `
-
-      view.webContents.executeJavaScript(script).catch((err) => {
-        console.error('注入插件 ID 失败 (did-finish-load):', err)
+        console.error('注入插件 ID 失败:', err)
       })
     })
 
@@ -93,10 +69,12 @@ export class WebContentsViewManager {
     //   view.webContents.openDevTools({ mode: 'detach' })
     // }
 
-    // 监听控制台消息
-    view.webContents.on('console-message', (_event, _level, message) => {
-      console.log(`[Plugin ${pluginId}]:`, message)
-    })
+    // 监听控制台消息（仅开发模式）
+    if (process.env.NODE_ENV === 'development') {
+      view.webContents.on('console-message', (_event, _level, message) => {
+        console.log(`[Plugin ${pluginId}]:`, message)
+      })
+    }
 
     // 监听加载错误
     view.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
@@ -144,8 +122,6 @@ export class WebContentsViewManager {
         height: windowBounds.height - titleBarHeight
       })
     }
-
-    console.log(`✅ 显示插件视图: ${pluginId}`)
   }
 
   /**
@@ -158,7 +134,6 @@ export class WebContentsViewManager {
     if (!view) return
 
     this.mainWindow.contentView.removeChildView(view)
-    console.log(`🔒 隐藏插件视图: ${pluginId}`)
   }
 
   /**
@@ -177,7 +152,6 @@ export class WebContentsViewManager {
     }
 
     this.views.delete(pluginId)
-    console.log(`🗑️ 移除插件视图: ${pluginId}`)
   }
 
   /**
