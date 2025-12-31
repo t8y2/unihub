@@ -1,9 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
-import './types/api'
+import './plugin-sdk'
 
-// 创建 Vue 应用
-const app = createApp(App)
-
-// 挂载应用
-app.mount('#app')
+// 创建并挂载 Vue 应用
+createApp(App).mount('#app')

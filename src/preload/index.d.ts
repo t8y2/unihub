@@ -14,9 +14,13 @@ declare global {
         list: () => Promise<Array<Record<string, unknown>>>
         load: (
           pluginId: string
-        ) => Promise<{ success: boolean; htmlPath?: string; devUrl?: string; html?: string; message?: string }>
+        ) => Promise<{ success: boolean; htmlPath?: string; devUrl?: string; pluginUrl?: string; message?: string }>
         open: (pluginId: string) => Promise<{ success: boolean; message?: string }>
         close: (pluginId: string) => Promise<{ success: boolean }>
+        updateBounds: (
+          pluginId: string,
+          bounds: { x: number; y: number; width: number; height: number }
+        ) => Promise<{ success: boolean }>
         dev: {
           register: (
             pluginId: string,

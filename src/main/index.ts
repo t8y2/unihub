@@ -1,13 +1,12 @@
 import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
 import { join } from 'path'
-import { readFile } from 'fs/promises'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { PluginManager } from './plugin-manager'
 import { PluginAPI } from './plugin-api'
 import { NodeAPI } from './node-api'
 import { registerDevModeHandlers } from './ipc-handlers'
-import { pluginWindowManager } from './plugin-window'
+import { webContentsViewManager } from './webcontents-view-manager'
 
 // 在开发环境中禁用安全警告
 if (is.dev) {
@@ -40,6 +39,10 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    // 设置主窗口到 WebContentsView 管理器
+    if (mainWindow) {
+      webContentsViewManager.setMainWindow(mainWindow)
+    }
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -57,46 +60,23 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.unihub.app')
 
-  // 注册自定义协议 plugin://
-  protocol.registerBufferProtocol('plugin', async (request, callback) => {
+  // 注册自定义协议 plugin:// (标准协议，支持相对路径)
+  protocol.registerFileProtocol('plugin', (request, callback) => {
     try {
-      // 解析 URL: plugin://plugin-id/path/to/file
+      // URL 示例: plugin://com.unihub.modern-vue/dist/index.html
       const url = request.url.substring('plugin://'.length)
       const [pluginId, ...pathParts] = url.split('/')
       const filePath = pathParts.join('/')
 
-      // 获取插件目录
+      // 映射到插件目录的真实路径
       const pluginDir = join(app.getPath('userData'), 'plugins', pluginId)
       const fullPath = join(pluginDir, filePath)
 
-      // 读取文件
-      const data = await readFile(fullPath)
-
-      // 根据文件扩展名设置 MIME 类型
-      let mimeType = 'text/plain'
-      if (filePath.endsWith('.html')) {
-        mimeType = 'text/html'
-      } else if (filePath.endsWith('.js')) {
-        mimeType = 'application/javascript'
-      } else if (filePath.endsWith('.css')) {
-        mimeType = 'text/css'
-      } else if (filePath.endsWith('.json')) {
-        mimeType = 'application/json'
-      } else if (filePath.endsWith('.png')) {
-        mimeType = 'image/png'
-      } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-        mimeType = 'image/jpeg'
-      } else if (filePath.endsWith('.svg')) {
-        mimeType = 'image/svg+xml'
-      }
-
-      callback({
-        data: Buffer.from(data),
-        mimeType
-      })
+      console.log('🔌 加载插件资源:', fullPath)
+      callback({ path: fullPath })
     } catch (error) {
-      console.error('加载插件资源失败:', error)
-      callback({ data: Buffer.from(''), mimeType: 'text/plain' })
+      console.error('❌ 加载插件资源失败:', error)
+      callback({ error: -2 }) // net::ERR_FAILED
     }
   })
 
@@ -141,41 +121,25 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('plugin:load', async (_, pluginId: string) => {
     const result = await pluginManager.loadPlugin(pluginId)
-    if (result.success && result.htmlPath) {
-      // 读取 HTML 内容并转换资源路径为 plugin:// 协议
-      try {
-        let html = await readFile(result.htmlPath, 'utf-8')
-        
-        // 替换相对路径为 plugin:// 协议
-        html = html.replace(/src="\.\/assets\//g, `src="plugin://${pluginId}/dist/assets/`)
-        html = html.replace(/href="\.\/assets\//g, `href="plugin://${pluginId}/dist/assets/`)
-        
-        // 添加 CSP meta 标签允许 plugin:// 协议
-        if (!html.includes('Content-Security-Policy')) {
-          html = html.replace(
-            '<head>',
-            '<head>\n  <meta http-equiv="Content-Security-Policy" content="default-src \'self\' plugin:; script-src \'self\' \'unsafe-inline\' \'unsafe-eval\' plugin:; style-src \'self\' \'unsafe-inline\' plugin:; img-src \'self\' data: plugin:; font-src \'self\' data: plugin:; connect-src \'self\' plugin:;">'
-          )
-        } else {
-          // 如果已有 CSP，添加 plugin: 到各个指令
-          html = html.replace(/script-src ([^;]+);/g, 'script-src $1 plugin:;')
-          html = html.replace(/style-src ([^;]+);/g, 'style-src $1 plugin:;')
-          html = html.replace(/default-src ([^;]+);/g, 'default-src $1 plugin:;')
-        }
-        
+    if (result.success) {
+      // 返回插件 URL，让浏览器自动处理相对路径
+      if (result.devUrl) {
         return {
           ...result,
-          html // 返回修改后的 HTML
+          pluginUrl: result.devUrl
         }
-      } catch (error) {
-        console.error('读取插件 HTML 失败:', error)
-        return result
+      } else if (result.htmlPath) {
+        // 生产模式：返回 plugin:// 协议的 URL
+        return {
+          ...result,
+          pluginUrl: `plugin://${pluginId}/dist/index.html`
+        }
       }
     }
     return result
   })
 
-  // 打开插件窗口
+  // 打开插件（使用 WebContentsView）
   ipcMain.handle('plugin:open', async (_, pluginId: string) => {
     const result = await pluginManager.loadPlugin(pluginId)
     if (!result.success) {
@@ -188,24 +152,40 @@ function setupIpcHandlers(): void {
       return { success: false, message: '插件未找到' }
     }
 
+    let pluginUrl = ''
     if (result.devUrl) {
       // 开发模式
-      console.log('🔥 打开开发模式插件:', pluginId, result.devUrl)
-      pluginWindowManager.openDevPlugin(pluginId, result.devUrl, plugin.metadata.name)
+      pluginUrl = result.devUrl
+      console.log('🔥 打开开发模式插件:', pluginId, pluginUrl)
     } else if (result.htmlPath) {
-      // 生产模式
-      console.log('🔥 打开生产模式插件:', pluginId, result.htmlPath)
-      pluginWindowManager.openPlugin(pluginId, result.htmlPath, plugin.metadata.name)
+      // 生产模式：使用 plugin:// 协议
+      pluginUrl = `plugin://${pluginId}/dist/index.html`
+      console.log('🔌 打开生产模式插件:', pluginId, pluginUrl)
+    } else {
+      return { success: false, message: '插件 URL 不正确' }
     }
 
+    // 创建并显示 WebContentsView
+    webContentsViewManager.createPluginView(pluginId, pluginUrl)
+    webContentsViewManager.showPluginView(pluginId)
+
     return { success: true }
   })
 
-  // 关闭插件窗口
+  // 关闭插件
   ipcMain.handle('plugin:close', async (_, pluginId: string) => {
-    pluginWindowManager.closePlugin(pluginId)
+    webContentsViewManager.hidePluginView(pluginId)
     return { success: true }
   })
+
+  // 更新插件视图位置
+  ipcMain.handle(
+    'plugin:updateBounds',
+    async (_, pluginId: string, bounds: { x: number; y: number; width: number; height: number }) => {
+      webContentsViewManager.updatePluginViewBounds(pluginId, bounds)
+      return { success: true }
+    }
+  )
 
   ipcMain.handle('app:getPath', async (_, name: 'home' | 'appData' | 'userData' | 'temp') => {
     return app.getPath(name)

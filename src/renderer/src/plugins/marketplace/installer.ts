@@ -3,7 +3,7 @@ import { markRaw } from 'vue'
 
 /**
  * 插件安装器（Electron 版本）
- * 在应用内 iframe 中加载插件
+ * 使用 WebContentsView 加载插件
  */
 export class PluginInstaller {
   /**
@@ -11,12 +11,10 @@ export class PluginInstaller {
    */
   async installFromUrl(url: string): Promise<void> {
     try {
-      // 只对 HTTP URL 进行 .zip 检查，blob URL 不需要检查
       if (url.startsWith('http') && !url.endsWith('.zip')) {
         throw new Error('仅支持 .zip 格式的插件包')
       }
 
-      // 调用 Electron 主进程安装插件
       const result = await window.api.plugin.install(url)
 
       if (!result.success) {
@@ -39,11 +37,9 @@ export class PluginInstaller {
         throw new Error('仅支持 .zip 格式的插件包')
       }
 
-      // 将文件转换为 ArrayBuffer
       const arrayBuffer = await file.arrayBuffer()
       const buffer = new Uint8Array(arrayBuffer)
 
-      // 调用 Electron 主进程安装插件（传递文件数据）
       const result = await window.api.plugin.installFromBuffer(Array.from(buffer), file.name)
 
       if (!result.success) {
@@ -62,10 +58,8 @@ export class PluginInstaller {
    */
   async uninstall(pluginId: string): Promise<void> {
     try {
-      // 从插件系统注销
       pluginRegistry.unregister(pluginId)
 
-      // 调用 Electron 主进程卸载插件
       const result = await window.api.plugin.uninstall(pluginId)
 
       if (!result.success) {
@@ -84,7 +78,6 @@ export class PluginInstaller {
    */
   async loadInstalledPlugins(): Promise<void> {
     try {
-      // 从 Electron 主进程获取插件列表
       const plugins = await window.api.plugin.list()
 
       for (const pluginInfo of plugins) {
@@ -92,7 +85,7 @@ export class PluginInstaller {
 
         const metadata = pluginInfo.metadata as any
 
-        // 创建插件组件（在应用内 iframe 中加载）
+        // 创建插件组件（使用 WebContentsView）
         const plugin = {
           metadata: {
             id: metadata.id,
@@ -124,29 +117,23 @@ export class PluginInstaller {
                     <p class="text-sm text-gray-600 dark:text-gray-400">{{ error }}</p>
                   </div>
                 </div>
-                <iframe
-                  v-else
-                  ref="iframe"
-                  :srcdoc="pluginHtml"
-                  class="flex-1 w-full border-0"
-                  sandbox="allow-scripts allow-same-origin allow-forms"
-                  allow="plugin:"
-                />
+                <div v-else class="flex-1 w-full" ref="pluginContainer">
+                  <!-- WebContentsView 将在这里显示 -->
+                </div>
               </div>
             `,
             data() {
               return {
                 pluginName: metadata.name,
                 pluginId: metadata.id,
-                pluginHtml: '',
                 loading: true,
-                error: ''
+                error: '',
+                isActive: false
               }
             },
             async mounted(this: any) {
               try {
-                // 加载插件
-                const result = await window.api.plugin.load(this.pluginId)
+                const result = await window.api.plugin.open(this.pluginId)
                 
                 if (!result.success) {
                   this.error = result.message || '加载插件失败'
@@ -154,31 +141,39 @@ export class PluginInstaller {
                   return
                 }
 
-                if (result.devUrl) {
-                  // 开发模式：使用 devUrl
-                  const devUrl = result.devUrl
-                  this.pluginHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body { margin: 0; padding: 0; overflow: hidden; } iframe { width: 100vw; height: 100vh; border: 0; }</style></head><body><iframe src="' + devUrl + '" sandbox="allow-scripts allow-same-origin"></iframe></body></html>'
-                } else if (result.html) {
-                  // 生产模式：使用转换后的 HTML
-                  this.pluginHtml = result.html
-                } else {
-                  this.error = '插件格式不正确'
-                }
-
                 this.loading = false
+                this.isActive = true
+                console.log('✅ 插件已加载:', this.pluginId)
 
-                // 注入插件 API
+                // 监听窗口大小变化，更新 WebContentsView 位置
                 this.$nextTick(() => {
-                  const iframe = this.$refs.iframe
-                  if (iframe && iframe.contentWindow) {
-                    iframe.contentWindow.pluginAPI = window.api
-                    console.log('✅ 插件 API 已注入:', this.pluginId)
-                  }
+                  this.updateViewBounds()
+                  window.addEventListener('resize', this.updateViewBounds)
                 })
               } catch (err) {
                 console.error('加载插件失败:', err)
                 this.error = String(err)
                 this.loading = false
+              }
+            },
+            beforeUnmount(this: any) {
+              if (this.isActive) {
+                window.api.plugin.close(this.pluginId)
+                window.removeEventListener('resize', this.updateViewBounds)
+              }
+            },
+            methods: {
+              updateViewBounds(this: any) {
+                const container = this.$refs.pluginContainer
+                if (!container) return
+
+                const rect = container.getBoundingClientRect()
+                window.api.plugin.updateBounds(this.pluginId, {
+                  x: Math.round(rect.x),
+                  y: Math.round(rect.y),
+                  width: Math.round(rect.width),
+                  height: Math.round(rect.height)
+                })
               }
             }
           }),

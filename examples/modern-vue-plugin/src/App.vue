@@ -6,6 +6,18 @@
     </header>
 
     <main class="app-main">
+      <!-- SDK 测试区域 -->
+      <div class="sdk-test-section">
+        <h3>🧪 SDK 测试</h3>
+        <div class="test-buttons">
+          <button @click="testNodeAPI" class="test-btn">测试 Node.js API</button>
+          <button @click="testAppAPI" class="test-btn">测试 App API</button>
+        </div>
+        <div v-if="testResult" class="test-result">
+          <pre>{{ testResult }}</pre>
+        </div>
+      </div>
+
       <div class="tasks-grid">
         <!-- Base64 编码/解码 -->
         <TaskCard
@@ -117,6 +129,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { pluginSDK } from './plugin-sdk'
 import TaskCard from './components/TaskCard.vue'
 import ResultDisplay from './components/ResultDisplay.vue'
 import type { TaskResult, TaskHistory, TaskType } from './types/plugin'
@@ -126,6 +139,7 @@ const inputText = ref('')
 const loading = ref(false)
 const result = ref<TaskResult | null>(null)
 const executionTime = ref(0)
+const testResult = ref('')
 
 // 任务选项
 const encodeType = ref('base64_encode')
@@ -135,6 +149,28 @@ const caesarShift = ref(3)
 
 // 历史记录
 const history = ref<TaskHistory[]>([])
+
+// 测试 Node.js API
+const testNodeAPI = async () => {
+  try {
+    testResult.value = '测试中...'
+    const result = await pluginSDK.node.getPluginDir()
+    testResult.value = JSON.stringify(result, null, 2)
+  } catch (error: any) {
+    testResult.value = `错误: ${error.message}`
+  }
+}
+
+// 测试 App API
+const testAppAPI = async () => {
+  try {
+    testResult.value = '测试中...'
+    const result = await pluginSDK.app.getPath('userData')
+    testResult.value = JSON.stringify(result, null, 2)
+  } catch (error: any) {
+    testResult.value = `错误: ${error.message}`
+  }
+}
 
 // 执行任务
 const executeTask = async (taskCategory: string) => {
@@ -165,17 +201,12 @@ const executeTask = async (taskCategory: string) => {
         taskType = taskCategory
     }
 
-    // 调用后端
-    const response = await window.api.plugin.backendCall(
-      'com.example.modern-vue',
-      taskType,
-      JSON.stringify({
-        data: inputText.value,
-        options
-      })
-    )
-
-    const taskResult: TaskResult = JSON.parse(response)
+    // TODO: 调用后端（需要实现 Sidecar 通信）
+    const taskResult: TaskResult = {
+      success: true,
+      result: `处理结果: ${inputText.value}`,
+      message: '功能开发中...'
+    }
     result.value = taskResult
 
     // 记录执行时间
@@ -293,6 +324,55 @@ body {
 .app-main {
   max-width: 1200px;
   margin: 0 auto;
+}
+
+.sdk-test-section {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.sdk-test-section h3 {
+  margin: 0 0 16px 0;
+  color: #1f2937;
+}
+
+.test-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.test-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.test-btn:hover {
+  transform: translateY(-2px);
+}
+
+.test-result {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.test-result pre {
+  margin: 0;
+  font-size: 13px;
+  color: #374151;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .tasks-grid {
