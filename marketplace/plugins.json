@@ -16,6 +16,11 @@
       "category": "formatter",
       "keywords": ["h5", "html", "formatter", "beautify", "minify", "格式化", "压缩"],
       "permissions": ["clipboard"],
+      "install": {
+        "zip": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/examples/h5-formatter-plugin/plugin.zip",
+        "npm": "@unihub/h5-formatter",
+        "github": "t8y2/unihub-plugin-h5-formatter"
+      },
       "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/examples/h5-formatter-plugin/plugin.zip",
       "homepage": "https://github.com/t8y2/unihub",
       "repository": "https://github.com/t8y2/unihub",
@@ -39,6 +44,11 @@
       "category": "tool",
       "keywords": ["vue", "typescript", "encode", "encrypt", "compress", "base64"],
       "permissions": ["fs", "clipboard", "http", "spawn"],
+      "install": {
+        "zip": "https://github.com/yourname/modern-vue-plugin/releases/download/v1.0.0/plugin.zip",
+        "npm": "@unihub/modern-vue-plugin",
+        "github": "yourname/modern-vue-plugin"
+      },
       "downloadUrl": "https://github.com/yourname/modern-vue-plugin/releases/download/v1.0.0/plugin.zip",
       "homepage": "https://github.com/yourname/modern-vue-plugin",
       "repository": "https://github.com/yourname/modern-vue-plugin",

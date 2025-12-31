@@ -24,6 +24,30 @@ interface ComponentInstance {
  */
 export class PluginInstaller {
   /**
+   * 智能安装 - 根据输入自动判断安装方式
+   */
+  async install(input: string): Promise<void> {
+    try {
+      // 判断安装方式
+      if (input.startsWith('@') || input.includes('/')) {
+        // npm 包格式: @unihub/plugin-name 或 unihub-plugin-name
+        return await this.installFromNpm(input)
+      } else if (input.startsWith('http')) {
+        // URL 格式
+        return await this.installFromUrl(input)
+      } else if (input.includes(':')) {
+        // GitHub 格式: owner/repo
+        return await this.installFromGitHub(input)
+      } else {
+        throw new Error('无法识别的安装格式')
+      }
+    } catch (error) {
+      console.error('安装插件失败:', error)
+      throw error
+    }
+  }
+
+  /**
    * 从 URL 安装插件
    */
   async installFromUrl(url: string): Promise<void> {
@@ -41,6 +65,44 @@ export class PluginInstaller {
       console.log('✅ 插件安装成功')
     } catch (error) {
       console.error('安装插件失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 从 npm 安装插件
+   */
+  async installFromNpm(packageName: string): Promise<void> {
+    try {
+      console.log('从 npm 安装插件:', packageName)
+
+      const result = await window.api.plugin.installFromNpm(packageName)
+
+      if (!result.success) {
+        throw new Error(result.message)
+      }
+
+      console.log('✅ 插件安装成功')
+    } catch (error) {
+      console.error('从 npm 安装插件失败:', error)
+      throw error
+    }
+  }
+
+  /**
+   * 从 GitHub 安装插件
+   */
+  async installFromGitHub(repo: string): Promise<void> {
+    try {
+      console.log('从 GitHub 安装插件:', repo)
+
+      // 转换为 GitHub Release URL
+      // 格式: owner/repo -> https://github.com/owner/repo/releases/latest/download/plugin.zip
+      const url = `https://github.com/${repo}/releases/latest/download/plugin.zip`
+
+      return await this.installFromUrl(url)
+    } catch (error) {
+      console.error('从 GitHub 安装插件失败:', error)
       throw error
     }
   }

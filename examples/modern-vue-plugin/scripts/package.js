@@ -90,3 +90,80 @@ if (fs.existsSync(path.join(rootDir, 'README.md'))) {
 
 // 完成打包
 archive.finalize()
+
+// 生成 marketplace 条目
+output.on('close', () => {
+  generateMarketplaceEntry()
+})
+
+/**
+ * 生成 marketplace 条目
+ */
+function generateMarketplaceEntry() {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'))
+    
+    if (!pkg.unihub) {
+      console.log('\n⚠️  未找到 unihub 配置，跳过生成 marketplace 条目')
+      return
+    }
+
+    const entry = {
+      id: pkg.unihub.id,
+      name: pkg.name,
+      version: pkg.version,
+      description: pkg.description,
+      author: typeof pkg.author === 'string' 
+        ? { name: pkg.author }
+        : pkg.author,
+      icon: pkg.unihub.icon || '📦',
+      category: pkg.unihub.category || 'tool',
+      keywords: pkg.keywords || [],
+      permissions: pkg.unihub.permissions || [],
+      install: {
+        // 从 package.json 读取安装信息
+        ...(pkg.unihub.install || {}),
+        // 如果没有 zip 链接，生成一个占位符
+        zip: pkg.unihub.install?.zip || `https://example.com/${pkg.name}/plugin.zip`
+      },
+      // 向后兼容
+      downloadUrl: pkg.unihub.install?.zip || pkg.homepage || '',
+      homepage: pkg.homepage || '',
+      repository: typeof pkg.repository === 'string' 
+        ? pkg.repository 
+        : pkg.repository?.url || '',
+      screenshots: pkg.unihub.screenshots || [],
+      downloads: 0,
+      rating: 5.0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    // 保存到文件
+    const marketplaceFile = path.join(rootDir, 'marketplace-entry.json')
+    fs.writeFileSync(marketplaceFile, JSON.stringify(entry, null, 2))
+    
+    console.log('\n✅ 已生成 marketplace 条目: marketplace-entry.json')
+    console.log('\n📋 Marketplace 条目预览:')
+    console.log('─'.repeat(50))
+    console.log(`名称: ${entry.name}`)
+    console.log(`ID: ${entry.id}`)
+    console.log(`版本: ${entry.version}`)
+    console.log(`分类: ${entry.category}`)
+    
+    if (entry.install.npm) {
+      console.log(`npm: ${entry.install.npm}`)
+    }
+    if (entry.install.github) {
+      console.log(`GitHub: ${entry.install.github}`)
+    }
+    if (entry.install.zip) {
+      console.log(`ZIP: ${entry.install.zip}`)
+    }
+    
+    console.log('─'.repeat(50))
+    console.log('\n💡 提示: 将此条目添加到 marketplace/plugins.json 中')
+  } catch (error) {
+    console.error('\n❌ 生成 marketplace 条目失败:', error.message)
+  }
+}

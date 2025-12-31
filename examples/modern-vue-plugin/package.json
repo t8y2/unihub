@@ -45,6 +45,10 @@
       "spawn"
     ],
     "screenshots": [],
+    "install": {
+      "npm": "@unihub/modern-vue-plugin",
+      "github": "unihub/modern-vue-plugin"
+    },
     "dev": {
       "enabled": false,
       "url": "http://localhost:5173",
