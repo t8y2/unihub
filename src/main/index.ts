@@ -79,49 +79,50 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.unihub.app')
 
-  // 预热插件缓存（性能优化）
-  pluginManager.warmupCache()
-
-  // 初始化已安装插件的权限
-  pluginManager.initializePermissions()
-
-  // 注册自定义协议 plugin:// (标准协议，支持相对路径)
+  // 注册自定义协议（必须在 ready 之后立即注册）
   protocol.registerFileProtocol('plugin', (request, callback) => {
     try {
-      // URL 示例: plugin://com.unihub.modern-vue/dist/index.html?__plugin_id=xxx
       let url = request.url.substring('plugin://'.length)
-
-      // 移除 URL 参数
       const queryIndex = url.indexOf('?')
       if (queryIndex !== -1) {
         url = url.substring(0, queryIndex)
       }
-
       const [pluginId, ...pathParts] = url.split('/')
       const filePath = pathParts.join('/')
-
-      // 映射到插件目录的真实路径
       const pluginDir = join(app.getPath('userData'), 'plugins', pluginId)
       const fullPath = join(pluginDir, filePath)
-
-      console.log('🔌 加载插件资源:', fullPath)
       callback({ path: fullPath })
     } catch (error) {
       console.error('❌ 加载插件资源失败:', error)
-      callback({ error: -2 }) // net::ERR_FAILED
+      callback({ error: -2 })
     }
+  })
+
+  // 立即设置 IPC 处理器（不等待其他初始化）
+  setupIpcHandlers()
+
+  // 立即创建窗口（不等待插件初始化）
+  createWindow()
+
+  // 异步初始化插件系统（不阻塞窗口显示）
+  setImmediate(() => {
+    console.log('🔄 开始异步初始化插件系统...')
+    
+    // 预热插件缓存（异步）
+    pluginManager.warmupCache()
+    
+    // 初始化已安装插件的权限（异步）
+    pluginManager.initializePermissions()
+    
+    console.log('✅ 插件系统初始化完成')
   })
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  setupIpcHandlers()
-
-  createWindow()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -160,14 +161,12 @@ function setupIpcHandlers(): void {
   ipcMain.handle('plugin:load', async (_, pluginId: string) => {
     const result = await pluginManager.loadPlugin(pluginId)
     if (result.success) {
-      // 返回插件 URL，让浏览器自动处理相对路径
       if (result.devUrl) {
         return {
           ...result,
           pluginUrl: result.devUrl
         }
       } else if (result.htmlPath) {
-        // 生产模式：返回 plugin:// 协议的 URL
         return {
           ...result,
           pluginUrl: `plugin://${pluginId}/dist/index.html`
@@ -177,7 +176,6 @@ function setupIpcHandlers(): void {
     return result
   })
 
-  // 打开插件（使用 WebContentsView）
   ipcMain.handle('plugin:open', async (_, pluginId: string) => {
     const result = await pluginManager.loadPlugin(pluginId)
     if (!result.success) {
@@ -192,41 +190,29 @@ function setupIpcHandlers(): void {
 
     let pluginUrl = ''
     if (result.devUrl) {
-      // 开发模式
       pluginUrl = result.devUrl
-      console.log('🔥 打开开发模式插件:', pluginId, pluginUrl)
     } else if (result.htmlPath) {
-      // 生产模式：使用 plugin:// 协议
       pluginUrl = `plugin://${pluginId}/dist/index.html`
-      console.log('🔌 打开生产模式插件:', pluginId, pluginUrl)
     } else {
       return { success: false, message: '插件 URL 不正确' }
     }
 
-    // 创建并显示 WebContentsView
     webContentsViewManager.createPluginView(pluginId, pluginUrl)
     webContentsViewManager.showPluginView(pluginId)
-
-    // 标记有活动的第三方插件
     hasActiveThirdPartyPlugin = true
 
     return { success: true }
   })
 
-  // 关闭插件
   ipcMain.handle('plugin:close', async (_, pluginId: string) => {
     webContentsViewManager.hidePluginView(pluginId)
-
-    // 检查是否还有其他活动的插件视图
     const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
     if (!hasOtherActiveViews) {
       hasActiveThirdPartyPlugin = false
     }
-
     return { success: true }
   })
 
-  // 更新插件视图位置
   ipcMain.handle(
     'plugin:updateBounds',
     async (
@@ -243,20 +229,24 @@ function setupIpcHandlers(): void {
     return app.getPath(name)
   })
 
-  // 初始化 PluginAPI 和 NodeAPI（它们在构造函数中注册了自己的 IPC handlers）
-  console.log('✅ PluginAPI 已初始化:', pluginAPI ? 'OK' : 'FAIL')
-  console.log('✅ NodeAPI 已初始化:', nodeAPI ? 'OK' : 'FAIL')
+  // 延迟初始化 API（不阻塞启动）
+  setImmediate(() => {
+    console.log('✅ PluginAPI 已初始化:', pluginAPI ? 'OK' : 'FAIL')
+    console.log('✅ NodeAPI 已初始化:', nodeAPI ? 'OK' : 'FAIL')
+  })
 }
 
 /**
  * 注册全局快捷键
  */
 function registerGlobalShortcuts(): void {
-  // Cmd+Shift+Space (Mac) 或 Ctrl+Shift+Space (Windows/Linux) - 显示/隐藏主窗口
   const toggleShortcut = process.platform === 'darwin' ? 'Command+Shift+Space' : 'Ctrl+Shift+Space'
-  shortcutManager.register('system', toggleShortcut, () => {
-    shortcutManager.toggleMainWindow()
+  
+  // 延迟注册快捷键，避免阻塞窗口显示
+  setImmediate(() => {
+    shortcutManager.register('system', toggleShortcut, () => {
+      shortcutManager.toggleMainWindow()
+    })
+    console.log(`✅ 已注册全局快捷键: ${toggleShortcut}`)
   })
-
-  console.log(`✅ 已注册全局快捷键: ${toggleShortcut}`)
 }
