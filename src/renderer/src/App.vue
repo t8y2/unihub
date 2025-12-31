@@ -98,6 +98,12 @@ const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
     }
   }
 
+  // Cmd+T (Mac) 或 Ctrl+T (Windows/Linux) 新建主页标签
+  if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+    e.preventDefault()
+    addHomeTab()
+  }
+
   // Cmd+B (Mac) 或 Ctrl+B (Windows/Linux) 切换侧边栏
   if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
     e.preventDefault()
@@ -237,7 +243,7 @@ const closeTab = (tabId: string): void => {
         activeTabId.value = nextTab.id
       }
     } else {
-      // 最后一个标签，清空 activeTabId
+      // 最后一个标签，清空 activeTabId（回到主页）
       activeTabId.value = ''
     }
   }
@@ -249,6 +255,18 @@ const goHome = (): void => {
   // 关闭所有标签，回到首页
   tabs.value = []
   activeTabId.value = ''
+}
+
+const addHomeTab = (): void => {
+  // 创建新的主页标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId: 'home',
+    title: '主页',
+    type: 'plugin'
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
 }
 </script>
 
@@ -489,6 +507,27 @@ const goHome = (): void => {
               </svg>
             </button>
           </div>
+          
+          <!-- 新增标签页按钮 -->
+          <button
+            class="h-full px-3 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors no-drag flex-shrink-0"
+            title="新建主页标签 (⌘T)"
+            @click="addHomeTab"
+          >
+            <svg
+              class="w-4 h-4 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </button>
         </div>
 
         <!-- 中间标题区域（无标签时显示） -->
@@ -501,24 +540,36 @@ const goHome = (): void => {
       </div>
 
       <!-- 内容区 -->
-      <div class="flex-1 bg-white dark:bg-gray-900 flex flex-col min-h-0">
-        <!-- 首页 -->
-        <HomePage v-if="tabs.length === 0" @open-tool="openTab" :recent-plugins="recentPlugins" />
+      <div class="flex-1 flex flex-col min-h-0">
+        <!-- 首页（无标签时） -->
+        <div v-if="tabs.length === 0" class="flex-1 bg-white dark:bg-gray-900">
+          <HomePage @open-tool="openTab" :recent-plugins="recentPlugins" />
+        </div>
 
         <!-- 工具标签页 -->
         <template v-for="tab in tabs" :key="tab.id">
           <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
+            <!-- 主页标签 -->
+            <div v-if="tab.pluginId === 'home'" class="flex-1 bg-white dark:bg-gray-900">
+              <HomePage @open-tool="openTab" :recent-plugins="recentPlugins" />
+            </div>
+
             <!-- 插件管理页面 -->
-            <PluginManagementPage v-if="tab.type === 'management'" />
+            <div v-else-if="tab.type === 'management'" class="flex-1 bg-white dark:bg-gray-900">
+              <PluginManagementPage />
+            </div>
 
             <!-- 设置页面 -->
-            <SettingsPage v-else-if="tab.type === 'settings'" />
+            <div v-else-if="tab.type === 'settings'" class="flex-1 bg-white dark:bg-gray-900">
+              <SettingsPage />
+            </div>
 
-            <!-- 普通插件 -->
+            <!-- 普通插件 - 无背景，让插件自己控制样式 -->
             <component
               v-else
               :is="pluginRegistry.get(tab.pluginId)?.component"
               v-bind="pluginRegistry.get(tab.pluginId)?.config || {}"
+              class="flex-1"
             />
           </div>
         </template>
