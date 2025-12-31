@@ -108,7 +108,7 @@ const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
       // 如果没有标签，关闭应用（Electron）
       window.electron.ipcRenderer.send('window:close')
     } else if (tabs.value.length === 1) {
-      // 如果只有一个标签，关闭标签（回到首页）
+      // 如果只有一个标签，关闭标签（回到主页）
       closeTab(activeTabId.value)
     } else {
       // 关闭当前标签
@@ -324,7 +324,7 @@ const goHome = (): void => {
     }
   })
 
-  // 关闭所有标签，回到首页
+  // 关闭所有标签，回到主页
   tabs.value = []
   activeTabId.value = ''
 }
@@ -363,7 +363,7 @@ const addHomeTab = (): void => {
       <!-- 导航菜单 -->
       <nav class="flex-1 p-2 overflow-y-auto scrollbar-hide">
         <div class="space-y-1">
-          <!-- 首页按钮 -->
+          <!-- 主页按钮 -->
           <button
             :class="[
               'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -372,7 +372,7 @@ const addHomeTab = (): void => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
               sidebarCollapsed ? 'justify-center' : ''
             ]"
-            :title="sidebarCollapsed ? '首页' : ''"
+            :title="sidebarCollapsed ? '主页' : ''"
             @click="goHome"
           >
             <svg
@@ -388,7 +388,7 @@ const addHomeTab = (): void => {
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
               />
             </svg>
-            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">首页</span>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">主页</span>
           </button>
 
           <template v-for="[category, plugins] in pluginsByCategory" :key="category">
@@ -625,7 +625,7 @@ const addHomeTab = (): void => {
 
       <!-- 内容区 -->
       <div class="flex-1 flex flex-col min-h-0">
-        <!-- 首页（无标签时） -->
+        <!-- 主页（无标签时） -->
         <div v-if="tabs.length === 0" class="flex-1 bg-white dark:bg-gray-900">
           <HomePage :recent-plugins="recentPlugins" @open-tool="openTab" />
         </div>
