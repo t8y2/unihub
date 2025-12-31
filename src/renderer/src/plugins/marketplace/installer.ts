@@ -10,6 +10,7 @@ interface ComponentInstance {
   loading: boolean
   error: string
   isActive: boolean
+  resizeObserver: ResizeObserver | null
   $refs: {
     pluginContainer?: HTMLElement
   }
@@ -90,11 +91,14 @@ export class PluginInstaller {
   }
 
   /**
-   * 加载已安装的插件
+   * 加载已安装的插件（性能优化版本）
    */
   async loadInstalledPlugins(): Promise<void> {
     try {
       const plugins = await window.api.plugin.list()
+      
+      // 批量注册插件，减少 DOM 更新
+      const pluginsToRegister = []
 
       for (const pluginInfo of plugins) {
         if (!pluginInfo.enabled) continue
@@ -153,7 +157,8 @@ export class PluginInstaller {
                 pluginId: metadata.id as string,
                 loading: true,
                 error: '',
-                isActive: false
+                isActive: false,
+                resizeObserver: null as ResizeObserver | null
               }
             },
             async mounted(this: ComponentInstance) {
@@ -170,10 +175,20 @@ export class PluginInstaller {
                 this.isActive = true
                 console.log('✅ 插件已加载:', this.pluginId)
 
-                // 监听窗口大小变化，更新 WebContentsView 位置
+                // 使用 ResizeObserver 代替 resize 事件（性能更好）
                 this.$nextTick(() => {
                   this.updateViewBounds()
-                  window.addEventListener('resize', this.updateViewBounds)
+                  
+                  const container = this.$refs.pluginContainer as HTMLElement
+                  if (container && 'ResizeObserver' in window) {
+                    this.resizeObserver = new ResizeObserver(() => {
+                      this.updateViewBounds()
+                    })
+                    this.resizeObserver.observe(container)
+                  } else {
+                    // 降级到 resize 事件
+                    window.addEventListener('resize', this.updateViewBounds)
+                  }
                 })
               } catch (err) {
                 console.error('加载插件失败:', err)
@@ -184,7 +199,13 @@ export class PluginInstaller {
             beforeUnmount(this: ComponentInstance) {
               if (this.isActive) {
                 window.api.plugin.close(this.pluginId)
-                window.removeEventListener('resize', this.updateViewBounds)
+                
+                // 清理 ResizeObserver
+                if (this.resizeObserver) {
+                  this.resizeObserver.disconnect()
+                } else {
+                  window.removeEventListener('resize', this.updateViewBounds)
+                }
               }
             },
             methods: {
@@ -206,9 +227,14 @@ export class PluginInstaller {
           hasBackend: (metadata.permissions as string[])?.includes('backend') || false
         }
 
-        pluginRegistry.register(plugin)
-        console.log('✅ 已加载插件:', metadata.name)
+        pluginsToRegister.push(plugin)
       }
+
+      // 批量注册（减少响应式更新）
+      pluginsToRegister.forEach((plugin) => {
+        pluginRegistry.register(plugin)
+        console.log('✅ 已加载插件:', plugin.metadata.name)
+      })
     } catch (error) {
       console.error('加载插件列表失败:', error)
     }

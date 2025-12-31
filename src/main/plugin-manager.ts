@@ -310,6 +310,13 @@ export class PluginManager {
     }
   }
 
+  /**
+   * 预热缓存 - 在应用启动时调用
+   */
+  warmupCache(): void {
+    this.getInstalledPlugins()
+  }
+
   private savePluginInfo(plugin: InstalledPlugin): void {
     const installed = this.getInstalledPlugins()
     installed.push(plugin)

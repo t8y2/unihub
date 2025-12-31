@@ -25,11 +25,18 @@ interface SearchResult {
   score: number
 }
 
-// 搜索结果
+// 搜索缓存（性能优化）
+const searchCache = new Map<string, SearchResult[]>()
+const MAX_CACHE_SIZE = 50
+
+// 搜索结果（带缓存和性能优化）
 const searchResults = computed(() => {
-  if (!query.value.trim()) {
+  const searchTerm = query.value.toLowerCase().trim()
+  
+  if (!searchTerm) {
     // 无搜索词时，显示所有启用的插件
-    return pluginRegistry.getEnabled().map((plugin) => ({
+    const plugins = pluginRegistry.getEnabled()
+    return plugins.map((plugin) => ({
       id: plugin.metadata.id,
       name: plugin.metadata.name,
       description: plugin.metadata.description,
@@ -40,10 +47,17 @@ const searchResults = computed(() => {
     }))
   }
 
-  const searchTerm = query.value.toLowerCase().trim()
-  const results: SearchResult[] = []
+  // 检查缓存
+  if (searchCache.has(searchTerm)) {
+    return searchCache.get(searchTerm)!
+  }
 
-  pluginRegistry.getEnabled().forEach((plugin) => {
+  const results: SearchResult[] = []
+  const plugins = pluginRegistry.getEnabled()
+
+  // 性能优化：使用 for 循环代替 forEach
+  for (let i = 0; i < plugins.length; i++) {
+    const plugin = plugins[i]
     let score = 0
 
     // 匹配插件名称
@@ -58,11 +72,12 @@ const searchResults = computed(() => {
 
     // 匹配关键词
     const keywords = plugin.metadata.keywords || []
-    keywords.forEach((keyword) => {
-      if (keyword.toLowerCase().includes(searchTerm)) {
+    for (let j = 0; j < keywords.length; j++) {
+      if (keywords[j].toLowerCase().includes(searchTerm)) {
         score += 80
+        break // 只需匹配一次
       }
-    })
+    }
 
     // 匹配分类
     if (plugin.metadata.category.toLowerCase().includes(searchTerm)) {
@@ -75,15 +90,24 @@ const searchResults = computed(() => {
         name: plugin.metadata.name,
         description: plugin.metadata.description,
         icon: plugin.metadata.icon,
-keywords: keywords,
+        keywords: keywords,
         category: plugin.metadata.category,
         score
       })
     }
-  })
+  }
 
   // 按分数排序
-  return results.sort((a, b) => b.score - a.score)
+  results.sort((a, b) => b.score - a.score)
+
+  // 缓存结果（限制缓存大小）
+  if (searchCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = searchCache.keys().next().value
+    searchCache.delete(firstKey)
+  }
+  searchCache.set(searchTerm, results)
+
+  return results
 })
 
 // 监听 visible 变化，自动聚焦

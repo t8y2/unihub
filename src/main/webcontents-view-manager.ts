@@ -25,14 +25,19 @@ export class WebContentsViewManager {
       this.removePluginView(pluginId)
     }
 
-    // 创建新的 WebContentsView
+    // 创建新的 WebContentsView（性能优化）
     const view = new WebContentsView({
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false, // 禁用 sandbox 以支持 preload
         contextIsolation: true,
         nodeIntegration: false,
-        webSecurity: true
+        webSecurity: true,
+        // 性能优化选项
+        backgroundThrottling: false, // 禁用后台节流，保持插件响应
+        offscreen: false, // 禁用离屏渲染
+        enableWebSQL: false, // 禁用 WebSQL
+        spellcheck: false // 禁用拼写检查
       }
     })
 
@@ -41,8 +46,10 @@ export class WebContentsViewManager {
       ? `${url}&__plugin_id=${pluginId}`
       : `${url}?__plugin_id=${pluginId}`
 
-    // 加载插件 URL
-    view.webContents.loadURL(urlWithPluginId)
+    // 加载插件 URL（异步，不阻塞）
+    view.webContents.loadURL(urlWithPluginId).catch((err) => {
+      console.error(`加载插件 ${pluginId} 失败:`, err)
+    })
 
     // 只在 dom-ready 时注入一次（更早且足够）
     view.webContents.once('dom-ready', () => {

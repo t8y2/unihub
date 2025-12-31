@@ -92,13 +92,14 @@ const filteredPlugins = computed(() => {
   }
 
   // 按搜索词过滤
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
+  const query = searchQuery.value.trim()
+  if (query) {
+    const lowerQuery = query.toLowerCase()
     result = result.filter(
       (p) =>
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.keywords.some((k) => k.toLowerCase().includes(query))
+        p.name.toLowerCase().includes(lowerQuery) ||
+        p.description.toLowerCase().includes(lowerQuery) ||
+        p.keywords.some((k) => k.toLowerCase().includes(lowerQuery))
     )
   }
 

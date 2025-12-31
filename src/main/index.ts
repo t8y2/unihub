@@ -82,6 +82,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.unihub.app')
 
+  // 预热插件缓存（性能优化）
+  pluginManager.warmupCache()
+
   // 初始化已安装插件的权限
   pluginManager.initializePermissions()
 
