@@ -4,17 +4,44 @@ import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
 
+interface PackageJson {
+  name: string
+  version: string
+  description: string
+  author: string | { name: string; email?: string }
+  license?: string
+  keywords?: string[]
+  homepage?: string
+  repository?: string | { type: string; url: string }
+  unihub?: {
+    id: string
+    icon?: string
+    category?: string
+    entry: string
+    backend?: {
+      entry: string
+      type: 'python' | 'node' | 'go' | 'binary'
+    }
+    permissions?: string[]
+    screenshots?: string[]
+  }
+}
+
 interface PluginMetadata {
   id: string
   name: string
   version: string
   description: string
   author: any
-  main: string
+  entry: string
   icon?: string
   category: string
   keywords?: string[]
   permissions?: string[]
+  backend?: {
+    entry: string
+    type: string
+  }
 }
 
 interface InstalledPlugin {
@@ -86,12 +113,42 @@ export class PluginManager {
       const zip = new AdmZip(tempZip)
       zip.extractAllTo(tempExtract, true)
 
+      // 优先读取 package.json，兼容旧的 manifest.json
+      let manifest: PluginMetadata
+      const packageJsonPath = join(tempExtract, 'package.json')
       const manifestPath = join(tempExtract, 'manifest.json')
-      if (!existsSync(manifestPath)) {
-        throw new Error('插件包中缺少 manifest.json')
-      }
 
-      const manifest: PluginMetadata = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+      if (existsSync(packageJsonPath)) {
+        // 新格式：使用 package.json
+        const pkg: PackageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+        
+        if (!pkg.unihub) {
+          throw new Error('package.json 中缺少 unihub 配置')
+        }
+
+        manifest = {
+          id: pkg.unihub.id,
+          name: pkg.name,
+          version: pkg.version,
+          description: pkg.description,
+          author: pkg.author,
+          entry: pkg.unihub.entry,
+          icon: pkg.unihub.icon,
+          category: pkg.unihub.category || 'tool',
+          keywords: pkg.keywords || [],
+          permissions: pkg.unihub.permissions || [],
+          backend: pkg.unihub.backend
+        }
+      } else if (existsSync(manifestPath)) {
+        // 旧格式：兼容 manifest.json
+        const oldManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+        manifest = {
+          ...oldManifest,
+          entry: oldManifest.main || oldManifest.frontend?.entry || 'frontend/index.html'
+        }
+      } else {
+        throw new Error('插件包中缺少 package.json 或 manifest.json')
+      }
 
       const installed = this.getInstalledPlugins()
       if (installed.some((p) => p.id === manifest.id)) {
@@ -180,7 +237,7 @@ export class PluginManager {
       }
 
       const pluginDir = join(this.pluginsDir, pluginId)
-      const htmlPath = join(pluginDir, plugin.metadata.main || 'frontend/index.html')
+      const htmlPath = join(pluginDir, plugin.metadata.entry)
 
       if (!existsSync(htmlPath)) {
         throw new Error('插件入口文件不存在')

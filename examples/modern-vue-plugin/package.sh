@@ -12,29 +12,19 @@ fi
 rm -f plugin.zip
 
 # 创建临时目录
-mkdir -p temp_package/frontend temp_package/backend
+mkdir -p temp_package/dist temp_package/backend
 
 # 复制构建后的文件
-cp dist/index.html temp_package/frontend/
+cp dist/index.html temp_package/dist/
 cp -r backend/* temp_package/backend/
 
-# 创建 manifest.json
-cat > temp_package/manifest.json << EOF
-{
-  "id": "com.example.modern-vue",
-  "name": "现代化 Vue 插件",
-  "version": "1.0.0",
-  "description": "使用 Vite + Vue 3 + TypeScript 构建的现代化插件",
-  "author": {
-    "name": "UniHub Team"
-  },
-  "main": "frontend/index.html",
-  "icon": "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
-  "category": "tool",
-  "keywords": ["vue", "typescript", "modern", "encode", "encrypt"],
-  "permissions": ["backend"]
-}
-EOF
+# 复制 package.json（作为配置文件）
+cp package.json temp_package/
+
+# 复制 README（可选）
+if [ -f "README.md" ]; then
+    cp README.md temp_package/
+fi
 
 # 创建 ZIP 包
 cd temp_package

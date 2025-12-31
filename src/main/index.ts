@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { PluginManager } from './plugin-manager'
+import { PluginAPI } from './plugin-api'
 
 // 在开发环境中禁用安全警告
 if (is.dev) {
@@ -11,6 +12,7 @@ if (is.dev) {
 
 let mainWindow: BrowserWindow | null = null
 const pluginManager = new PluginManager()
+const pluginAPI = new PluginAPI()
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({

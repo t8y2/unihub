@@ -50,66 +50,48 @@ http://localhost:8080/plugin.zip
 
 ## 📚 插件开发
 
-### 三种示例插件
-
-1. **原生 JS + Go** - 高性能工具
-
-   ```bash
-   cd examples/vanilla-go-plugin
-   ```
-
-2. **React + Python** - 数据分析工具
-
-   ```bash
-   cd examples/react-python-plugin
-   ```
-
-3. **Vue + Node.js** - 快速开发工具
-   ```bash
-   cd examples/simple-plugin
-   ```
-
-### 创建你的第一个插件
+### 快速创建插件
 
 ```bash
-# 1. 创建目录结构
-mkdir my-plugin && cd my-plugin
-mkdir frontend
+# 使用脚手架工具创建插件
+node tools/create-plugin.js my-awesome-plugin
 
-# 2. 创建 manifest.json
-cat > manifest.json << 'EOF'
-{
-  "id": "com.yourname.plugin",
-  "name": "我的插件",
-  "version": "1.0.0",
-  "description": "插件描述",
-  "author": {"name": "你的名字"},
-  "main": "frontend/index.html",
-  "category": "tool",
-  "keywords": ["关键词"]
-}
-EOF
+cd my-awesome-plugin
+npm install
+npm run dev
+```
 
-# 3. 创建前端页面
-cat > frontend/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head><title>我的插件</title></head>
-<body><h1>Hello World!</h1></body>
-</html>
-EOF
+### 打包发布
 
-# 4. 打包并测试
-zip -r plugin.zip manifest.json frontend/
-python3 -m http.server 8080
+```bash
+# 1. 构建插件
+npm run build
+
+# 2. 打包成 zip
+npm run package
+
+# 3. 测试插件
+# 在 UniHub 中安装 plugin.zip
+
+# 4. 发布到 GitHub Release
+# 上传 plugin.zip 到你的仓库 Release
+```
+
+### 示例插件
+
+**modern-vue-plugin** - 使用 Vite + Vue 3 + TypeScript
+
+```bash
+cd examples/modern-vue-plugin
+npm install
+npm run dev
+npm run package
 ```
 
 ### 文档
 
-- **[PLUGIN_GUIDE.md](PLUGIN_GUIDE.md)** - 完整开发指南
-- **[PLUGIN_ARCHITECTURE.md](PLUGIN_ARCHITECTURE.md)** - 架构设计
-- **[PLUGIN_EXAMPLES.md](PLUGIN_EXAMPLES.md)** - 技术栈对比
-- **[PLUGIN_SUMMARY.md](PLUGIN_SUMMARY.md)** - 功能总结
+- **[PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)** - 完整开发指南（配置、API、打包、发布）
+- **[PLUGIN_API_REFERENCE.md](PLUGIN_API_REFERENCE.md)** - API 详细参考
 
 ## 🎯 技术栈对比
 

@@ -422,15 +422,15 @@ const getSourceLabel = (source: string): string => {
     </div>
 
     <!-- 内容区 -->
-    <div class="flex-1 overflow-y-auto">
+    <div class="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
       <!-- 已安装插件标签页 -->
-      <div v-show="activeTab === 'installed'" class="px-6 pb-6 space-y-4">
+      <div v-show="activeTab === 'installed'" class="space-y-6 pt-4">
         <!-- 内置插件 -->
         <div>
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             内置插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-              已启用 {{ enabledCount }} 个
+              已启用 {{ enabledCount }} / {{ builtInPlugins.length }} 个
             </span>
           </h2>
 
@@ -495,11 +495,11 @@ const getSourceLabel = (source: string): string => {
         </div>
 
         <!-- 第三方插件 -->
-        <div v-if="installedPlugins.length > 0">
+        <div v-if="installedPlugins.length > 0" class="pt-6 border-t border-gray-200 dark:border-gray-700">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             第三方插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-              {{ installedPlugins.length }} 个
+              {{ installedPlugins.length }} 个已安装
             </span>
           </h2>
 
@@ -543,7 +543,7 @@ const getSourceLabel = (source: string): string => {
       </div>
 
       <!-- 插件商店标签页 -->
-      <div v-show="activeTab === 'store'" class="px-6 pb-6 space-y-4">
+      <div v-show="activeTab === 'store'" class="space-y-4 pt-4">
         <!-- 官方插件商店 -->
         <div
           class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
@@ -699,7 +699,7 @@ const getSourceLabel = (source: string): string => {
       </div>
 
       <!-- 手动安装标签页 -->
-      <div v-show="activeTab === 'install'" class="px-6 pb-6 space-y-4">
+      <div v-show="activeTab === 'install'" class="space-y-4 pt-4">
         <!-- 从 URL 安装 -->
         <div
           class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700"
@@ -811,7 +811,7 @@ const getSourceLabel = (source: string): string => {
       </div>
 
       <!-- 开发指南标签页 -->
-      <div v-show="activeTab === 'guide'" class="px-6 pb-6 space-y-4">
+      <div v-show="activeTab === 'guide'" class="space-y-4 pt-4">
         <!-- 插件开发指南 -->
         <div
           class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800"

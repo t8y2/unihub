@@ -555,7 +555,7 @@ const addHomeTab = (): void => {
             </div>
 
             <!-- 插件管理页面 -->
-            <div v-else-if="tab.type === 'management'" class="flex-1 bg-white dark:bg-gray-900">
+            <div v-else-if="tab.type === 'management'" class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900">
               <PluginManagementPage />
             </div>
 

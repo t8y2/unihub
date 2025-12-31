@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import PluginIcon from './PluginIcon.vue'
 
 const emit = defineEmits<{
   close: []
@@ -76,19 +77,7 @@ const enabledCount = computed(() => pluginRegistry.getEnabled().length)
                 <div
                   class="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0"
                 >
-                  <svg
-                    class="w-5 h-5 text-blue-600 dark:text-blue-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      :d="plugin.metadata.icon"
-                    />
-                  </svg>
+                  <PluginIcon :icon="plugin.metadata.icon" size="md" />
                 </div>
 
                 <!-- 信息 -->

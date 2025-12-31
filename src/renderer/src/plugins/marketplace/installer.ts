@@ -169,14 +169,23 @@ export class PluginInstaller {
             async mounted() {
               try {
                 // 获取插件 HTML 路径
-                const result = await window.api.plugin.load(metadata.id)
+                const loadResult = await window.api.plugin.load(metadata.id)
 
-                if (!result.success || !result.htmlPath) {
-                  throw new Error(result.message || '加载插件失败')
+                if (!loadResult.success || !loadResult.htmlPath) {
+                  throw new Error(loadResult.message || '加载插件失败')
                 }
 
                 // 读取 HTML 内容
-                let htmlContent = await window.api.fs.readFile(result.htmlPath)
+                const readResult = (await window.api.fs.readFile(loadResult.htmlPath)) as {
+                  success: boolean
+                  data?: string
+                  error?: string
+                }
+                let htmlContent = readResult.success ? readResult.data || '' : ''
+
+                if (!htmlContent) {
+                  throw new Error('无法读取插件 HTML 文件')
+                }
 
                 // 修改 HTML 内容，添加 CSP meta 标签（允许外部脚本）
                 const cspMeta =
@@ -194,6 +203,14 @@ export class PluginInstaller {
                 // 创建 blob URL
                 const blob = new Blob([htmlContent], { type: 'text/html' })
                 this.iframeUrl = URL.createObjectURL(blob)
+
+                // 等待 iframe 加载后注入插件 ID
+                this.$nextTick(() => {
+                  const iframe = this.$refs.iframe as HTMLIFrameElement
+                  if (iframe && iframe.contentWindow) {
+                    ;(iframe.contentWindow as any).__UNIHUB_PLUGIN_ID__ = metadata.id
+                  }
+                })
               } catch (error) {
                 console.error('加载插件失败:', error)
               }
