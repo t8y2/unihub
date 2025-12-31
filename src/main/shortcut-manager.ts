@@ -1,0 +1,149 @@
+import { globalShortcut, BrowserWindow } from 'electron'
+
+/**
+ * 快捷键管理器
+ * 管理全局快捷键和插件快捷键
+ */
+
+interface ShortcutHandler {
+  pluginId: string
+  accelerator: string
+  callback: () => void
+}
+
+export class ShortcutManager {
+  private shortcuts = new Map<string, ShortcutHandler>()
+  private mainWindow: BrowserWindow | null = null
+
+  /**
+   * 设置主窗口
+   */
+  setMainWindow(window: BrowserWindow): void {
+    this.mainWindow = window
+  }
+
+  /**
+   * 注册全局快捷键
+   */
+  register(pluginId: string, accelerator: string, callback: () => void): boolean {
+    try {
+      // 检查快捷键是否已被占用
+      if (this.shortcuts.has(accelerator)) {
+        console.warn(`⚠️ 快捷键 ${accelerator} 已被占用`)
+        return false
+      }
+
+      // 注册全局快捷键
+      const success = globalShortcut.register(accelerator, callback)
+
+      if (success) {
+        this.shortcuts.set(accelerator, { pluginId, accelerator, callback })
+        console.log(`✅ 已注册快捷键: ${accelerator} (插件: ${pluginId})`)
+        return true
+      } else {
+        console.warn(`⚠️ 注册快捷键失败: ${accelerator}`)
+        return false
+      }
+    } catch (error) {
+      console.error(`❌ 注册快捷键失败: ${accelerator}`, error)
+      return false
+    }
+  }
+
+  /**
+   * 取消注册快捷键
+   */
+  unregister(accelerator: string): boolean {
+    try {
+      const handler = this.shortcuts.get(accelerator)
+      if (!handler) {
+        console.warn(`⚠️ 快捷键 ${accelerator} 未注册`)
+        return false
+      }
+
+      globalShortcut.unregister(accelerator)
+      this.shortcuts.delete(accelerator)
+      console.log(`✅ 已取消注册快捷键: ${accelerator}`)
+      return true
+    } catch (error) {
+      console.error(`❌ 取消注册快捷键失败: ${accelerator}`, error)
+      return false
+    }
+  }
+
+  /**
+   * 取消注册插件的所有快捷键
+   */
+  unregisterPlugin(pluginId: string): void {
+    const toRemove: string[] = []
+
+    this.shortcuts.forEach((handler, accelerator) => {
+      if (handler.pluginId === pluginId) {
+        toRemove.push(accelerator)
+      }
+    })
+
+    toRemove.forEach((accelerator) => {
+      this.unregister(accelerator)
+    })
+
+    console.log(`✅ 已取消插件 ${pluginId} 的所有快捷键`)
+  }
+
+  /**
+   * 获取插件的所有快捷键
+   */
+  getPluginShortcuts(pluginId: string): string[] {
+    const shortcuts: string[] = []
+
+    this.shortcuts.forEach((handler, accelerator) => {
+      if (handler.pluginId === pluginId) {
+        shortcuts.push(accelerator)
+      }
+    })
+
+    return shortcuts
+  }
+
+  /**
+   * 获取所有已注册的快捷键
+   */
+  getAllShortcuts(): Array<{ pluginId: string; accelerator: string }> {
+    return Array.from(this.shortcuts.values()).map((handler) => ({
+      pluginId: handler.pluginId,
+      accelerator: handler.accelerator
+    }))
+  }
+
+  /**
+   * 检查快捷键是否已被占用
+   */
+  isRegistered(accelerator: string): boolean {
+    return this.shortcuts.has(accelerator)
+  }
+
+  /**
+   * 清理所有快捷键
+   */
+  cleanup(): void {
+    globalShortcut.unregisterAll()
+    this.shortcuts.clear()
+    console.log('✅ 已清理所有快捷键')
+  }
+
+  /**
+   * 显示/隐藏主窗口
+   */
+  toggleMainWindow(): void {
+    if (!this.mainWindow) return
+
+    if (this.mainWindow.isVisible()) {
+      this.mainWindow.hide()
+    } else {
+      this.mainWindow.show()
+      this.mainWindow.focus()
+    }
+  }
+}
+
+export const shortcutManager = new ShortcutManager()

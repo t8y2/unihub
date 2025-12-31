@@ -3,6 +3,7 @@ import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
 import { pluginDevServer } from './plugin-dev-server'
+import { permissionManager } from './permission-manager'
 
 interface PackageJson {
   name: string
@@ -195,6 +196,9 @@ export class PluginManager {
 
       this.savePluginInfo(pluginInfo)
 
+      // 注册插件权限
+      permissionManager.registerPlugin(manifest.id, manifest.permissions || [])
+
       console.log('插件安装成功:', manifest.name)
       return { success: true, message: `插件 ${manifest.name} 安装成功` }
     } catch (error) {
@@ -217,6 +221,9 @@ export class PluginManager {
       // 清除缓存
       this.cachedPlugins = null
 
+      // 移除插件权限
+      permissionManager.unregisterPlugin(pluginId)
+
       return { success: true, message: '插件已卸载' }
     } catch (error) {
       return { success: false, message: (error as Error).message }
@@ -225,6 +232,19 @@ export class PluginManager {
 
   async listPlugins(): Promise<InstalledPlugin[]> {
     return this.getInstalledPlugins()
+  }
+
+  /**
+   * 初始化已安装插件的权限
+   */
+  initializePermissions(): void {
+    const installed = this.getInstalledPlugins()
+    installed.forEach((plugin) => {
+      if (plugin.enabled && plugin.metadata.permissions) {
+        permissionManager.registerPlugin(plugin.id, plugin.metadata.permissions)
+        console.log(`✅ 已加载插件权限: ${plugin.metadata.name}`, plugin.metadata.permissions)
+      }
+    })
   }
 
   async loadPlugin(

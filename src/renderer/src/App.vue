@@ -5,9 +5,11 @@ import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
 import SettingsPage from './components/SettingsPage.vue'
+import GlobalSearch from './components/GlobalSearch.vue'
 
 const isDark = ref(false)
 const sidebarCollapsed = ref(false)
+const showGlobalSearch = ref(false)
 
 // 最近访问的插件
 const recentPlugins = ref<string[]>([])
@@ -126,6 +128,18 @@ const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
     e.preventDefault()
     toggleSidebar()
+  }
+
+  // Cmd+K (Mac) 或 Ctrl+K (Windows/Linux) 打开全局搜索
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    showGlobalSearch.value = true
+  }
+
+  // Cmd+P (Mac) 或 Ctrl+P (Windows/Linux) 打开全局搜索
+  if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+    e.preventDefault()
+    showGlobalSearch.value = true
   }
 }
 
@@ -344,6 +358,12 @@ const addHomeTab = (): void => {
 
 <template>
   <div class="h-screen flex bg-gray-50 dark:bg-gray-900">
+    <!-- 全局搜索 -->
+    <GlobalSearch
+      :visible="showGlobalSearch"
+      @open-plugin="openTab"
+      @close="showGlobalSearch = false"
+    />
     <!-- 侧边栏 -->
     <aside
       :class="[
@@ -541,6 +561,33 @@ const addHomeTab = (): void => {
                 d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
+          </button>
+
+          <!-- 全局搜索按钮 -->
+          <button
+            class="flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors"
+            title="搜索插件 (⌘K)"
+            @click="showGlobalSearch = true"
+          >
+            <svg
+              class="w-4 h-4 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <span class="text-xs text-gray-600 dark:text-gray-400">搜索</span>
+            <kbd
+              class="px-1.5 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded"
+            >
+              ⌘K
+            </kbd>
           </button>
         </div>
 

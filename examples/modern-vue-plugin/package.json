@@ -41,7 +41,8 @@
     "permissions": [
       "fs",
       "clipboard",
-      "http"
+      "http",
+      "spawn"
     ],
     "screenshots": [],
     "dev": {

@@ -3,6 +3,7 @@ import { readFile, writeFile, readdir, stat, mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { app } from 'electron'
+import { permissionManager } from './permission-manager'
 
 /**
  * 插件 API 处理器
@@ -15,8 +16,11 @@ export class PluginAPI {
 
   private registerHandlers(): void {
     // 文件系统 API
-    ipcMain.handle('plugin-api:fs:readFile', async (_, path: string) => {
+    ipcMain.handle('plugin-api:fs:readFile', async (event, path: string) => {
       try {
+        const pluginId = this.getPluginIdFromEvent(event)
+        permissionManager.requirePermission(pluginId, 'fs')
+        
         const content = await readFile(path, 'utf-8')
         return { success: true, data: content }
       } catch (error: unknown) {
@@ -95,13 +99,27 @@ export class PluginAPI {
     })
 
     // 剪贴板 API
-    ipcMain.handle('plugin-api:clipboard:readText', () => {
-      return { success: true, data: clipboard.readText() }
+    ipcMain.handle('plugin-api:clipboard:readText', (event) => {
+      try {
+        const pluginId = this.getPluginIdFromEvent(event)
+        permissionManager.requirePermission(pluginId, 'clipboard')
+        
+        return { success: true, data: clipboard.readText() }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
+      }
     })
 
-    ipcMain.handle('plugin-api:clipboard:writeText', (_, text: string) => {
-      clipboard.writeText(text)
-      return { success: true }
+    ipcMain.handle('plugin-api:clipboard:writeText', (event, text: string) => {
+      try {
+        const pluginId = this.getPluginIdFromEvent(event)
+        permissionManager.requirePermission(pluginId, 'clipboard')
+        
+        clipboard.writeText(text)
+        return { success: true }
+      } catch (error: unknown) {
+        return { success: false, error: (error as Error).message }
+      }
     })
 
     ipcMain.handle('plugin-api:clipboard:readImage', () => {
@@ -156,8 +174,11 @@ export class PluginAPI {
     })
 
     // HTTP API（避免 CORS）
-    ipcMain.handle('plugin-api:http:request', async (_, options: Record<string, unknown>) => {
+    ipcMain.handle('plugin-api:http:request', async (event, options: Record<string, unknown>) => {
       try {
+        const pluginId = this.getPluginIdFromEvent(event)
+        permissionManager.requirePermission(pluginId, 'http')
+        
         const response = await fetch(options.url as string, {
           method: (options.method as string) || 'GET',
           headers: options.headers as Record<string, string>,
@@ -266,8 +287,11 @@ export class PluginAPI {
     })
 
     // 通知 API
-    ipcMain.handle('plugin-api:notification:show', async (_, options: Record<string, unknown>) => {
+    ipcMain.handle('plugin-api:notification:show', async (event, options: Record<string, unknown>) => {
       try {
+        const pluginId = this.getPluginIdFromEvent(event)
+        permissionManager.requirePermission(pluginId, 'notification')
+        
         const { Notification } = await import('electron')
         new Notification({
           title: options.title as string,
@@ -279,5 +303,20 @@ export class PluginAPI {
         return { success: false, error: (error as Error).message }
       }
     })
+  }
+
+  /**
+   * 从 IPC 事件中获取插件 ID
+   */
+  private getPluginIdFromEvent(event: Electron.IpcMainInvokeEvent): string {
+    // 从 sender 的 URL 中提取插件 ID
+    const url = event.sender.getURL()
+    const match = url.match(/[?&]__plugin_id=([^&]+)/)
+    if (match) {
+      return match[1]
+    }
+    
+    // 如果无法获取，返回 unknown（内置插件）
+    return 'builtin'
   }
 }

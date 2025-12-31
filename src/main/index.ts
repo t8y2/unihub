@@ -7,6 +7,7 @@ import { PluginAPI } from './plugin-api'
 import { NodeAPI } from './node-api'
 import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
+import { shortcutManager } from './shortcut-manager'
 
 // 标记是否有活动的第三方插件
 let hasActiveThirdPartyPlugin = false
@@ -45,7 +46,11 @@ function createWindow(): void {
     // 设置主窗口到 WebContentsView 管理器
     if (mainWindow) {
       webContentsViewManager.setMainWindow(mainWindow)
+      shortcutManager.setMainWindow(mainWindow)
     }
+
+    // 注册全局快捷键
+    registerGlobalShortcuts()
   })
 
   // 拦截 Cmd+W / Ctrl+W 快捷键
@@ -76,6 +81,9 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.unihub.app')
+
+  // 初始化已安装插件的权限
+  pluginManager.initializePermissions()
 
   // 注册自定义协议 plugin:// (标准协议，支持相对路径)
   protocol.registerFileProtocol('plugin', (request, callback) => {
@@ -118,6 +126,9 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  // 清理快捷键
+  shortcutManager.cleanup()
+  
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -232,4 +243,17 @@ function setupIpcHandlers(): void {
   // 初始化 PluginAPI 和 NodeAPI（它们在构造函数中注册了自己的 IPC handlers）
   console.log('✅ PluginAPI 已初始化:', pluginAPI ? 'OK' : 'FAIL')
   console.log('✅ NodeAPI 已初始化:', nodeAPI ? 'OK' : 'FAIL')
+}
+
+/**
+ * 注册全局快捷键
+ */
+function registerGlobalShortcuts(): void {
+  // Cmd+Shift+Space (Mac) 或 Ctrl+Shift+Space (Windows/Linux) - 显示/隐藏主窗口
+  const toggleShortcut = process.platform === 'darwin' ? 'Command+Shift+Space' : 'Ctrl+Shift+Space'
+  shortcutManager.register('system', toggleShortcut, () => {
+    shortcutManager.toggleMainWindow()
+  })
+
+  console.log(`✅ 已注册全局快捷键: ${toggleShortcut}`)
 }
