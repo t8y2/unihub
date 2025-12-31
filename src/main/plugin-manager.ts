@@ -3,6 +3,7 @@ import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
+import { pluginDevServer } from './plugin-dev-server'
 
 interface PackageJson {
   name: string
@@ -24,6 +25,11 @@ interface PackageJson {
     }
     permissions?: string[]
     screenshots?: string[]
+    dev?: {
+      enabled?: boolean
+      url?: string
+      autoReload?: boolean
+    }
   }
 }
 
@@ -32,7 +38,7 @@ interface PluginMetadata {
   name: string
   version: string
   description: string
-  author: any
+  author: string | { name: string; email?: string }
   entry: string
   icon?: string
   category: string
@@ -41,6 +47,11 @@ interface PluginMetadata {
   backend?: {
     entry: string
     type: string
+  }
+  dev?: {
+    enabled?: boolean
+    url?: string
+    autoReload?: boolean
   }
 }
 
@@ -69,7 +80,7 @@ export class PluginManager {
     }
   }
 
-  setMainWindow(window: BrowserWindow) {
+  setMainWindow(window: BrowserWindow): void {
     this.mainWindow = window
   }
 
@@ -84,9 +95,9 @@ export class PluginManager {
 
       const buffer = Buffer.from(await response.arrayBuffer())
       return await this.installFromBuffer(buffer, url)
-    } catch (error: any) {
+    } catch (error) {
       console.error('安装插件失败:', error)
-      return { success: false, message: error.message }
+      return { success: false, message: (error as Error).message }
     }
   }
 
@@ -121,7 +132,7 @@ export class PluginManager {
       if (existsSync(packageJsonPath)) {
         // 新格式：使用 package.json
         const pkg: PackageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-        
+
         if (!pkg.unihub) {
           throw new Error('package.json 中缺少 unihub 配置')
         }
@@ -137,7 +148,8 @@ export class PluginManager {
           category: pkg.unihub.category || 'tool',
           keywords: pkg.keywords || [],
           permissions: pkg.unihub.permissions || [],
-          backend: pkg.unihub.backend
+          backend: pkg.unihub.backend,
+          dev: pkg.unihub.dev
         }
       } else if (existsSync(manifestPath)) {
         // 旧格式：兼容 manifest.json
@@ -198,9 +210,9 @@ export class PluginManager {
 
       console.log('插件安装成功:', manifest.name)
       return { success: true, message: `插件 ${manifest.name} 安装成功` }
-    } catch (error: any) {
+    } catch (error) {
       console.error('安装插件失败:', error)
-      return { success: false, message: error.message }
+      return { success: false, message: (error as Error).message }
     }
   }
 
@@ -216,8 +228,8 @@ export class PluginManager {
       writeFileSync(this.pluginsDataFile, JSON.stringify(filtered, null, 2))
 
       return { success: true, message: '插件已卸载' }
-    } catch (error: any) {
-      return { success: false, message: error.message }
+    } catch (error) {
+      return { success: false, message: (error as Error).message }
     }
   }
 
@@ -227,13 +239,31 @@ export class PluginManager {
 
   async loadPlugin(
     pluginId: string
-  ): Promise<{ success: boolean; htmlPath?: string; message?: string }> {
+  ): Promise<{ success: boolean; htmlPath?: string; devUrl?: string; message?: string }> {
     try {
+      // 检查是否为开发模式
+      if (pluginDevServer.isDevMode(pluginId)) {
+        const devUrl = pluginDevServer.getDevUrl(pluginId)
+        if (devUrl) {
+          return { success: true, devUrl }
+        }
+      }
+
       const installed = this.getInstalledPlugins()
       const plugin = installed.find((p) => p.id === pluginId)
 
       if (!plugin) {
         throw new Error('插件未安装')
+      }
+
+      // 检查插件配置中的开发模式
+      if (plugin.metadata.dev?.enabled && plugin.metadata.dev?.url) {
+        pluginDevServer.registerDevPlugin(
+          pluginId,
+          plugin.metadata.dev.url,
+          plugin.metadata.dev.autoReload !== false
+        )
+        return { success: true, devUrl: plugin.metadata.dev.url }
       }
 
       const pluginDir = join(this.pluginsDir, pluginId)
@@ -244,8 +274,8 @@ export class PluginManager {
       }
 
       return { success: true, htmlPath }
-    } catch (error: any) {
-      return { success: false, message: error.message }
+    } catch (error) {
+      return { success: false, message: (error as Error).message }
     }
   }
 
@@ -266,7 +296,6 @@ export class PluginManager {
       }
 
       // 查找后端可执行文件
-      const { spawn } = await import('child_process')
       const { promisify } = await import('util')
       const execFile = promisify((await import('child_process')).execFile)
 
@@ -318,11 +347,11 @@ export class PluginManager {
       }
 
       return stdout.trim()
-    } catch (error: any) {
+    } catch (error) {
       console.error('调用后端失败:', error)
       return JSON.stringify({
         success: false,
-        error: error.message
+        error: (error as Error).message
       })
     }
   }

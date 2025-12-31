@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import PluginDevMode from './PluginDevMode.vue'
 
 const activeTab = ref<'store' | 'installed' | 'install' | 'guide'>('store')
+const showDevMode = ref(false)
 const installUrl = ref('')
 const installing = ref(false)
 const error = ref('')
@@ -372,7 +374,7 @@ const getSourceLabel = (source: string): string => {
 <template>
   <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-900">
     <!-- 标签页切换 -->
-    <div class="flex items-center gap-1 px-6 pt-4 pb-2">
+    <div class="flex items-center justify-between px-6 pt-4 pb-2">
       <div class="inline-flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
         <button
           :class="[
@@ -419,6 +421,15 @@ const getSourceLabel = (source: string): string => {
           开发指南
         </button>
       </div>
+      
+      <!-- 开发模式按钮 -->
+      <Button
+        @click="showDevMode = true"
+        variant="outline"
+        size="sm"
+      >
+        开发模式
+      </Button>
     </div>
 
     <!-- 内容区 -->
@@ -905,5 +916,8 @@ python3 -m http.server 8080
         </div>
       </div>
     </div>
+
+    <!-- 开发模式对话框 -->
+    <PluginDevMode v-if="showDevMode" @close="showDevMode = false" />
   </div>
 </template>

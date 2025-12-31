@@ -168,14 +168,34 @@ export class PluginInstaller {
             },
             async mounted() {
               try {
-                // 获取插件 HTML 路径
+                // 获取插件加载信息
                 const loadResult = await window.api.plugin.load(metadata.id)
 
-                if (!loadResult.success || !loadResult.htmlPath) {
+                if (!loadResult.success) {
                   throw new Error(loadResult.message || '加载插件失败')
                 }
 
-                // 读取 HTML 内容
+                // 如果是开发模式，直接加载开发服务器 URL
+                if (loadResult.devUrl) {
+                  console.log(`🔥 开发模式: ${metadata.name} -> ${loadResult.devUrl}`)
+                  this.iframeUrl = loadResult.devUrl
+                  
+                  // 等待 iframe 加载后注入插件 ID
+                  this.$nextTick(() => {
+                    const iframe = this.$refs.iframe as HTMLIFrameElement
+                    if (iframe && iframe.contentWindow) {
+                      ;(iframe.contentWindow as any).__UNIHUB_PLUGIN_ID__ = metadata.id
+                      ;(iframe.contentWindow as any).__UNIHUB_DEV_MODE__ = true
+                    }
+                  })
+                  return
+                }
+
+                // 生产模式：读取打包后的 HTML 文件
+                if (!loadResult.htmlPath) {
+                  throw new Error('未找到插件入口文件')
+                }
+
                 const readResult = (await window.api.fs.readFile(loadResult.htmlPath)) as {
                   success: boolean
                   data?: string

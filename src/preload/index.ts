@@ -10,7 +10,15 @@ const api = {
     list: () => ipcRenderer.invoke('plugin:list'),
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),
     backendCall: (pluginId: string, functionName: string, args: string) =>
-      ipcRenderer.invoke('plugin:backend-call', pluginId, functionName, args)
+      ipcRenderer.invoke('plugin:backend-call', pluginId, functionName, args),
+    // 开发模式 API
+    dev: {
+      register: (pluginId: string, devUrl: string, autoReload?: boolean) =>
+        ipcRenderer.invoke('plugin:dev:register', pluginId, devUrl, autoReload),
+      unregister: (pluginId: string) => ipcRenderer.invoke('plugin:dev:unregister', pluginId),
+      isDevMode: (pluginId: string) => ipcRenderer.invoke('plugin:dev:isDevMode', pluginId),
+      list: () => ipcRenderer.invoke('plugin:dev:list')
+    }
   },
   // 文件系统 API
   fs: {

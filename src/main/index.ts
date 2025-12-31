@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { PluginManager } from './plugin-manager'
 import { PluginAPI } from './plugin-api'
+import { registerDevModeHandlers } from './ipc-handlers'
 
 // 在开发环境中禁用安全警告
 if (is.dev) {
@@ -73,6 +74,9 @@ app.on('window-all-closed', () => {
 })
 
 function setupIpcHandlers() {
+  // 注册开发模式处理器
+  registerDevModeHandlers()
+
   ipcMain.handle('plugin:install', async (_, url: string) => {
     return await pluginManager.installPlugin(url)
   })
