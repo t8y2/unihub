@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { pluginRegistry } from '../plugins'
+import { pinyin } from 'pinyin-pro'
 
 const emit = defineEmits<{
   openPlugin: [pluginId: string]
@@ -25,13 +26,72 @@ interface SearchResult {
   score: number
 }
 
+// 拼音缓存（性能优化）
+const pinyinCache = new Map<string, string>()
+
+/**
+ * 获取文本的拼音（带缓存）
+ */
+function getPinyin(text: string): string {
+  if (pinyinCache.has(text)) {
+    return pinyinCache.get(text)!
+  }
+  
+  // 获取拼音（不带音调，连续输出）
+  const py = pinyin(text, { toneType: 'none', type: 'array' }).join('')
+  pinyinCache.set(text, py)
+  return py
+}
+
+/**
+ * 获取文本的拼音首字母（带缓存）
+ */
+function getPinyinInitials(text: string): string {
+  const cacheKey = `initials:${text}`
+  if (pinyinCache.has(cacheKey)) {
+    return pinyinCache.get(cacheKey)!
+  }
+  
+  // 获取拼音首字母
+  const initials = pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' }).join('')
+  pinyinCache.set(cacheKey, initials)
+  return initials
+}
+
+/**
+ * 检查是否匹配（支持拼音）
+ */
+function matchesSearch(text: string, searchTerm: string): boolean {
+  const lowerText = text.toLowerCase()
+  const lowerSearch = searchTerm.toLowerCase()
+  
+  // 1. 直接匹配
+  if (lowerText.includes(lowerSearch)) {
+    return true
+  }
+  
+  // 2. 拼音全拼匹配
+  const py = getPinyin(text).toLowerCase()
+  if (py.includes(lowerSearch)) {
+    return true
+  }
+  
+  // 3. 拼音首字母匹配
+  const initials = getPinyinInitials(text).toLowerCase()
+  if (initials.includes(lowerSearch)) {
+    return true
+  }
+  
+  return false
+}
+
 // 搜索缓存（性能优化）
 const searchCache = new Map<string, SearchResult[]>()
 const MAX_CACHE_SIZE = 50
 
-// 搜索结果（带缓存和性能优化）
+// 搜索结果（带缓存和拼音搜索）
 const searchResults = computed(() => {
-  const searchTerm = query.value.toLowerCase().trim()
+  const searchTerm = query.value.trim()
   
   if (!searchTerm) {
     // 无搜索词时，显示所有启用的插件
@@ -60,27 +120,27 @@ const searchResults = computed(() => {
     const plugin = plugins[i]
     let score = 0
 
-    // 匹配插件名称
-    if (plugin.metadata.name.toLowerCase().includes(searchTerm)) {
+    // 匹配插件名称（支持拼音）
+    if (matchesSearch(plugin.metadata.name, searchTerm)) {
       score += 100
     }
 
-    // 匹配描述
-    if (plugin.metadata.description.toLowerCase().includes(searchTerm)) {
+    // 匹配描述（支持拼音）
+    if (matchesSearch(plugin.metadata.description, searchTerm)) {
       score += 50
     }
 
-    // 匹配关键词
+    // 匹配关键词（支持拼音）
     const keywords = plugin.metadata.keywords || []
     for (let j = 0; j < keywords.length; j++) {
-      if (keywords[j].toLowerCase().includes(searchTerm)) {
+      if (matchesSearch(keywords[j], searchTerm)) {
         score += 80
         break // 只需匹配一次
       }
     }
 
-    // 匹配分类
-    if (plugin.metadata.category.toLowerCase().includes(searchTerm)) {
+    // 匹配分类（支持拼音）
+    if (matchesSearch(plugin.metadata.category, searchTerm)) {
       score += 30
     }
 
@@ -103,7 +163,9 @@ const searchResults = computed(() => {
   // 缓存结果（限制缓存大小）
   if (searchCache.size >= MAX_CACHE_SIZE) {
     const firstKey = searchCache.keys().next().value
-    searchCache.delete(firstKey)
+    if (firstKey) {
+      searchCache.delete(firstKey)
+    }
   }
   searchCache.set(searchTerm, results)
 
@@ -209,7 +271,7 @@ const categoryNames: Record<string, string> = {
               ref="searchInput"
               v-model="query"
               type="text"
-              placeholder="搜索插件或输入关键词..."
+              placeholder="搜索插件（支持拼音）..."
               class="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400"
             />
             <kbd

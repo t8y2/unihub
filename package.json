@@ -26,6 +26,7 @@
     "@radix-icons/vue": "^1.0.0",
     "adm-zip": "^0.5.10",
     "electron-updater": "^6.3.9",
+    "pinyin-pro": "^3.27.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
