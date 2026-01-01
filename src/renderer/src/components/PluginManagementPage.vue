@@ -26,6 +26,8 @@ const showDevMode = ref(false)
 const installUrl = ref('')
 const installing = ref(false)
 const isDragging = ref(false)
+const dragCounter = ref(0) // 用于跟踪拖拽进入/离开的次数
+
 const fileInput = ref<HTMLInputElement>()
 const showUninstallDialog = ref(false)
 const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
@@ -151,8 +153,23 @@ const installFromUrl = async (): Promise<void> => {
 }
 
 // 处理文件拖拽
+const handleDragEnter = (event: DragEvent): void => {
+  event.preventDefault()
+  dragCounter.value++
+  isDragging.value = true
+}
+
+const handleDragLeave = (event: DragEvent): void => {
+  event.preventDefault()
+  dragCounter.value--
+  if (dragCounter.value === 0) {
+    isDragging.value = false
+  }
+}
+
 const handleDrop = async (event: DragEvent): Promise<void> => {
   event.preventDefault()
+  dragCounter.value = 0
   isDragging.value = false
 
   const file = event.dataTransfer?.files?.[0]
@@ -454,10 +471,9 @@ const uninstallPlugin = async (): Promise<void> => {
             ]"
             @drop="handleDrop"
             @dragover.prevent
-            @dragenter.prevent
+            @dragenter="handleDragEnter"
+            @dragleave="handleDragLeave"
             @click="triggerFileSelect"
-            @dragenter="isDragging = true"
-            @dragleave="isDragging = false"
           >
             <svg
               class="w-12 h-12 mx-auto mb-4 text-gray-400"

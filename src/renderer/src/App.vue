@@ -380,7 +380,7 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
                   tabs.some((t) => t.id === activeTabId && t.pluginId === plugin.metadata.id)
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
-                  sidebarCollapsed ? 'justify-center' : 'pl-8'
+                  sidebarCollapsed ? 'justify-center' : ''
                 ]"
                 :title="sidebarCollapsed ? plugin.metadata.name : ''"
                 @click="openTab(plugin.metadata.id)"
