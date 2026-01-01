@@ -12,6 +12,9 @@ import {
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { useClipboard } from '@/composables/useClipboard'
+
+const { copy } = useClipboard()
 
 const inputText = ref('')
 const qrCodeDataUrl = ref('')
@@ -208,13 +211,7 @@ const pasteAndDecode = async (): Promise<void> => {
 
 const copyDecodeResult = async (): Promise<void> => {
   if (!decodeResult.value) return
-
-  try {
-    await navigator.clipboard.writeText(decodeResult.value)
-    alert('已复制')
-  } catch {
-    alert('复制失败')
-  }
+  await copy(decodeResult.value)
 }
 </script>
 

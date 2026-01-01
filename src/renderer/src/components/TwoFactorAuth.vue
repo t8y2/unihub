@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { toast } from 'vue-sonner'
+import { useClipboard } from '@/composables/useClipboard'
+
+const { copy } = useClipboard()
 
 interface Account {
   id: string
@@ -21,7 +24,6 @@ const showAddDialog = ref(false)
 const showTestDialog = ref(false)
 const showQRDialog = ref(false)
 const qrCodeData = ref({ dataUrl: '', name: '', issuer: '', secret: '' })
-const copied = ref<string | null>(null)
 
 const newAccount = ref({ name: '', issuer: '', secret: '' })
 const testSecret = ref('')
@@ -111,16 +113,8 @@ const testGenerateToken = (): void => {
   }
 }
 
-const copyToken = async (token: string, id: string): Promise<void> => {
-  try {
-    await navigator.clipboard.writeText(token)
-    copied.value = id
-    setTimeout(() => {
-      copied.value = null
-    }, 2000)
-  } catch {
-    toast.error('复制失败')
-  }
+const copyToken = async (token: string): Promise<void> => {
+  await copy(token)
 }
 
 const generateQRCodeImage = (text: string): string => {
@@ -374,35 +368,15 @@ onUnmounted(() => {
               size="icon"
               variant="ghost"
               class="absolute right-0 top-1/2 -translate-y-1/2"
-              :title="copied === account.id ? '已复制' : '复制'"
-              @click="copyToken(generateToken(account.totp), account.id)"
+              title="复制"
+              @click="copyToken(generateToken(account.totp))"
             >
-              <svg
-                v-if="copied !== account.id"
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
                   d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              <svg
-                v-else
-                class="w-4 h-4 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
                 />
               </svg>
             </Button>
@@ -507,9 +481,7 @@ onUnmounted(() => {
                 >
               </div>
               <div class="flex gap-2 justify-center">
-                <Button size="sm" @click="copyToken(testToken, 'test')">
-                  {{ copied === 'test' ? '已复制' : '复制验证码' }}
-                </Button>
+                <Button size="sm" @click="copyToken(testToken)"> 复制验证码 </Button>
                 <Button size="sm" variant="secondary" @click="showTestQRCode"> 显示二维码 </Button>
               </div>
             </div>

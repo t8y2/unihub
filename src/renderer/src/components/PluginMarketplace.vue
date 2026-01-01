@@ -3,6 +3,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
 import { toast } from 'vue-sonner'
 import PermissionDialog from './PermissionDialog.vue'
 import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
@@ -189,14 +196,16 @@ onUnmounted(() => {
           <Input v-model="searchQuery" placeholder="搜索插件..." class="w-full" />
         </div>
 
-        <select
-          v-model="selectedCategory"
-          class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        >
-          <option v-for="cat in MARKETPLACE_CATEGORIES" :key="cat.value" :value="cat.value">
-            {{ cat.label }}
-          </option>
-        </select>
+        <Select v-model="selectedCategory">
+          <SelectTrigger class="w-[180px]">
+            <SelectValue placeholder="选择分类" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="cat in MARKETPLACE_CATEGORIES" :key="cat.value" :value="cat.value">
+              {{ cat.label }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
         <Button :disabled="loading" @click="loadPlugins">
           <svg

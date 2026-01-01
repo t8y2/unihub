@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
+import { useClipboard } from '@/composables/useClipboard'
+
+const { copy } = useClipboard()
 
 const currentTimestamp = ref(Math.floor(Date.now() / 1000))
 const currentTimestampMs = ref(Date.now())
@@ -8,7 +11,6 @@ const timestampInput = ref('')
 const dateInput = ref('')
 const timestampResult = ref('')
 const dateResult = ref('')
-const copied = ref(false)
 
 let timer: number | null = null
 
@@ -94,15 +96,7 @@ const dateToTimestamp = (): void => {
 }
 
 const copyToClipboard = async (text: string): Promise<void> => {
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
-  } catch (e) {
-    console.error('复制失败', e)
-  }
+  await copy(text)
 }
 
 const useCurrentTimestamp = (): void => {

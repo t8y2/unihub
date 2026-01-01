@@ -20,10 +20,13 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { useClipboard } from '@/composables/useClipboard'
+
+const { copy } = useClipboard()
 
 // 确保 Buffer 在全局可用
 if (typeof window !== 'undefined') {
-  ;(window as Record<string, unknown>).Buffer = Buffer
+  ;(window as unknown as Record<string, unknown>).Buffer = Buffer
 }
 
 hljs.registerLanguage('json', json)
@@ -35,7 +38,6 @@ type Format = 'json' | 'yaml' | 'toml' | 'xml'
 const input = ref('')
 const output = ref('')
 const error = ref('')
-const copied = ref(false)
 const fromFormat = ref<Format>('json')
 const toFormat = ref<Format>('yaml')
 const indent = ref(2)
@@ -121,15 +123,7 @@ watch([input, fromFormat, toFormat, indent], () => {
 })
 
 const copyToClipboard = async (): Promise<void> => {
-  try {
-    await navigator.clipboard.writeText(output.value)
-    copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
-  } catch {
-    error.value = '复制失败'
-  }
+  await copy(output.value)
 }
 
 const clearAll = (): void => {
@@ -254,13 +248,7 @@ const swapFormats = (): void => {
             class="flex items-center gap-1.5"
             @click="copyToClipboard"
           >
-            <svg
-              v-if="!copied"
-              class="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -268,15 +256,7 @@ const swapFormats = (): void => {
                 d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
-            <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            {{ copied ? '已复制' : '复制' }}
+            复制
           </Button>
         </div>
         <div

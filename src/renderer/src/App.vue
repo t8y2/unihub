@@ -9,6 +9,7 @@ import FavoritesPage from './components/FavoritesPage.vue'
 import RecentsPage from './components/RecentsPage.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import { Toaster } from './components/ui/sonner'
+import { Kbd } from './components/ui/kbd'
 import { STORAGE_KEYS, CATEGORY_NAMES, DEFAULT_CATEGORIES } from '@/constants'
 import { usePluginData } from './composables/usePluginData'
 import { useKeyboard } from './composables/useKeyboard'
@@ -549,11 +550,7 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
               />
             </svg>
             <span class="text-xs text-gray-600 dark:text-gray-400">搜索</span>
-            <kbd
-              class="px-1.5 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded"
-            >
-              ⌘K
-            </kbd>
+            <Kbd>⌘K</Kbd>
           </button>
         </div>
 

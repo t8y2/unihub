@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { log } from '@/utils/logger'
+import { Kbd } from '@/components/ui/kbd'
 import {
   SETTINGS_TABS,
   SHORTCUT_LABELS,
@@ -357,11 +358,7 @@ const exportSystemInfo = (): void => {
                     class="flex items-center justify-between py-2"
                   >
                     <span class="text-sm text-gray-700 dark:text-gray-300">{{ item.name }}</span>
-                    <kbd
-                      class="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono text-gray-700 dark:text-gray-300"
-                    >
-                      {{ item.shortcut }}
-                    </kbd>
+                    <Kbd>{{ item.shortcut }}</Kbd>
                   </div>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { pluginRegistry } from '../plugins'
 import { pinyin } from 'pinyin-pro'
 import { CATEGORY_NAMES, LIMITS } from '@/constants'
+import { Kbd } from '@/components/ui/kbd'
 
 const emit = defineEmits<{
   openPlugin: [pluginId: string]
@@ -228,11 +229,7 @@ onUnmounted(() => {
               placeholder="搜索插件（支持拼音）..."
               class="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400"
             />
-            <kbd
-              class="px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
-            >
-              ESC
-            </kbd>
+            <Kbd>ESC</Kbd>
           </div>
 
           <!-- 搜索结果 -->
@@ -315,11 +312,7 @@ onUnmounted(() => {
 
               <!-- 快捷键提示 -->
               <div v-if="index === selectedIndex" class="flex-shrink-0">
-                <kbd
-                  class="px-2 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
-                >
-                  ↵
-                </kbd>
+                <Kbd>↵</Kbd>
               </div>
             </div>
           </div>
@@ -330,16 +323,16 @@ onUnmounted(() => {
           >
             <div class="flex items-center gap-4">
               <span class="flex items-center gap-1">
-                <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded">↑</kbd>
-                <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded">↓</kbd>
+                <Kbd>↑</Kbd>
+                <Kbd>↓</Kbd>
                 导航
               </span>
               <span class="flex items-center gap-1">
-                <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded">↵</kbd>
+                <Kbd>↵</Kbd>
                 选择
               </span>
               <span class="flex items-center gap-1">
-                <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded">ESC</kbd>
+                <Kbd>ESC</Kbd>
                 关闭
               </span>
             </div>
