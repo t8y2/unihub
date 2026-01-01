@@ -670,7 +670,10 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
             </div>
 
             <!-- 设置页面 -->
-            <div v-else-if="tab.type === 'settings'" class="flex-1 bg-white dark:bg-gray-900">
+            <div
+              v-else-if="tab.type === 'settings'"
+              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
+            >
               <SettingsPage />
             </div>
 

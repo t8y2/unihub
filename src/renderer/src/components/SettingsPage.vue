@@ -285,9 +285,9 @@ const builtinShortcuts = [
       </div>
 
       <!-- 主内容区 -->
-      <div class="flex-1 overflow-auto bg-white dark:bg-gray-900">
+      <div class="flex-1 flex flex-col overflow-auto">
         <!-- 通用设置 -->
-        <div v-if="activeTab === 'general'" class="p-6 min-h-full">
+        <div v-if="activeTab === 'general'" class="flex-1 p-6 bg-white dark:bg-gray-900">
           <div class="max-w-2xl">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">通用设置</h2>
 
@@ -325,7 +325,7 @@ const builtinShortcuts = [
         </div>
 
         <!-- 快捷键设置 -->
-        <div v-if="activeTab === 'shortcuts'" class="p-6 min-h-full">
+        <div v-if="activeTab === 'shortcuts'" class="flex-1 p-6 bg-white dark:bg-gray-900">
           <div class="max-w-2xl">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">快捷键设置</h2>
 
@@ -403,7 +403,7 @@ const builtinShortcuts = [
         </div>
 
         <!-- 关于页面 -->
-        <div v-if="activeTab === 'about'" class="p-6 min-h-full">
+        <div v-if="activeTab === 'about'" class="flex-1 p-6 bg-white dark:bg-gray-900">
           <div class="max-w-2xl">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-6">关于 UniHub</h2>
 
