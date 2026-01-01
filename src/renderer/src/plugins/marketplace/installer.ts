@@ -159,6 +159,14 @@ export class PluginInstaller {
     try {
       const plugins = await window.api.plugin.list()
       
+      // 先移除所有第三方插件（避免重复）
+      const allPlugins = pluginRegistry.getAll()
+      allPlugins.forEach((plugin) => {
+        if (plugin.metadata.isThirdParty) {
+          pluginRegistry.unregister(plugin.metadata.id)
+        }
+      })
+      
       // 批量注册插件，减少 DOM 更新
       const pluginsToRegister = []
 

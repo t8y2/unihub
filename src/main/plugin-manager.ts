@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, net } from 'electron'
 import { join } from 'path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
@@ -77,16 +77,62 @@ export class PluginManager {
     try {
       console.log('开始安装插件:', url)
 
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`下载失败: ${response.statusText}`)
-      }
-
-      const buffer = Buffer.from(await response.arrayBuffer())
+      const buffer = await this.downloadWithRetry(url, 3)
       return await this.installFromBuffer(buffer, url)
     } catch (error) {
       console.error('安装插件失败:', error)
       return { success: false, message: (error as Error).message }
+    }
+  }
+
+  /**
+   * 带重试机制的下载函数（使用 Electron net 模块，无超时限制）
+   */
+  private async downloadWithRetry(url: string, maxRetries: number = 3): Promise<Buffer> {
+    let lastError: Error | null = null
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`下载尝试 ${attempt}/${maxRetries}:`, url)
+
+        // 使用 Electron 的 net.fetch，它没有内置的超时限制
+        const response = await net.fetch(url, {
+          headers: {
+            'User-Agent': 'UniHub/1.0',
+            Accept: 'application/zip,application/octet-stream,*/*'
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer())
+        console.log(`✅ 下载成功，大小: ${(buffer.length / 1024).toFixed(2)} KB`)
+        return buffer
+      } catch (error) {
+        lastError = error as Error
+        console.warn(`下载失败 (尝试 ${attempt}/${maxRetries}):`, lastError.message)
+
+        // 如果不是最后一次尝试，等待后重试
+        if (attempt < maxRetries) {
+          const delay = 2000 * attempt // 递增延迟：2s, 4s, 6s
+          console.log(`等待 ${delay}ms 后重试...`)
+          await new Promise((resolve) => setTimeout(resolve, delay))
+        }
+      }
+    }
+
+    // 所有重试都失败了
+    const errorMessage = lastError?.message || '未知错误'
+    if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+      throw new Error(
+        `下载超时，已重试 ${maxRetries} 次。请检查网络连接或稍后重试。\n提示：如果在中国大陆，可能需要配置代理访问 cdn.jsdelivr.net`
+      )
+    } else if (errorMessage.includes('ENOTFOUND') || errorMessage.includes('ECONNREFUSED')) {
+      throw new Error(`无法连接到服务器，已重试 ${maxRetries} 次。请检查网络连接或 DNS 设置。`)
+    } else {
+      throw new Error(`下载失败: ${errorMessage}（已重试 ${maxRetries} 次）`)
     }
   }
 
@@ -318,8 +364,23 @@ export class PluginManager {
   }
 
   private savePluginInfo(plugin: InstalledPlugin): void {
+    // 先清除缓存，确保读取最新数据
+    this.cachedPlugins = null
+    
     const installed = this.getInstalledPlugins()
-    installed.push(plugin)
+    
+    // 检查是否已存在（防止重复）
+    const existingIndex = installed.findIndex((p) => p.id === plugin.id)
+    if (existingIndex >= 0) {
+      // 更新现有插件
+      installed[existingIndex] = plugin
+      console.log('更新插件信息:', plugin.metadata.name)
+    } else {
+      // 添加新插件
+      installed.push(plugin)
+      console.log('添加新插件:', plugin.metadata.name)
+    }
+    
     writeFileSync(this.pluginsDataFile, JSON.stringify(installed, null, 2))
 
     // 清除缓存

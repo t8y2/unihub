@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -39,6 +39,25 @@ const selectedCategory = ref('all')
 const selectedPlugin = ref<Plugin | null>(null)
 const showPermissionDialog = ref(false)
 const installing = ref(false)
+const installedPluginIds = ref<Set<string>>(new Set())
+
+// 事件处理器引用
+let pluginChangeHandler: (() => void) | null = null
+
+// 加载已安装插件列表
+const loadInstalledPlugins = async (): Promise<void> => {
+  try {
+    const installed = await window.api.plugin.list()
+    installedPluginIds.value = new Set(installed.map((p) => p.id as string))
+  } catch (err) {
+    console.error('加载已安装插件失败:', err)
+  }
+}
+
+// 检查插件是否已安装
+const isPluginInstalled = (pluginId: string): boolean => {
+  return installedPluginIds.value.has(pluginId)
+}
 
 // 加载插件列表
 const loadPlugins = async (): Promise<void> => {
@@ -115,6 +134,16 @@ const confirmInstall = async (): Promise<void> => {
     if (result.success) {
       toast.success(`${selectedPlugin.value.name} 安装成功！`)
       closePluginDetail()
+      
+      // 重新加载插件
+      const { pluginInstaller } = await import('@/plugins/marketplace/installer')
+      await pluginInstaller.loadInstalledPlugins()
+      
+      // 更新已安装列表
+      await loadInstalledPlugins()
+      
+      // 触发全局刷新事件（通知其他组件）
+      window.dispatchEvent(new CustomEvent('plugin-installed'))
     } else {
       toast.error(`安装失败: ${result.message}`)
     }
@@ -127,6 +156,24 @@ const confirmInstall = async (): Promise<void> => {
 
 onMounted(() => {
   loadPlugins()
+  loadInstalledPlugins()
+  
+  // 监听插件变更事件
+  pluginChangeHandler = () => {
+    console.log('收到插件变更事件，刷新已安装列表')
+    loadInstalledPlugins()
+  }
+  
+  window.addEventListener('plugin-installed', pluginChangeHandler)
+  window.addEventListener('plugin-uninstalled', pluginChangeHandler)
+})
+
+onUnmounted(() => {
+  // 清理事件监听
+  if (pluginChangeHandler) {
+    window.removeEventListener('plugin-installed', pluginChangeHandler)
+    window.removeEventListener('plugin-uninstalled', pluginChangeHandler)
+  }
 })
 </script>
 
@@ -261,6 +308,9 @@ onMounted(() => {
 
           <!-- 标签 -->
           <div class="flex flex-wrap gap-2 mb-3">
+            <Badge v-if="isPluginInstalled(plugin.id)" variant="default" class="bg-green-600">
+              ✓ 已安装
+            </Badge>
             <Badge variant="secondary">
               {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
             </Badge>
@@ -439,8 +489,23 @@ onMounted(() => {
             <!-- 详情底部 -->
             <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
               <Button variant="outline" @click="closePluginDetail">取消</Button>
-              <Button :disabled="installing" @click="installPlugin(selectedPlugin)">
+              <Button
+                v-if="!isPluginInstalled(selectedPlugin.id)"
+                :disabled="installing"
+                @click="installPlugin(selectedPlugin)"
+              >
                 {{ installing ? '安装中...' : '安装插件' }}
+              </Button>
+              <Button v-else variant="secondary" disabled>
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                已安装
               </Button>
             </div>
           </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { pluginRegistry } from '@/plugins'
 import { pluginInstaller } from '@/plugins/marketplace/installer'
 import { Button } from '@/components/ui/button'
@@ -17,8 +17,7 @@ import {
 } from '@/components/ui/dialog'
 import PluginDevMode from './PluginDevMode.vue'
 import PluginStore from './PluginStore.vue'
-import { CATEGORY_NAMES, SOURCE_LABELS } from '@/constants'
-import { formatDate } from '@/utils'
+import { CATEGORY_NAMES } from '@/constants'
 
 type ActiveTab = 'store' | 'installed' | 'install' | 'guide'
 
@@ -32,11 +31,26 @@ const showUninstallDialog = ref(false)
 const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
 const refreshKey = ref(0)
 
-// 内置插件
+// 事件处理器引用
+let pluginEventHandler: (() => void) | null = null
+
+// 内置插件（不包括第三方）
 const builtInPlugins = computed(() => {
   void pluginRegistry.version.value
   void refreshKey.value
-  return pluginRegistry.getAll()
+  return pluginRegistry.getAll().filter((p) => !p.metadata.isThirdParty)
+})
+
+// 第三方插件（从 registry 获取，确保状态同步）
+const thirdPartyPlugins = computed(() => {
+  void pluginRegistry.version.value
+  void refreshKey.value
+  return pluginRegistry.getAll().filter((p) => p.metadata.isThirdParty)
+})
+
+// 总插件数
+const totalPluginsCount = computed(() => {
+  return builtInPlugins.value.length + thirdPartyPlugins.value.length
 })
 
 interface InstalledPlugin {
@@ -44,16 +58,17 @@ interface InstalledPlugin {
   version: string
   source: string
   installedAt: string
+  enabled: boolean
   metadata: {
     name: string
     description: string
   }
 }
 
-// 已安装的第三方插件
+// 已安装的第三方插件（用于显示详细信息）
 const installedPlugins = ref<InstalledPlugin[]>([])
 
-// 按分类分组
+// 按分类分组（只包含内置插件）
 const pluginsByCategory = computed(() => {
   const categories = new Map<string, typeof builtInPlugins.value>()
   void refreshKey.value
@@ -89,6 +104,24 @@ const loadInstalledPlugins = async (): Promise<void> => {
 
 onMounted(() => {
   loadInstalledPlugins()
+  
+  // 监听插件安装/卸载事件
+  pluginEventHandler = () => {
+    console.log('收到插件变更事件，刷新列表')
+    loadInstalledPlugins()
+    refreshKey.value++
+  }
+  
+  window.addEventListener('plugin-installed', pluginEventHandler)
+  window.addEventListener('plugin-uninstalled', pluginEventHandler)
+})
+
+onUnmounted(() => {
+  // 清理事件监听
+  if (pluginEventHandler) {
+    window.removeEventListener('plugin-installed', pluginEventHandler)
+    window.removeEventListener('plugin-uninstalled', pluginEventHandler)
+  }
 })
 
 // 从 URL 安装
@@ -103,7 +136,13 @@ const installFromUrl = async (): Promise<void> => {
     await pluginInstaller.installFromUrl(installUrl.value)
     toast.success('插件安装成功！')
     installUrl.value = ''
-    await Promise.all([loadInstalledPlugins(), pluginInstaller.loadInstalledPlugins()])
+    // 先重新加载插件列表，再刷新注册表
+    await pluginInstaller.loadInstalledPlugins()
+    await loadInstalledPlugins()
+    // 强制刷新视图
+    refreshKey.value++
+    // 触发全局事件
+    window.dispatchEvent(new CustomEvent('plugin-installed'))
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
@@ -152,7 +191,13 @@ const installFile = async (file: File): Promise<void> => {
     installing.value = true
     await pluginInstaller.installFromFile(file)
     toast.success('插件安装成功！')
-    await Promise.all([loadInstalledPlugins(), pluginInstaller.loadInstalledPlugins()])
+    // 先重新加载插件列表，再刷新注册表
+    await pluginInstaller.loadInstalledPlugins()
+    await loadInstalledPlugins()
+    // 强制刷新视图
+    refreshKey.value++
+    // 触发全局事件
+    window.dispatchEvent(new CustomEvent('plugin-installed'))
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
@@ -174,17 +219,16 @@ const uninstallPlugin = async (): Promise<void> => {
     await pluginInstaller.uninstall(pluginToUninstall.value.id)
     toast.success('插件已卸载')
     await loadInstalledPlugins()
+    // 强制刷新视图
+    refreshKey.value++
+    // 触发全局事件
+    window.dispatchEvent(new CustomEvent('plugin-uninstalled'))
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '卸载失败')
   } finally {
     showUninstallDialog.value = false
     pluginToUninstall.value = null
   }
-}
-
-// 获取来源标签
-const getSourceLabel = (source: string): string => {
-  return SOURCE_LABELS[source] || source
 }
 </script>
 
@@ -202,7 +246,7 @@ const getSourceLabel = (source: string): string => {
           ]"
           @click="activeTab = 'installed'"
         >
-          已安装 ({{ builtInPlugins.length + installedPlugins.length }})
+          已安装 ({{ totalPluginsCount }})
         </button>
         <button
           :class="[
@@ -248,36 +292,51 @@ const getSourceLabel = (source: string): string => {
       <!-- 已安装插件标签页 -->
       <div v-show="activeTab === 'installed'" class="space-y-6 pt-4">
         <!-- 第三方插件 -->
-        <div v-if="installedPlugins.length > 0">
+        <div v-if="thirdPartyPlugins.length > 0">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             第三方插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
-              {{ installedPlugins.length }} 个已安装
+              {{ thirdPartyPlugins.length }} 个已安装
             </span>
           </h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             <div
-              v-for="plugin in installedPlugins"
-              :key="plugin.id"
+              v-for="plugin in thirdPartyPlugins"
+              :key="plugin.metadata.id"
               class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
             >
+              <!-- 图标 -->
+              <div
+                class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0"
+              >
+                <svg
+                  v-if="plugin.metadata.icon.startsWith('M') || plugin.metadata.icon.startsWith('m')"
+                  class="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="plugin.metadata.icon"
+                  />
+                </svg>
+                <span v-else class="text-xl">{{ plugin.metadata.icon }}</span>
+              </div>
+
               <!-- 信息 -->
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                   <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {{ plugin.metadata.name }}
                   </h4>
-                  <Badge variant="secondary" class="text-xs"> v{{ plugin.version }} </Badge>
-                  <Badge variant="outline" class="text-xs">
-                    {{ getSourceLabel(plugin.source) }}
-                  </Badge>
+                  <Badge variant="secondary" class="text-xs"> v{{ plugin.metadata.version }} </Badge>
                 </div>
                 <p class="text-xs text-gray-600 dark:text-gray-400">
                   {{ plugin.metadata.description }}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  安装于 {{ formatDate(plugin.installedAt) }}
                 </p>
               </div>
 
@@ -286,7 +345,7 @@ const getSourceLabel = (source: string): string => {
                 size="sm"
                 variant="outline"
                 class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                @click="confirmUninstall(plugin.id, plugin.metadata.name)"
+                @click="confirmUninstall(plugin.metadata.id, plugin.metadata.name)"
               >
                 卸载
               </Button>
@@ -297,7 +356,7 @@ const getSourceLabel = (source: string): string => {
         <!-- 内置插件 -->
         <div
           :class="{
-            'pt-6 border-t border-gray-200 dark:border-gray-700': installedPlugins.length > 0
+            'pt-6 border-t border-gray-200 dark:border-gray-700': thirdPartyPlugins.length > 0
           }"
         >
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">

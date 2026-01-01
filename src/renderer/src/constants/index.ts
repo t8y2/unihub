@@ -117,3 +117,10 @@ export const MARKETPLACE_CATEGORIES = [
   { value: 'productivity', label: '效率' },
   { value: 'developer', label: '开发者' }
 ] as const
+
+// ========== 网络配置 ==========
+export const NETWORK_CONFIG = {
+  PLUGIN_DOWNLOAD_TIMEOUT: 60000, // 插件下载超时时间（毫秒）
+  RETRY_ATTEMPTS: 3, // 重试次数
+  RETRY_DELAY: 2000 // 重试延迟（毫秒）
+} as const
