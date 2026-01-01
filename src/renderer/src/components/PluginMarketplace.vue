@@ -134,14 +134,14 @@ const confirmInstall = async (): Promise<void> => {
     if (result.success) {
       toast.success(`${selectedPlugin.value.name} 安装成功！`)
       closePluginDetail()
-      
+
       // 重新加载插件
       const { pluginInstaller } = await import('@/plugins/marketplace/installer')
       await pluginInstaller.loadInstalledPlugins()
-      
+
       // 更新已安装列表
       await loadInstalledPlugins()
-      
+
       // 触发全局刷新事件（通知其他组件）
       window.dispatchEvent(new CustomEvent('plugin-installed'))
     } else {
@@ -157,13 +157,13 @@ const confirmInstall = async (): Promise<void> => {
 onMounted(() => {
   loadPlugins()
   loadInstalledPlugins()
-  
+
   // 监听插件变更事件
   pluginChangeHandler = () => {
     console.log('收到插件变更事件，刷新已安装列表')
     loadInstalledPlugins()
   }
-  
+
   window.addEventListener('plugin-installed', pluginChangeHandler)
   window.addEventListener('plugin-uninstalled', pluginChangeHandler)
 })
@@ -274,9 +274,7 @@ onUnmounted(() => {
             >
               <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
               <svg
-                v-if="
-                  plugin.icon.startsWith('M') || plugin.icon.startsWith('m')
-                "
+                v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
                 class="w-6 h-6 text-white"
                 fill="none"
                 stroke="currentColor"
@@ -314,11 +312,7 @@ onUnmounted(() => {
             <Badge variant="secondary">
               {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
             </Badge>
-            <Badge
-              v-for="keyword in plugin.keywords.slice(0, 2)"
-              :key="keyword"
-              variant="outline"
-            >
+            <Badge v-for="keyword in plugin.keywords.slice(0, 2)" :key="keyword" variant="outline">
               {{ keyword }}
             </Badge>
           </div>
@@ -373,8 +367,7 @@ onUnmounted(() => {
                   <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
                   <svg
                     v-if="
-                      selectedPlugin.icon.startsWith('M') ||
-                      selectedPlugin.icon.startsWith('m')
+                      selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')
                     "
                     class="w-8 h-8 text-white"
                     fill="none"

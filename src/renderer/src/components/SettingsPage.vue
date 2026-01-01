@@ -163,7 +163,11 @@ onMounted(() => {
 })
 
 const systemInfo = ref({
-  platform: navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Win') ? 'Windows' : 'Linux',
+  platform: navigator.userAgent.includes('Mac')
+    ? 'macOS'
+    : navigator.userAgent.includes('Win')
+      ? 'Windows'
+      : 'Linux',
   userAgent: navigator.userAgent,
   language: navigator.language,
   electron: 'N/A',
@@ -208,7 +212,6 @@ const exportSystemInfo = (): void => {
 
   URL.revokeObjectURL(url)
 }
-
 </script>
 
 <template>

@@ -104,14 +104,14 @@ const loadInstalledPlugins = async (): Promise<void> => {
 
 onMounted(() => {
   loadInstalledPlugins()
-  
+
   // 监听插件安装/卸载事件
   pluginEventHandler = () => {
     console.log('收到插件变更事件，刷新列表')
     loadInstalledPlugins()
     refreshKey.value++
   }
-  
+
   window.addEventListener('plugin-installed', pluginEventHandler)
   window.addEventListener('plugin-uninstalled', pluginEventHandler)
 })
@@ -311,7 +311,9 @@ const uninstallPlugin = async (): Promise<void> => {
                 class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0"
               >
                 <svg
-                  v-if="plugin.metadata.icon.startsWith('M') || plugin.metadata.icon.startsWith('m')"
+                  v-if="
+                    plugin.metadata.icon.startsWith('M') || plugin.metadata.icon.startsWith('m')
+                  "
                   class="w-5 h-5 text-white"
                   fill="none"
                   stroke="currentColor"
@@ -333,7 +335,9 @@ const uninstallPlugin = async (): Promise<void> => {
                   <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {{ plugin.metadata.name }}
                   </h4>
-                  <Badge variant="secondary" class="text-xs"> v{{ plugin.metadata.version }} </Badge>
+                  <Badge variant="secondary" class="text-xs">
+                    v{{ plugin.metadata.version }}
+                  </Badge>
                 </div>
                 <p class="text-xs text-gray-600 dark:text-gray-400">
                   {{ plugin.metadata.description }}

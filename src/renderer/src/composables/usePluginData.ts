@@ -3,10 +3,22 @@
  * 统一管理收藏和最近访问
  */
 
-import { ref } from 'vue'
+import { ref, Ref } from 'vue'
 import { LIMITS } from '@/constants'
 
-export function usePluginData() {
+interface PluginDataItem {
+  pluginId: string
+  [key: string]: unknown
+}
+
+export function usePluginData(): {
+  recentPlugins: Ref<string[]>
+  favoritePlugins: Ref<string[]>
+  loadAll: () => Promise<void>
+  addRecent: (pluginId: string) => Promise<void>
+  toggleFavorite: (pluginId: string) => Promise<void>
+  isFavorite: (pluginId: string) => boolean
+} {
   const recentPlugins = ref<string[]>([])
   const favoritePlugins = ref<string[]>([])
 
@@ -19,7 +31,7 @@ export function usePluginData() {
       type === 'recents'
         ? await window.api.db.getRecents(limit || LIMITS.RECENT_PLUGINS)
         : await window.api.db.getFavorites()
-    return data.map((item) => item.pluginId)
+    return data.map((item: PluginDataItem) => item.pluginId)
   }
 
   // 加载所有数据

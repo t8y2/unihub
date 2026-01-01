@@ -19,7 +19,7 @@ export class DatabaseManager {
   constructor() {
     const userDataPath = app.getPath('userData')
     const dbPath = join(userDataPath, 'unihub.db')
-    
+
     this.db = new Database(dbPath)
     this.initTables()
   }
@@ -50,7 +50,7 @@ export class DatabaseManager {
   }
 
   // ========== 收藏相关 ==========
-  
+
   addFavorite(pluginId: string): void {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO favorites (plugin_id, added_at)
@@ -79,7 +79,7 @@ export class DatabaseManager {
   }
 
   // ========== 最近使用相关 ==========
-  
+
   addRecent(pluginId: string): void {
     const stmt = this.db.prepare(`
       INSERT INTO recents (plugin_id, last_accessed_at, access_count)
@@ -110,7 +110,7 @@ export class DatabaseManager {
   }
 
   // ========== 清理相关 ==========
-  
+
   close(): void {
     this.db.close()
   }

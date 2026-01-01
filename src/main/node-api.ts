@@ -137,7 +137,7 @@ export class NodeAPI {
         try {
           // 权限检查
           permissionManager.requirePermission(pluginId, 'spawn')
-          
+
           // 安全检查：只允许执行插件目录内的文件
           if (!command.startsWith('./') && !command.startsWith('.\\')) {
             throw new Error('只能执行插件目录内的文件（必须以 ./ 或 .\\ 开头）')

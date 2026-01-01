@@ -49,12 +49,8 @@ export default defineConfig({
           // 代码分割优化
           manualChunks: {
             'vue-vendor': ['vue'],
-            'ui-components': [
-              '@radix-icons/vue',
-              'lucide-vue-next',
-              'reka-ui'
-            ],
-            'utils': [
+            'ui-components': ['@radix-icons/vue', 'lucide-vue-next', 'reka-ui'],
+            utils: [
               'highlight.js',
               'jose',
               'js-yaml',
@@ -83,12 +79,7 @@ export default defineConfig({
     },
     // 优化依赖预构建
     optimizeDeps: {
-      include: [
-        'vue',
-        '@radix-icons/vue',
-        'lucide-vue-next',
-        'reka-ui'
-      ],
+      include: ['vue', '@radix-icons/vue', 'lucide-vue-next', 'reka-ui'],
       exclude: ['electron']
     }
   }

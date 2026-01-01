@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 interface Props {
   modelValue?: string | number
   type?: string

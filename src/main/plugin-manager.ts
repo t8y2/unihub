@@ -16,9 +16,14 @@ interface PackageJson {
   repository?: string | { type: string; url: string }
   unihub?: {
     id: string
+    name?: string
+    version?: string
+    description?: string
+    author?: string | { name: string; email?: string }
     icon?: string
     category?: string
     entry: string
+    keywords?: string[]
     permissions?: string[]
     screenshots?: string[]
     dev?: {
@@ -366,9 +371,9 @@ export class PluginManager {
   private savePluginInfo(plugin: InstalledPlugin): void {
     // 先清除缓存，确保读取最新数据
     this.cachedPlugins = null
-    
+
     const installed = this.getInstalledPlugins()
-    
+
     // 检查是否已存在（防止重复）
     const existingIndex = installed.findIndex((p) => p.id === plugin.id)
     if (existingIndex >= 0) {
@@ -380,7 +385,7 @@ export class PluginManager {
       installed.push(plugin)
       console.log('添加新插件:', plugin.metadata.name)
     }
-    
+
     writeFileSync(this.pluginsDataFile, JSON.stringify(installed, null, 2))
 
     // 清除缓存

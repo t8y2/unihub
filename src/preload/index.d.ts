@@ -67,9 +67,9 @@ declare global {
         isFavorite: (pluginId: string) => Promise<boolean>
         getFavorites: () => Promise<Array<{ pluginId: string; addedAt: number }>>
         addRecent: (pluginId: string) => Promise<{ success: boolean }>
-        getRecents: (limit?: number) => Promise<
-          Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>
-        >
+        getRecents: (
+          limit?: number
+        ) => Promise<Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>>
         clearRecents: () => Promise<{ success: boolean }>
       }
     }

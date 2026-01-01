@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -102,7 +103,7 @@ output.on('close', () => {
 function generateMarketplaceEntry() {
   try {
     const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'))
-    
+
     if (!pkg.unihub) {
       console.log('\n⚠️  未找到 unihub 配置，跳过生成 marketplace 条目')
       return
@@ -113,9 +114,7 @@ function generateMarketplaceEntry() {
       name: pkg.name,
       version: pkg.version,
       description: pkg.description,
-      author: typeof pkg.author === 'string' 
-        ? { name: pkg.author }
-        : pkg.author,
+      author: typeof pkg.author === 'string' ? { name: pkg.author } : pkg.author,
       icon: pkg.unihub.icon || '📦',
       category: pkg.unihub.category || 'tool',
       keywords: pkg.keywords || [],
@@ -129,9 +128,7 @@ function generateMarketplaceEntry() {
       // 向后兼容
       downloadUrl: pkg.unihub.install?.zip || pkg.homepage || '',
       homepage: pkg.homepage || '',
-      repository: typeof pkg.repository === 'string' 
-        ? pkg.repository 
-        : pkg.repository?.url || '',
+      repository: typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url || '',
       screenshots: pkg.unihub.screenshots || [],
       downloads: 0,
       rating: 5.0,
@@ -142,7 +139,7 @@ function generateMarketplaceEntry() {
     // 保存到文件
     const marketplaceFile = path.join(rootDir, 'marketplace-entry.json')
     fs.writeFileSync(marketplaceFile, JSON.stringify(entry, null, 2))
-    
+
     console.log('\n✅ 已生成 marketplace 条目: marketplace-entry.json')
     console.log('\n📋 Marketplace 条目预览:')
     console.log('─'.repeat(50))
@@ -150,7 +147,7 @@ function generateMarketplaceEntry() {
     console.log(`ID: ${entry.id}`)
     console.log(`版本: ${entry.version}`)
     console.log(`分类: ${entry.category}`)
-    
+
     if (entry.install.npm) {
       console.log(`npm: ${entry.install.npm}`)
     }
@@ -160,7 +157,7 @@ function generateMarketplaceEntry() {
     if (entry.install.zip) {
       console.log(`ZIP: ${entry.install.zip}`)
     }
-    
+
     console.log('─'.repeat(50))
     console.log('\n💡 提示: 将此条目添加到 marketplace/plugins.json 中')
   } catch (error) {

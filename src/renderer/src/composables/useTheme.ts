@@ -2,12 +2,18 @@
  * 主题管理 Composable
  */
 
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { STORAGE_KEYS } from '@/constants'
 
 export type Theme = 'light' | 'dark' | 'system'
 
-export function useTheme() {
+export function useTheme(): {
+  isDark: ReturnType<typeof ref<boolean>>
+  initTheme: () => void
+  toggleTheme: () => void
+  setTheme: (theme: Theme) => void
+  watchSystemTheme: () => void
+} {
   const isDark = ref(false)
 
   // 初始化主题
@@ -34,7 +40,7 @@ export function useTheme() {
     } else {
       isDark.value = theme === 'dark'
     }
-    
+
     document.documentElement.classList.toggle('dark', isDark.value)
     localStorage.setItem(STORAGE_KEYS.THEME, theme)
   }

@@ -331,7 +331,9 @@ const clearSearch = (): void => {
                 <svg
                   class="w-4 h-4"
                   :fill="favoritePlugins.includes(plugin.metadata.id) ? 'currentColor' : 'none'"
-                  :class="favoritePlugins.includes(plugin.metadata.id) ? 'text-red-500' : 'text-gray-400'"
+                  :class="
+                    favoritePlugins.includes(plugin.metadata.id) ? 'text-red-500' : 'text-gray-400'
+                  "
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >

@@ -7,7 +7,12 @@ import { onMounted, onUnmounted } from 'vue'
 export type ShortcutHandler = () => void
 export type ShortcutMap = Record<string, ShortcutHandler>
 
-export function useKeyboard(shortcuts: ShortcutMap, shouldHandle?: () => boolean) {
+export function useKeyboard(
+  shortcuts: ShortcutMap,
+  shouldHandle?: () => boolean
+): {
+  handleKeyDown: (e: KeyboardEvent) => void
+} {
   const handleKeyDown = (e: KeyboardEvent): void => {
     // 检查是否应该处理快捷键
     if (shouldHandle && !shouldHandle()) return

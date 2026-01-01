@@ -32,7 +32,7 @@ export async function safeAsync<T>(
 /**
  * 创建操作结果
  */
-export function createResult<T = any>(
+export function createResult<T = unknown>(
   success: boolean,
   message?: string,
   data?: T
@@ -43,13 +43,16 @@ export function createResult<T = any>(
 /**
  * 创建成功结果
  */
-export function successResult<T = any>(message?: string, data?: T) {
+export function successResult<T = unknown>(
+  message?: string,
+  data?: T
+): { success: boolean; message?: string; data?: T } {
   return createResult(true, message, data)
 }
 
 /**
  * 创建失败结果
  */
-export function errorResult(message: string) {
+export function errorResult(message: string): { success: boolean; message?: string } {
   return createResult(false, message)
 }

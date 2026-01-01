@@ -22,30 +22,30 @@ export function formatDate(dateStr: string | Date): string {
 /**
  * 防抖函数
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout>
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => fn.apply(this, args), delay)
+    timeoutId = setTimeout(() => (fn as (...args: unknown[]) => unknown).apply(this, args), delay)
   }
 }
 
 /**
  * 节流函数
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): (...args: Parameters<T>) => void {
   let lastCall = 0
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     const now = Date.now()
     if (now - lastCall >= delay) {
       lastCall = now
-      fn.apply(this, args)
+      ;(fn as (...args: unknown[]) => unknown).apply(this, args)
     }
   }
 }
@@ -55,12 +55,12 @@ export function throttle<T extends (...args: any[]) => any>(
  */
 export function deepClone<T>(obj: T): T {
   if (obj === null || typeof obj !== 'object') return obj
-  if (obj instanceof Date) return new Date(obj.getTime()) as any
-  if (obj instanceof Array) return obj.map((item) => deepClone(item)) as any
+  if (obj instanceof Date) return new Date(obj.getTime()) as T
+  if (obj instanceof Array) return obj.map((item) => deepClone(item)) as T
   if (obj instanceof Object) {
     const clonedObj = {} as T
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         clonedObj[key] = deepClone(obj[key])
       }
     }
@@ -79,7 +79,7 @@ export function generateId(): string {
 /**
  * 安全的 JSON 解析
  */
-export function safeJsonParse<T = any>(json: string, fallback: T): T {
+export function safeJsonParse<T = unknown>(json: string, fallback: T): T {
   try {
     return JSON.parse(json)
   } catch {

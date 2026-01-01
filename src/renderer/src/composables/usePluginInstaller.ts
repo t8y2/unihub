@@ -3,11 +3,17 @@
  * 统一管理插件安装逻辑
  */
 
-import { ref } from 'vue'
+import { ref, Ref } from 'vue'
 import { pluginInstaller } from '@/plugins/marketplace/installer'
 import { toast } from 'vue-sonner'
 
-export function usePluginInstaller() {
+export function usePluginInstaller(): {
+  installing: Ref<boolean>
+  installFromUrl: (url: string) => Promise<boolean>
+  installFromFile: (file: File) => Promise<boolean>
+  uninstall: (pluginId: string) => Promise<boolean>
+  reload: () => Promise<void>
+} {
   const installing = ref(false)
 
   // 从 URL 安装

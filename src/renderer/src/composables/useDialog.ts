@@ -3,9 +3,15 @@
  * 简化对话框状态管理
  */
 
-import { ref } from 'vue'
+import { ref, Ref } from 'vue'
 
-export function useDialog<T = any>() {
+export function useDialog<T = unknown>(): {
+  visible: Ref<boolean>
+  data: Ref<T | null>
+  open: (payload?: T) => void
+  close: () => void
+  toggle: () => void
+} {
   const visible = ref(false)
   const data = ref<T | null>(null)
 

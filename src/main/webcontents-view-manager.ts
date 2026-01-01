@@ -223,7 +223,7 @@ export class WebContentsViewManager {
     }
 
     this.views.delete(pluginId)
-    
+
     // 从 LRU 队列中移除
     const index = this.lruQueue.indexOf(pluginId)
     if (index > -1) {

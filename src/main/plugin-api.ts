@@ -20,7 +20,7 @@ export class PluginAPI {
       try {
         const pluginId = this.getPluginIdFromEvent(event)
         permissionManager.requirePermission(pluginId, 'fs')
-        
+
         const content = await readFile(path, 'utf-8')
         return { success: true, data: content }
       } catch (error: unknown) {
@@ -103,7 +103,7 @@ export class PluginAPI {
       try {
         const pluginId = this.getPluginIdFromEvent(event)
         permissionManager.requirePermission(pluginId, 'clipboard')
-        
+
         return { success: true, data: clipboard.readText() }
       } catch (error: unknown) {
         return { success: false, error: (error as Error).message }
@@ -114,7 +114,7 @@ export class PluginAPI {
       try {
         const pluginId = this.getPluginIdFromEvent(event)
         permissionManager.requirePermission(pluginId, 'clipboard')
-        
+
         clipboard.writeText(text)
         return { success: true }
       } catch (error: unknown) {
@@ -178,7 +178,7 @@ export class PluginAPI {
       try {
         const pluginId = this.getPluginIdFromEvent(event)
         permissionManager.requirePermission(pluginId, 'http')
-        
+
         const response = await fetch(options.url as string, {
           method: (options.method as string) || 'GET',
           headers: options.headers as Record<string, string>,
@@ -287,22 +287,25 @@ export class PluginAPI {
     })
 
     // 通知 API
-    ipcMain.handle('plugin-api:notification:show', async (event, options: Record<string, unknown>) => {
-      try {
-        const pluginId = this.getPluginIdFromEvent(event)
-        permissionManager.requirePermission(pluginId, 'notification')
-        
-        const { Notification } = await import('electron')
-        new Notification({
-          title: options.title as string,
-          body: options.body as string,
-          icon: options.icon as string
-        }).show()
-        return { success: true }
-      } catch (error: unknown) {
-        return { success: false, error: (error as Error).message }
+    ipcMain.handle(
+      'plugin-api:notification:show',
+      async (event, options: Record<string, unknown>) => {
+        try {
+          const pluginId = this.getPluginIdFromEvent(event)
+          permissionManager.requirePermission(pluginId, 'notification')
+
+          const { Notification } = await import('electron')
+          new Notification({
+            title: options.title as string,
+            body: options.body as string,
+            icon: options.icon as string
+          }).show()
+          return { success: true }
+        } catch (error: unknown) {
+          return { success: false, error: (error as Error).message }
+        }
       }
-    })
+    )
   }
 
   /**
@@ -315,7 +318,7 @@ export class PluginAPI {
     if (match) {
       return match[1]
     }
-    
+
     // 如果无法获取，返回 unknown（内置插件）
     return 'builtin'
   }

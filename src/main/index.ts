@@ -136,13 +136,13 @@ app.whenReady().then(async () => {
   // 异步初始化插件系统（不阻塞窗口显示）
   setImmediate(() => {
     console.log('🔄 开始异步初始化插件系统...')
-    
+
     // 预热插件缓存（异步）
     pluginManager.warmupCache()
-    
+
     // 初始化已安装插件的权限（异步）
     pluginManager.initializePermissions()
-    
+
     console.log('✅ 插件系统初始化完成')
   })
 
@@ -158,7 +158,7 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   // 清理快捷键
   shortcutManager.cleanup()
-  
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
@@ -228,7 +228,7 @@ function setupIpcHandlers(): void {
     if (!existingView) {
       webContentsViewManager.createPluginView(pluginId, pluginUrl)
     }
-    
+
     webContentsViewManager.showPluginView(pluginId)
     hasActiveThirdPartyPlugin = true
 

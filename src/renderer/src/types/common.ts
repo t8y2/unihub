@@ -23,7 +23,7 @@ export type CategoryType = 'formatter' | 'tool' | 'encoder' | 'custom'
 export type ThemeType = 'light' | 'dark' | 'system'
 
 // 操作结果
-export interface OperationResult<T = any> {
+export interface OperationResult<T = unknown> {
   success: boolean
   message?: string
   data?: T

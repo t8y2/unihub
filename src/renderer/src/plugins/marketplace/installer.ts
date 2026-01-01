@@ -158,7 +158,7 @@ export class PluginInstaller {
   async loadInstalledPlugins(): Promise<void> {
     try {
       const plugins = await window.api.plugin.list()
-      
+
       // 先移除所有第三方插件（避免重复）
       const allPlugins = pluginRegistry.getAll()
       allPlugins.forEach((plugin) => {
@@ -166,7 +166,7 @@ export class PluginInstaller {
           pluginRegistry.unregister(plugin.metadata.id)
         }
       })
-      
+
       // 批量注册插件，减少 DOM 更新
       const pluginsToRegister = []
 
@@ -248,7 +248,7 @@ export class PluginInstaller {
                 // 使用 ResizeObserver 代替 resize 事件（性能更好）
                 this.$nextTick(() => {
                   this.updateViewBounds()
-                  
+
                   const container = this.$refs.pluginContainer as HTMLElement
                   if (container && 'ResizeObserver' in window) {
                     this.resizeObserver = new ResizeObserver(() => {
@@ -269,7 +269,7 @@ export class PluginInstaller {
             beforeUnmount(this: ComponentInstance) {
               if (this.isActive) {
                 window.api.plugin.close(this.pluginId)
-                
+
                 // 清理 ResizeObserver
                 if (this.resizeObserver) {
                   this.resizeObserver.disconnect()
