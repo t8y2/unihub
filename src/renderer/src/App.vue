@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
@@ -9,385 +9,208 @@ import FavoritesPage from './components/FavoritesPage.vue'
 import RecentsPage from './components/RecentsPage.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import { Toaster } from './components/ui/sonner'
+import { STORAGE_KEYS, CATEGORY_NAMES, DEFAULT_CATEGORIES } from '@/constants'
+import { usePluginData } from './composables/usePluginData'
+import { useKeyboard } from './composables/useKeyboard'
+import type { Tab, TabType } from '@/types/common'
 
+// UI 状态
 const isDark = ref(false)
 const sidebarCollapsed = ref(false)
 const showGlobalSearch = ref(false)
+const expandedCategories = ref(new Set(DEFAULT_CATEGORIES))
 
-// 最近访问和收藏的插件
-const recentPlugins = ref<string[]>([])
-const favoritePlugins = ref<string[]>([])
-
-// 分类展开/收起状态
-const expandedCategories = ref<Set<string>>(new Set(['formatter', 'tool', 'encoder']))
+// 使用插件数据 composable
+const { recentPlugins, favoritePlugins, loadAll, addRecent, toggleFavorite } = usePluginData()
 
 // 切换分类展开状态
 const toggleCategory = (category: string): void => {
-  if (expandedCategories.value.has(category)) {
-    expandedCategories.value.delete(category)
-  } else {
-    expandedCategories.value.add(category)
-  }
+  expandedCategories.value.has(category)
+    ? expandedCategories.value.delete(category)
+    : expandedCategories.value.add(category)
 }
 
-// 从数据库加载最近访问和收藏
-const loadPluginData = async (): Promise<void> => {
-  try {
-    // 加载最近访问
-    const recents = await window.api.db.getRecents(10)
-    recentPlugins.value = recents.map((r) => r.pluginId)
-
-    // 加载收藏
-    const favorites = await window.api.db.getFavorites()
-    favoritePlugins.value = favorites.map((f) => f.pluginId)
-  } catch (error) {
-    console.error('加载插件数据失败:', error)
-  }
-}
-
-// 添加到最近访问
-const addToRecent = async (pluginId: string): Promise<void> => {
-  try {
-    await window.api.db.addRecent(pluginId)
-    // 重新加载最近访问列表
-    const recents = await window.api.db.getRecents(10)
-    recentPlugins.value = recents.map((r) => r.pluginId)
-  } catch (error) {
-    console.error('添加最近访问失败:', error)
-  }
-}
-
-// 切换收藏状态
-const toggleFavorite = async (pluginId: string): Promise<void> => {
-  try {
-    const isFav = await window.api.db.isFavorite(pluginId)
-    if (isFav) {
-      await window.api.db.removeFavorite(pluginId)
-    } else {
-      await window.api.db.addFavorite(pluginId)
-    }
-    // 重新加载收藏列表
-    const favorites = await window.api.db.getFavorites()
-    favoritePlugins.value = favorites.map((f) => f.pluginId)
-  } catch (error) {
-    console.error('切换收藏失败:', error)
-  }
-}
-
-onMounted(async () => {
+// 初始化应用
+const initializeApp = async (): Promise<void> => {
   // 初始化插件系统
   initPlugins()
 
-  // 加载已安装的第三方插件
+  // 加载第三方插件
   try {
     await pluginInstaller.loadInstalledPlugins()
   } catch (error) {
     console.error('加载第三方插件失败:', error)
   }
 
-  // 从 localStorage 读取主题设置
-  const savedTheme = localStorage.getItem('theme')
+  // 恢复主题设置
+  const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME)
   if (savedTheme === 'dark') {
     isDark.value = true
     document.documentElement.classList.add('dark')
   }
 
-  // 从 localStorage 读取侧边栏状态
-  const savedSidebarState = localStorage.getItem('sidebarCollapsed')
-  if (savedSidebarState === 'true') {
-    sidebarCollapsed.value = true
-  }
+  // 恢复侧边栏状态
+  sidebarCollapsed.value = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED) === 'true'
 
-  // 加载最近访问和收藏
-  await loadPluginData()
+  // 加载插件数据
+  await loadAll()
+}
 
-  // 添加键盘快捷键监听
-  window.addEventListener('keydown', handleKeyDown)
-
-  // 监听主进程的关闭标签事件
+onMounted(() => {
+  initializeApp()
   window.electron.ipcRenderer.on('handle-close-tab', () => {
-    if (activeTabId.value) {
-      closeTab(activeTabId.value)
-    }
+    if (activeTabId.value) closeTab(activeTabId.value)
   })
 })
 
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-})
-
-const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
-  // 如果焦点在插件视图中，不处理快捷键
-  // 检查是否有活动的第三方插件标签
+// 检查是否应该处理快捷键
+const shouldHandleShortcut = (): boolean => {
   const activeTab = tabs.value.find((t) => t.id === activeTabId.value)
-  if (activeTab && activeTab.type === 'plugin') {
-    const plugin = pluginRegistry.get(activeTab.pluginId)
-    if (plugin?.metadata.isThirdParty) {
-      // 第三方插件正在显示，不处理快捷键
-      return
-    }
-  }
+  if (!activeTab || activeTab.type !== 'plugin') return true
 
-  // Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
-  if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
-    e.preventDefault()
-
-    if (tabs.value.length === 0) {
-      // 如果没有标签，关闭应用（Electron）
-      window.electron.ipcRenderer.send('window:close')
-    } else if (tabs.value.length === 1) {
-      // 如果只有一个标签，关闭标签（回到主页）
-      closeTab(activeTabId.value)
-    } else {
-      // 关闭当前标签
-      closeTab(activeTabId.value)
-    }
-  }
-
-  // Cmd+N (Mac) 或 Ctrl+N (Windows/Linux) 新建主页标签
-  if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-    e.preventDefault()
-    addHomeTab()
-  }
-
-  // Cmd+B (Mac) 或 Ctrl+B (Windows/Linux) 切换侧边栏
-  if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-    e.preventDefault()
-    toggleSidebar()
-  }
-
-  // Cmd+K (Mac) 或 Ctrl+K (Windows/Linux) 打开全局搜索
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault()
-    showGlobalSearch.value = true
-  }
-
-  // Cmd+P (Mac) 或 Ctrl+P (Windows/Linux) 打开全局搜索
-  if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
-    e.preventDefault()
-    showGlobalSearch.value = true
-  }
+  const plugin = pluginRegistry.get(activeTab.pluginId)
+  return !plugin?.metadata.isThirdParty
 }
 
+// 使用键盘快捷键 composable
+useKeyboard(
+  {
+    w: () => {
+      tabs.value.length === 0
+        ? window.electron.ipcRenderer.send('window:close')
+        : closeTab(activeTabId.value)
+    },
+    n: () => addHomeTab(),
+    b: () => toggleSidebar(),
+    k: () => (showGlobalSearch.value = true),
+    p: () => (showGlobalSearch.value = true)
+  },
+  shouldHandleShortcut
+)
+
+// 主题切换
 const toggleTheme = (): void => {
   isDark.value = !isDark.value
-  if (isDark.value) {
-    document.documentElement.classList.add('dark')
-    localStorage.setItem('theme', 'dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-    localStorage.setItem('theme', 'light')
-  }
+  document.documentElement.classList.toggle('dark', isDark.value)
+  localStorage.setItem(STORAGE_KEYS.THEME, isDark.value ? 'dark' : 'light')
 }
 
+// 侧边栏切换
 const toggleSidebar = (): void => {
   sidebarCollapsed.value = !sidebarCollapsed.value
-  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value.toString())
+  localStorage.setItem(STORAGE_KEYS.SIDEBAR_COLLAPSED, String(sidebarCollapsed.value))
 }
 
-interface Tab {
-  id: string
-  pluginId: string
-  title: string
-  type: 'plugin' | 'management' | 'settings' | 'favorites' | 'recents'
-}
-
+// 标签管理
 const tabs = ref<Tab[]>([])
 const activeTabId = ref('')
 
-// 监听 activeTabId 变化，自动显示/隐藏第三方插件视图
-watch(activeTabId, (newTabId, oldTabId) => {
-  // 隐藏旧标签的插件视图
-  if (oldTabId) {
-    const oldTab = tabs.value.find((t) => t.id === oldTabId)
-    if (oldTab && oldTab.type === 'plugin') {
-      const oldPlugin = pluginRegistry.get(oldTab.pluginId)
-      if (oldPlugin?.metadata.isThirdParty) {
-        window.api.plugin.close(oldTab.pluginId)
-      }
-    }
-  }
+// 处理第三方插件视图的显示/隐藏
+const handleThirdPartyPlugin = (tabId: string, action: 'open' | 'close'): void => {
+  if (!tabId) return
 
-  // 显示新标签的插件视图
-  if (newTabId) {
-    const newTab = tabs.value.find((t) => t.id === newTabId)
-    if (newTab && newTab.type === 'plugin') {
-      const newPlugin = pluginRegistry.get(newTab.pluginId)
-      if (newPlugin?.metadata.isThirdParty) {
-        window.api.plugin.open(newTab.pluginId)
-      }
-    }
+  const tab = tabs.value.find((t) => t.id === tabId)
+  if (!tab || tab.type !== 'plugin') return
+
+  const plugin = pluginRegistry.get(tab.pluginId)
+  if (plugin?.metadata.isThirdParty) {
+    window.api.plugin[action](tab.pluginId)
   }
+}
+
+// 监听标签切换，自动显示/隐藏第三方插件视图
+watch(activeTabId, (newTabId, oldTabId) => {
+  handleThirdPartyPlugin(oldTabId, 'close')
+  handleThirdPartyPlugin(newTabId, 'open')
 })
 
-// 获取所有启用的插件（使用 computed 缓存）
+// 获取所有启用的插件
 const enabledPlugins = computed(() => {
-  // 依赖 version 来触发重新计算
   void pluginRegistry.version.value
   return pluginRegistry.getEnabled()
 })
 
-// 按分类获取插件（使用 computed 缓存）
+// 按分类获取插件
 const pluginsByCategory = computed(() => {
-  // 依赖 version 来触发重新计算
   void pluginRegistry.version.value
   const categories = new Map<string, typeof enabledPlugins.value>()
-  const plugins = enabledPlugins.value
-  
-  // 性能优化：使用 for 循环代替 forEach
-  for (let i = 0; i < plugins.length; i++) {
-    const plugin = plugins[i]
+
+  for (const plugin of enabledPlugins.value) {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
       categories.set(category, [])
     }
     categories.get(category)!.push(plugin)
   }
+
   return categories
 })
 
-// 分类名称映射
-const categoryNames: Record<string, string> = {
-  formatter: '格式化',
-  tool: '工具',
-  encoder: '编码',
-  custom: '自定义'
-}
-
-const openTab = (pluginId: string): void => {
-  const plugin = pluginRegistry.get(pluginId)
-  if (!plugin || !plugin.enabled) return
-
-  // 添加到最近访问
-  addToRecent(pluginId)
-
-  // 检查是否已经打开
-  const existingTab = tabs.value.find((t) => t.pluginId === pluginId && t.type === 'plugin')
+// 创建或激活标签的通用函数
+const createOrActivateTab = (
+  type: TabType,
+  pluginId: string,
+  title: string,
+  matcher?: (tab: Tab) => boolean
+): void => {
+  const existingTab = tabs.value.find(matcher || ((t) => t.type === type))
   if (existingTab) {
     activeTabId.value = existingTab.id
-    // 如果是第三方插件，显示其视图
-    if (plugin.metadata.isThirdParty) {
-      window.api.plugin.open(pluginId)
-    }
     return
   }
 
-  // 创建新标签
   const newTab: Tab = {
     id: Date.now().toString(),
     pluginId,
-    title: plugin.metadata.name,
-    type: 'plugin'
+    title,
+    type
   }
   tabs.value.push(newTab)
   activeTabId.value = newTab.id
+}
 
-  // 如果是第三方插件，打开其视图
+// 打开插件标签
+const openTab = (pluginId: string): void => {
+  const plugin = pluginRegistry.get(pluginId)
+  if (!plugin?.enabled) return
+
+  addRecent(pluginId)
+
+  createOrActivateTab(
+    'plugin',
+    pluginId,
+    plugin.metadata.name,
+    (t) => t.pluginId === pluginId && t.type === 'plugin'
+  )
+
   if (plugin.metadata.isThirdParty) {
     window.api.plugin.open(pluginId)
   }
 }
 
-const openPluginManagement = (): void => {
-  // 检查是否已经打开
-  const existingTab = tabs.value.find((t) => t.type === 'management')
-  if (existingTab) {
-    activeTabId.value = existingTab.id
-    return
-  }
+// 打开系统页面
+const openPluginManagement = (): void =>
+  createOrActivateTab('management', 'plugin-management', '插件管理')
 
-  // 创建新标签
-  const newTab: Tab = {
-    id: Date.now().toString(),
-    pluginId: 'plugin-management',
-    title: '插件管理',
-    type: 'management'
-  }
-  tabs.value.push(newTab)
-  activeTabId.value = newTab.id
-}
+const openSettings = (): void => createOrActivateTab('settings', 'settings', '设置')
 
-const openSettings = (): void => {
-  // 检查是否已经打开
-  const existingTab = tabs.value.find((t) => t.type === 'settings')
-  if (existingTab) {
-    activeTabId.value = existingTab.id
-    return
-  }
+const openFavorites = (): void => createOrActivateTab('favorites', 'favorites', '收藏')
 
-  // 创建新标签
-  const newTab: Tab = {
-    id: Date.now().toString(),
-    pluginId: 'settings',
-    title: '设置',
-    type: 'settings'
-  }
-  tabs.value.push(newTab)
-  activeTabId.value = newTab.id
-}
+const openRecents = (): void => createOrActivateTab('recents', 'recents', '最近使用')
 
-const openFavorites = (): void => {
-  // 检查是否已经打开
-  const existingTab = tabs.value.find((t) => t.type === 'favorites')
-  if (existingTab) {
-    activeTabId.value = existingTab.id
-    return
-  }
-
-  // 创建新标签
-  const newTab: Tab = {
-    id: Date.now().toString(),
-    pluginId: 'favorites',
-    title: '收藏',
-    type: 'favorites'
-  }
-  tabs.value.push(newTab)
-  activeTabId.value = newTab.id
-}
-
-const openRecents = (): void => {
-  // 检查是否已经打开
-  const existingTab = tabs.value.find((t) => t.type === 'recents')
-  if (existingTab) {
-    activeTabId.value = existingTab.id
-    return
-  }
-
-  // 创建新标签
-  const newTab: Tab = {
-    id: Date.now().toString(),
-    pluginId: 'recents',
-    title: '最近使用',
-    type: 'recents'
-  }
-  tabs.value.push(newTab)
-  activeTabId.value = newTab.id
-}
-
+// 关闭标签
 const closeTab = (tabId: string): void => {
   const index = tabs.value.findIndex((t) => t.id === tabId)
   if (index === -1) return
 
-  const tab = tabs.value[index]
+  handleThirdPartyPlugin(tabId, 'close')
 
-  // 如果是第三方插件，关闭其视图
-  if (tab.type === 'plugin') {
-    const plugin = pluginRegistry.get(tab.pluginId)
-    if (plugin?.metadata.isThirdParty) {
-      window.api.plugin.close(tab.pluginId)
-    }
-  }
-
-  // 如果关闭的是当前标签，切换到相邻标签
+  // 切换到相邻标签
   if (activeTabId.value === tabId) {
     if (tabs.value.length > 1) {
       const nextIndex = index === tabs.value.length - 1 ? index - 1 : index + 1
-      const nextTab = tabs.value[nextIndex]
-      if (nextTab) {
-        activeTabId.value = nextTab.id
-      }
+      activeTabId.value = tabs.value[nextIndex].id
     } else {
-      // 最后一个标签，清空 activeTabId（回到主页）
       activeTabId.value = ''
     }
   }
@@ -395,33 +218,15 @@ const closeTab = (tabId: string): void => {
   tabs.value.splice(index, 1)
 }
 
+// 回到主页
 const goHome = (): void => {
-  // 关闭所有第三方插件视图
-  tabs.value.forEach((tab) => {
-    if (tab.type === 'plugin') {
-      const plugin = pluginRegistry.get(tab.pluginId)
-      if (plugin?.metadata.isThirdParty) {
-        window.api.plugin.close(tab.pluginId)
-      }
-    }
-  })
-
-  // 关闭所有标签，回到主页
+  tabs.value.forEach((tab) => handleThirdPartyPlugin(tab.id, 'close'))
   tabs.value = []
   activeTabId.value = ''
 }
 
-const addHomeTab = (): void => {
-  // 创建新的主页标签
-  const newTab: Tab = {
-    id: Date.now().toString(),
-    pluginId: 'home',
-    title: '主页',
-    type: 'plugin'
-  }
-  tabs.value.push(newTab)
-  activeTabId.value = newTab.id
-}
+// 新建主页标签
+const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
 </script>
 
 <template>
@@ -554,7 +359,7 @@ const addHomeTab = (): void => {
                 />
               </svg>
               <span v-show="!sidebarCollapsed" class="flex-1 text-left">
-                {{ categoryNames[category] || category }}
+                {{ CATEGORY_NAMES[category] || category }}
               </span>
               <!-- 工具数量 -->
               <span
@@ -895,7 +700,7 @@ const addHomeTab = (): void => {
       </div>
     </main>
   </div>
-  
+
   <!-- Toast 通知 -->
   <Toaster position="top-right" rich-colors :theme="isDark ? 'dark' : 'light'" />
 </template>

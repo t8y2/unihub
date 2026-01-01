@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
+import { log } from '@/utils/logger'
 
 const props = defineProps<{
   favoritePlugins: string[]
@@ -13,10 +14,25 @@ const emit = defineEmits<{
 
 // 收藏的插件列表
 const favoritePluginsList = computed(() => {
-  return props.favoritePlugins
+  const plugins = props.favoritePlugins
     .map((id) => pluginRegistry.get(id))
-    .filter((plugin) => plugin && plugin.enabled)
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
+
+  log.debug('收藏列表加载', { count: plugins.length })
+  return plugins
 })
+
+// 处理打开工具
+const handleOpenTool = (pluginId: string): void => {
+  log.info('打开收藏的工具', { pluginId })
+  emit('openTool', pluginId)
+}
+
+// 处理取消收藏
+const handleToggleFavorite = (pluginId: string): void => {
+  log.info('取消收藏', { pluginId })
+  emit('toggleFavorite', pluginId)
+}
 </script>
 
 <template>
@@ -72,7 +88,7 @@ const favoritePluginsList = computed(() => {
           v-for="plugin in favoritePluginsList"
           :key="plugin.metadata.id"
           class="group p-5 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.02] hover:border-red-300 dark:hover:border-red-700 text-left relative overflow-hidden"
-          @click="emit('openTool', plugin.metadata.id)"
+          @click="handleOpenTool(plugin.metadata.id)"
         >
           <!-- 背景装饰 -->
           <div
@@ -102,7 +118,7 @@ const favoritePluginsList = computed(() => {
               <div
                 class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
                 title="取消收藏"
-                @click.stop="emit('toggleFavorite', plugin.metadata.id)"
+                @click.stop="handleToggleFavorite(plugin.metadata.id)"
               >
                 <svg
                   class="w-5 h-5 text-red-500"

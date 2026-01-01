@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
+import { log } from '@/utils/logger'
 
 const props = defineProps<{
   recentPlugins: string[]
@@ -12,10 +13,19 @@ const emit = defineEmits<{
 
 // 最近使用的插件列表
 const recentPluginsList = computed(() => {
-  return props.recentPlugins
+  const plugins = props.recentPlugins
     .map((id) => pluginRegistry.get(id))
-    .filter((plugin) => plugin && plugin.enabled)
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
+
+  log.debug('最近使用列表加载', { count: plugins.length })
+  return plugins
 })
+
+// 处理打开工具
+const handleOpenTool = (pluginId: string): void => {
+  log.info('打开最近使用的工具', { pluginId })
+  emit('openTool', pluginId)
+}
 </script>
 
 <template>
@@ -77,7 +87,7 @@ const recentPluginsList = computed(() => {
           v-for="(plugin, index) in recentPluginsList"
           :key="plugin.metadata.id"
           class="group p-5 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.02] hover:border-green-300 dark:hover:border-green-700 text-left relative overflow-hidden"
-          @click="emit('openTool', plugin.metadata.id)"
+          @click="handleOpenTool(plugin.metadata.id)"
         >
           <!-- 背景装饰 -->
           <div

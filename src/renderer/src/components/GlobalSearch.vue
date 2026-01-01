@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { pluginRegistry } from '../plugins'
 import { pinyin } from 'pinyin-pro'
+import { CATEGORY_NAMES, LIMITS } from '@/constants'
 
 const emit = defineEmits<{
   openPlugin: [pluginId: string]
@@ -26,77 +27,54 @@ interface SearchResult {
   score: number
 }
 
-// 拼音缓存（性能优化）
+// 拼音缓存
 const pinyinCache = new Map<string, string>()
 
-/**
- * 获取文本的拼音（带缓存）
- */
+// 获取拼音（带缓存）
 function getPinyin(text: string): string {
-  if (pinyinCache.has(text)) {
-    return pinyinCache.get(text)!
-  }
-  
-  // 获取拼音（不带音调，连续输出）
+  if (pinyinCache.has(text)) return pinyinCache.get(text)!
+
   const py = pinyin(text, { toneType: 'none', type: 'array' }).join('')
   pinyinCache.set(text, py)
   return py
 }
 
-/**
- * 获取文本的拼音首字母（带缓存）
- */
+// 获取拼音首字母（带缓存）
 function getPinyinInitials(text: string): string {
   const cacheKey = `initials:${text}`
-  if (pinyinCache.has(cacheKey)) {
-    return pinyinCache.get(cacheKey)!
-  }
-  
-  // 获取拼音首字母
+  if (pinyinCache.has(cacheKey)) return pinyinCache.get(cacheKey)!
+
   const initials = pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' }).join('')
   pinyinCache.set(cacheKey, initials)
   return initials
 }
 
-/**
- * 检查是否匹配（支持拼音）
- */
+// 检查是否匹配（支持拼音）
 function matchesSearch(text: string, searchTerm: string): boolean {
   const lowerText = text.toLowerCase()
   const lowerSearch = searchTerm.toLowerCase()
-  
-  // 1. 直接匹配
-  if (lowerText.includes(lowerSearch)) {
-    return true
-  }
-  
-  // 2. 拼音全拼匹配
-  const py = getPinyin(text).toLowerCase()
-  if (py.includes(lowerSearch)) {
-    return true
-  }
-  
-  // 3. 拼音首字母匹配
-  const initials = getPinyinInitials(text).toLowerCase()
-  if (initials.includes(lowerSearch)) {
-    return true
-  }
-  
+
+  // 直接匹配
+  if (lowerText.includes(lowerSearch)) return true
+
+  // 拼音全拼匹配
+  if (getPinyin(text).toLowerCase().includes(lowerSearch)) return true
+
+  // 拼音首字母匹配
+  if (getPinyinInitials(text).toLowerCase().includes(lowerSearch)) return true
+
   return false
 }
 
-// 搜索缓存（性能优化）
+// 搜索缓存
 const searchCache = new Map<string, SearchResult[]>()
-const MAX_CACHE_SIZE = 50
 
-// 搜索结果（带缓存和拼音搜索）
+// 搜索结果
 const searchResults = computed(() => {
   const searchTerm = query.value.trim()
-  
+
   if (!searchTerm) {
-    // 无搜索词时，显示所有启用的插件
-    const plugins = pluginRegistry.getEnabled()
-    return plugins.map((plugin) => ({
+    return pluginRegistry.getEnabled().map((plugin) => ({
       id: plugin.metadata.id,
       name: plugin.metadata.name,
       description: plugin.metadata.description,
@@ -108,41 +86,26 @@ const searchResults = computed(() => {
   }
 
   // 检查缓存
-  if (searchCache.has(searchTerm)) {
-    return searchCache.get(searchTerm)!
-  }
+  if (searchCache.has(searchTerm)) return searchCache.get(searchTerm)!
 
   const results: SearchResult[] = []
   const plugins = pluginRegistry.getEnabled()
 
-  // 性能优化：使用 for 循环代替 forEach
-  for (let i = 0; i < plugins.length; i++) {
-    const plugin = plugins[i]
+  for (const plugin of plugins) {
     let score = 0
 
-    // 匹配插件名称（支持拼音）
-    if (matchesSearch(plugin.metadata.name, searchTerm)) {
-      score += 100
-    }
+    if (matchesSearch(plugin.metadata.name, searchTerm)) score += 100
+    if (matchesSearch(plugin.metadata.description, searchTerm)) score += 50
 
-    // 匹配描述（支持拼音）
-    if (matchesSearch(plugin.metadata.description, searchTerm)) {
-      score += 50
-    }
-
-    // 匹配关键词（支持拼音）
     const keywords = plugin.metadata.keywords || []
-    for (let j = 0; j < keywords.length; j++) {
-      if (matchesSearch(keywords[j], searchTerm)) {
+    for (const keyword of keywords) {
+      if (matchesSearch(keyword, searchTerm)) {
         score += 80
-        break // 只需匹配一次
+        break
       }
     }
 
-    // 匹配分类（支持拼音）
-    if (matchesSearch(plugin.metadata.category, searchTerm)) {
-      score += 30
-    }
+    if (matchesSearch(plugin.metadata.category, searchTerm)) score += 30
 
     if (score > 0) {
       results.push({
@@ -150,22 +113,19 @@ const searchResults = computed(() => {
         name: plugin.metadata.name,
         description: plugin.metadata.description,
         icon: plugin.metadata.icon,
-        keywords: keywords,
+        keywords,
         category: plugin.metadata.category,
         score
       })
     }
   }
 
-  // 按分数排序
   results.sort((a, b) => b.score - a.score)
 
-  // 缓存结果（限制缓存大小）
-  if (searchCache.size >= MAX_CACHE_SIZE) {
+  // 缓存结果
+  if (searchCache.size >= LIMITS.SEARCH_CACHE_SIZE) {
     const firstKey = searchCache.keys().next().value
-    if (firstKey) {
-      searchCache.delete(firstKey)
-    }
+    if (firstKey) searchCache.delete(firstKey)
   }
   searchCache.set(searchTerm, results)
 
@@ -230,14 +190,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
 })
-
-// 分类名称映射
-const categoryNames: Record<string, string> = {
-  formatter: '格式化',
-  tool: '工具',
-  encoder: '编码',
-  custom: '自定义'
-}
 </script>
 
 <template>
@@ -342,7 +294,7 @@ const categoryNames: Record<string, string> = {
                   <span
                     class="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
                   >
-                    {{ categoryNames[result.category] || result.category }}
+                    {{ CATEGORY_NAMES[result.category] || result.category }}
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">

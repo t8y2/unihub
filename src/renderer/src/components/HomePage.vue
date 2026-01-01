@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { pluginRegistry } from '@/plugins'
-import type { TabType } from '@/types/plugin'
+import { CATEGORY_NAMES, CATEGORY_ORDER, LIMITS } from '@/constants'
 
 const props = defineProps<{
   recentPlugins: string[]
@@ -9,21 +9,20 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  openTool: [type: TabType]
+  openTool: [pluginId: string]
   toggleFavorite: [pluginId: string]
 }>()
 
 const searchQuery = ref('')
 
+// 获取启用的插件
 const enabledPlugins = computed(() => pluginRegistry.getEnabled())
 
-// 搜索过滤后的插件
+// 搜索过滤
 const filteredPlugins = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return enabledPlugins.value
-  }
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return enabledPlugins.value
 
-  const query = searchQuery.value.toLowerCase()
   return enabledPlugins.value.filter(
     (plugin) =>
       plugin.metadata.name.toLowerCase().includes(query) ||
@@ -31,49 +30,46 @@ const filteredPlugins = computed(() => {
   )
 })
 
+// 按分类分组
 const pluginsByCategory = computed(() => {
   const categories = new Map<string, typeof filteredPlugins.value>()
-  filteredPlugins.value.forEach((plugin) => {
+
+  for (const plugin of filteredPlugins.value) {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
       categories.set(category, [])
     }
     categories.get(category)!.push(plugin)
-  })
+  }
+
   return categories
 })
 
-// 最近访问的插件（过滤掉不存在或未启用的）
-const recentPluginsList = computed(() => {
-  return props.recentPlugins
-    .map((id) => pluginRegistry.get(id))
-    .filter((plugin) => plugin && plugin.enabled)
-    .slice(0, 6) // 最多显示6个
-})
-
-// 收藏的插件（过滤掉不存在或未启用的）
-const favoritePluginsList = computed(() => {
-  return props.favoritePlugins
-    .map((id) => pluginRegistry.get(id))
-    .filter((plugin) => plugin && plugin.enabled)
-})
-
-const categoryNames: Record<string, string> = {
-  formatter: '格式化',
-  tool: '工具',
-  encoder: '编码',
-  custom: '自定义'
-}
-
-const categoryOrder = ['formatter', 'tool', 'encoder', 'custom']
+// 排序后的分类
 const sortedCategories = computed(() => {
   return Array.from(pluginsByCategory.value.entries()).sort(([a], [b]) => {
-    const indexA = categoryOrder.indexOf(a)
-    const indexB = categoryOrder.indexOf(b)
+    const indexA = CATEGORY_ORDER.indexOf(a)
+    const indexB = CATEGORY_ORDER.indexOf(b)
     return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
   })
 })
 
+// 最近访问的插件
+const recentPluginsList = computed(() => {
+  return props.recentPlugins
+    .map((id) => pluginRegistry.get(id))
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
+    .slice(0, LIMITS.FAVORITE_DISPLAY)
+})
+
+// 收藏的插件
+const favoritePluginsList = computed(() => {
+  return props.favoritePlugins
+    .map((id) => pluginRegistry.get(id))
+    .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
+})
+
+// 清除搜索
 const clearSearch = (): void => {
   searchQuery.value = ''
 }
@@ -285,7 +281,7 @@ const clearSearch = (): void => {
             class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"
           >
             <div class="w-1 h-5 bg-blue-500 rounded-full"></div>
-            {{ categoryNames[category] || category }}
+            {{ CATEGORY_NAMES[category] || category }}
             <span v-if="searchQuery" class="text-xs text-gray-500 dark:text-gray-400 font-normal">
               ({{ plugins.length }} 个结果)
             </span>
@@ -335,11 +331,7 @@ const clearSearch = (): void => {
                 <svg
                   class="w-4 h-4"
                   :fill="favoritePlugins.includes(plugin.metadata.id) ? 'currentColor' : 'none'"
-                  :class="
-                    favoritePlugins.includes(plugin.metadata.id)
-                      ? 'text-red-500'
-                      : 'text-gray-400'
-                  "
+                  :class="favoritePlugins.includes(plugin.metadata.id) ? 'text-red-500' : 'text-gray-400'"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >

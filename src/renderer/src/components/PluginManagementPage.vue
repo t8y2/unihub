@@ -17,8 +17,12 @@ import {
 } from '@/components/ui/dialog'
 import PluginDevMode from './PluginDevMode.vue'
 import PluginStore from './PluginStore.vue'
+import { CATEGORY_NAMES, SOURCE_LABELS } from '@/constants'
+import { formatDate } from '@/utils'
 
-const activeTab = ref<'store' | 'installed' | 'install' | 'guide'>('store')
+type ActiveTab = 'store' | 'installed' | 'install' | 'guide'
+
+const activeTab = ref<ActiveTab>('store')
 const showDevMode = ref(false)
 const installUrl = ref('')
 const installing = ref(false)
@@ -26,69 +30,58 @@ const isDragging = ref(false)
 const fileInput = ref<HTMLInputElement>()
 const showUninstallDialog = ref(false)
 const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
-
-// 强制刷新计数器
 const refreshKey = ref(0)
 
 // 内置插件
 const builtInPlugins = computed(() => {
-  // 依赖 pluginRegistry.version 来触发重新计算
-  void pluginRegistry.version.value // 访问以触发响应式
-  void refreshKey.value // 访问以触发响应式
+  void pluginRegistry.version.value
+  void refreshKey.value
   return pluginRegistry.getAll()
 })
 
+interface InstalledPlugin {
+  id: string
+  version: string
+  source: string
+  installedAt: string
+  metadata: {
+    name: string
+    description: string
+  }
+}
+
 // 已安装的第三方插件
-const installedPlugins = ref<
-  Array<{
-    id: string
-    version: string
-    source: string
-    installedAt: string
-    metadata: {
-      name: string
-      description: string
-    }
-  }>
->([])
+const installedPlugins = ref<InstalledPlugin[]>([])
 
 // 按分类分组
 const pluginsByCategory = computed(() => {
   const categories = new Map<string, typeof builtInPlugins.value>()
-  // 触发响应式更新
-  const plugins = builtInPlugins.value
-  void refreshKey.value // 访问以触发重新计算
+  void refreshKey.value
 
-  plugins.forEach((plugin) => {
+  for (const plugin of builtInPlugins.value) {
     const category = plugin.metadata.category
     if (!categories.has(category)) {
       categories.set(category, [])
     }
     categories.get(category)!.push(plugin)
-  })
+  }
+
   return categories
 })
 
-const categoryNames: Record<string, string> = {
-  formatter: '格式化',
-  tool: '工具',
-  encoder: '编码',
-  custom: '自定义'
-}
+const enabledCount = computed(() => pluginRegistry.getEnabled().length)
 
+// 切换插件状态
 const togglePlugin = (id: string): void => {
   pluginRegistry.toggle(id)
-  // 强制刷新
   refreshKey.value++
 }
-
-const enabledCount = computed(() => pluginRegistry.getEnabled().length)
 
 // 加载已安装的第三方插件
 const loadInstalledPlugins = async (): Promise<void> => {
   try {
     const plugins = await window.api.plugin.list()
-    installedPlugins.value = plugins
+    installedPlugins.value = plugins as unknown as InstalledPlugin[]
   } catch (err) {
     console.error('加载已安装插件失败:', err)
   }
@@ -107,15 +100,10 @@ const installFromUrl = async (): Promise<void> => {
 
   try {
     installing.value = true
-
     await pluginInstaller.installFromUrl(installUrl.value)
-
     toast.success('插件安装成功！')
     installUrl.value = ''
-
-    // 重新加载插件列表
-    await loadInstalledPlugins()
-    await pluginInstaller.loadInstalledPlugins()
+    await Promise.all([loadInstalledPlugins(), pluginInstaller.loadInstalledPlugins()])
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
@@ -128,13 +116,12 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   event.preventDefault()
   isDragging.value = false
 
-  const files = event.dataTransfer?.files
-  if (!files || files.length === 0) {
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) {
     toast.error('请拖拽一个文件')
     return
   }
 
-  const file = files[0]
   await installFile(file)
 }
 
@@ -146,20 +133,15 @@ const triggerFileSelect = (): void => {
 // 处理文件选择
 const handleFileSelect = async (event: Event): Promise<void> => {
   const target = event.target as HTMLInputElement
-  const files = target.files
+  const file = target.files?.[0]
 
-  if (!files || files.length === 0) {
-    return
+  if (file) {
+    await installFile(file)
+    target.value = '' // 清空，允许重复选择
   }
-
-  const file = files[0]
-  await installFile(file)
-
-  // 清空文件输入，允许重复选择同一文件
-  target.value = ''
 }
 
-// 安装文件的通用方法
+// 安装文件
 const installFile = async (file: File): Promise<void> => {
   if (!file.name.endsWith('.zip')) {
     toast.error('只支持 .zip 格式的插件文件')
@@ -168,15 +150,9 @@ const installFile = async (file: File): Promise<void> => {
 
   try {
     installing.value = true
-
-    // 直接调用文件安装方法
     await pluginInstaller.installFromFile(file)
-
     toast.success('插件安装成功！')
-
-    // 重新加载插件列表
-    await loadInstalledPlugins()
-    await pluginInstaller.loadInstalledPlugins()
+    await Promise.all([loadInstalledPlugins(), pluginInstaller.loadInstalledPlugins()])
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
@@ -197,8 +173,6 @@ const uninstallPlugin = async (): Promise<void> => {
   try {
     await pluginInstaller.uninstall(pluginToUninstall.value.id)
     toast.success('插件已卸载')
-
-    // 重新加载插件列表
     await loadInstalledPlugins()
   } catch (e) {
     toast.error(e instanceof Error ? e.message : '卸载失败')
@@ -208,26 +182,9 @@ const uninstallPlugin = async (): Promise<void> => {
   }
 }
 
-// 格式化日期
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
 // 获取来源标签
 const getSourceLabel = (source: string): string => {
-  const labels: Record<string, string> = {
-    official: '官方',
-    url: '第三方',
-    local: '本地'
-  }
-  return labels[source] || source
+  return SOURCE_LABELS[source] || source
 }
 </script>
 
@@ -338,7 +295,11 @@ const getSourceLabel = (source: string): string => {
         </div>
 
         <!-- 内置插件 -->
-        <div :class="{ 'pt-6 border-t border-gray-200 dark:border-gray-700': installedPlugins.length > 0 }">
+        <div
+          :class="{
+            'pt-6 border-t border-gray-200 dark:border-gray-700': installedPlugins.length > 0
+          }"
+        >
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
             内置插件
             <span class="text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -352,7 +313,7 @@ const getSourceLabel = (source: string): string => {
                 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2"
               >
                 <div class="w-1 h-4 bg-blue-500 rounded-full"></div>
-                {{ categoryNames[category] || category }}
+                {{ CATEGORY_NAMES[category] || category }}
               </h3>
 
               <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
