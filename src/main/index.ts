@@ -10,6 +10,7 @@ import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
 import { settingsManager } from './settings-manager'
+import { dbManager } from './db-manager'
 import { pathToFileURL } from 'url'
 
 // 标记是否有活动的第三方插件
@@ -308,6 +309,39 @@ function setupIpcHandlers(): void {
     settingsManager.resetToDefaults()
     // 重新注册默认快捷键
     registerGlobalShortcuts()
+    return { success: true }
+  })
+
+  // 数据库相关 IPC
+  ipcMain.handle('db:addFavorite', (_, pluginId: string) => {
+    dbManager.addFavorite(pluginId)
+    return { success: true }
+  })
+
+  ipcMain.handle('db:removeFavorite', (_, pluginId: string) => {
+    dbManager.removeFavorite(pluginId)
+    return { success: true }
+  })
+
+  ipcMain.handle('db:isFavorite', (_, pluginId: string) => {
+    return dbManager.isFavorite(pluginId)
+  })
+
+  ipcMain.handle('db:getFavorites', () => {
+    return dbManager.getFavorites()
+  })
+
+  ipcMain.handle('db:addRecent', (_, pluginId: string) => {
+    dbManager.addRecent(pluginId)
+    return { success: true }
+  })
+
+  ipcMain.handle('db:getRecents', (_, limit?: number) => {
+    return dbManager.getRecents(limit)
+  })
+
+  ipcMain.handle('db:clearRecents', () => {
+    dbManager.clearRecents()
     return { success: true }
   })
 

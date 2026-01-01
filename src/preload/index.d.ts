@@ -61,6 +61,17 @@ declare global {
         update: (partial: Record<string, unknown>) => Promise<{ success: boolean }>
         reset: () => Promise<{ success: boolean }>
       }
+      db: {
+        addFavorite: (pluginId: string) => Promise<{ success: boolean }>
+        removeFavorite: (pluginId: string) => Promise<{ success: boolean }>
+        isFavorite: (pluginId: string) => Promise<boolean>
+        getFavorites: () => Promise<Array<{ pluginId: string; addedAt: number }>>
+        addRecent: (pluginId: string) => Promise<{ success: boolean }>
+        getRecents: (limit?: number) => Promise<
+          Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>
+        >
+        clearRecents: () => Promise<{ success: boolean }>
+      }
     }
     // Node.js API（第一公民）
     node: {

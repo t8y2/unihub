@@ -25,6 +25,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@radix-icons/vue": "^1.0.0",
     "adm-zip": "^0.5.10",
+    "better-sqlite3": "^12.5.0",
     "electron-updater": "^6.3.9",
     "pinyin-pro": "^3.27.0",
     "tailwindcss-animate": "^1.0.7",

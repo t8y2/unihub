@@ -75,6 +75,15 @@ const api = {
       ipcRenderer.invoke('settings:setShortcut', key, value),
     update: (partial: Record<string, unknown>) => ipcRenderer.invoke('settings:update', partial),
     reset: () => ipcRenderer.invoke('settings:reset')
+  },
+  db: {
+    addFavorite: (pluginId: string) => ipcRenderer.invoke('db:addFavorite', pluginId),
+    removeFavorite: (pluginId: string) => ipcRenderer.invoke('db:removeFavorite', pluginId),
+    isFavorite: (pluginId: string) => ipcRenderer.invoke('db:isFavorite', pluginId),
+    getFavorites: () => ipcRenderer.invoke('db:getFavorites'),
+    addRecent: (pluginId: string) => ipcRenderer.invoke('db:addRecent', pluginId),
+    getRecents: (limit?: number) => ipcRenderer.invoke('db:getRecents', limit),
+    clearRecents: () => ipcRenderer.invoke('db:clearRecents')
   }
 }
 

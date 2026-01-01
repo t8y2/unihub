@@ -1,0 +1,131 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { pluginRegistry } from '@/plugins'
+
+const props = defineProps<{
+  favoritePlugins: string[]
+}>()
+
+const emit = defineEmits<{
+  openTool: [pluginId: string]
+  toggleFavorite: [pluginId: string]
+}>()
+
+// 收藏的插件列表
+const favoritePluginsList = computed(() => {
+  return props.favoritePlugins
+    .map((id) => pluginRegistry.get(id))
+    .filter((plugin) => plugin && plugin.enabled)
+})
+</script>
+
+<template>
+  <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900 overflow-auto">
+    <!-- 拖动区域 -->
+    <div data-tauri-drag-region class="h-16 flex-shrink-0"></div>
+
+    <div class="max-w-5xl mx-auto w-full px-8 pb-8">
+      <!-- 头部 -->
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-2">
+          <div
+            class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-lg"
+          >
+            <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">收藏</h1>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-400 ml-15">
+          {{ favoritePluginsList.length }} 个收藏的工具
+        </p>
+      </div>
+
+      <!-- 空状态 -->
+      <div
+        v-if="favoritePluginsList.length === 0"
+        class="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700"
+      >
+        <div
+          class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg"
+        >
+          <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">暂无收藏</h3>
+        <p class="text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+          在主页或工具列表中点击爱心图标来收藏你喜欢的工具
+        </p>
+      </div>
+
+      <!-- 收藏列表 -->
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <button
+          v-for="plugin in favoritePluginsList"
+          :key="plugin.metadata.id"
+          class="group p-5 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.02] hover:border-red-300 dark:hover:border-red-700 text-left relative overflow-hidden"
+          @click="emit('openTool', plugin.metadata.id)"
+        >
+          <!-- 背景装饰 -->
+          <div
+            class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/5 to-pink-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all"
+          ></div>
+
+          <div class="relative">
+            <div class="flex items-start justify-between mb-4">
+              <div
+                class="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/10 to-pink-500/10 dark:from-red-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-red-500/20 group-hover:to-pink-500/20 dark:group-hover:from-red-500/30 dark:group-hover:to-pink-500/30 transition-all shadow-sm"
+              >
+                <svg
+                  class="w-7 h-7 text-red-600 dark:text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="plugin.metadata.icon"
+                  />
+                </svg>
+              </div>
+              <!-- 取消收藏按钮 -->
+              <div
+                class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
+                title="取消收藏"
+                @click.stop="emit('toggleFavorite', plugin.metadata.id)"
+              >
+                <svg
+                  class="w-5 h-5 text-red-500"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3
+              class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
+            >
+              {{ plugin.metadata.name }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+              {{ plugin.metadata.description }}
+            </p>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>

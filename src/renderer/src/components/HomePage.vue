@@ -5,10 +5,12 @@ import type { TabType } from '@/types/plugin'
 
 const props = defineProps<{
   recentPlugins: string[]
+  favoritePlugins: string[]
 }>()
 
 const emit = defineEmits<{
   openTool: [type: TabType]
+  toggleFavorite: [pluginId: string]
 }>()
 
 const searchQuery = ref('')
@@ -47,6 +49,13 @@ const recentPluginsList = computed(() => {
     .map((id) => pluginRegistry.get(id))
     .filter((plugin) => plugin && plugin.enabled)
     .slice(0, 6) // 最多显示6个
+})
+
+// 收藏的插件（过滤掉不存在或未启用的）
+const favoritePluginsList = computed(() => {
+  return props.favoritePlugins
+    .map((id) => pluginRegistry.get(id))
+    .filter((plugin) => plugin && plugin.enabled)
 })
 
 const categoryNames: Record<string, string> = {
@@ -144,6 +153,65 @@ const clearSearch = (): void => {
         </div>
       </div>
 
+      <!-- 收藏 -->
+      <div v-if="favoritePluginsList.length > 0 && !searchQuery" class="mb-8">
+        <h2
+          class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"
+        >
+          <div class="w-1 h-5 bg-red-500 rounded-full"></div>
+          收藏
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button
+            v-for="plugin in favoritePluginsList"
+            :key="plugin.metadata.id"
+            class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left relative"
+            @click="emit('openTool', plugin.metadata.id)"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/20 dark:group-hover:bg-red-500/30 transition-colors"
+              >
+                <svg
+                  class="w-5 h-5 text-red-600 dark:text-red-400"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3
+                  class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
+                >
+                  {{ plugin.metadata.name }}
+                </h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                  {{ plugin.metadata.description }}
+                </p>
+              </div>
+            </div>
+            <!-- 取消收藏按钮 -->
+            <div
+              class="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 transition-opacity cursor-pointer"
+              title="取消收藏"
+              @click.stop="emit('toggleFavorite', plugin.metadata.id)"
+            >
+              <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M6 18L18 6M6 6l12 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- 最近访问 -->
       <div v-if="recentPluginsList.length > 0 && !searchQuery" class="mb-8">
         <h2
@@ -226,7 +294,7 @@ const clearSearch = (): void => {
             <button
               v-for="plugin in plugins"
               :key="plugin.metadata.id"
-              class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left"
+              class="group p-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-md hover:scale-[1.02] text-left relative"
               @click="emit('openTool', plugin.metadata.id)"
             >
               <div class="flex items-start gap-3">
@@ -257,6 +325,31 @@ const clearSearch = (): void => {
                     {{ plugin.metadata.description }}
                   </p>
                 </div>
+              </div>
+              <!-- 收藏按钮 -->
+              <div
+                class="absolute top-2 right-2 p-1.5 rounded-md opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 transition-opacity cursor-pointer"
+                :title="favoritePlugins.includes(plugin.metadata.id) ? '取消收藏' : '收藏'"
+                @click.stop="emit('toggleFavorite', plugin.metadata.id)"
+              >
+                <svg
+                  class="w-4 h-4"
+                  :fill="favoritePlugins.includes(plugin.metadata.id) ? 'currentColor' : 'none'"
+                  :class="
+                    favoritePlugins.includes(plugin.metadata.id)
+                      ? 'text-red-500'
+                      : 'text-gray-400'
+                  "
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
               </div>
             </button>
           </div>

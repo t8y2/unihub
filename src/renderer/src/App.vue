@@ -5,6 +5,8 @@ import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
 import SettingsPage from './components/SettingsPage.vue'
+import FavoritesPage from './components/FavoritesPage.vue'
+import RecentsPage from './components/RecentsPage.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import { Toaster } from './components/ui/sonner'
 
@@ -12,41 +14,64 @@ const isDark = ref(false)
 const sidebarCollapsed = ref(false)
 const showGlobalSearch = ref(false)
 
-// 最近访问的插件
+// 最近访问和收藏的插件
 const recentPlugins = ref<string[]>([])
+const favoritePlugins = ref<string[]>([])
 
-// 从 localStorage 加载最近访问
-const loadRecentPlugins = (): void => {
-  const saved = localStorage.getItem('recentPlugins')
-  if (saved) {
-    try {
-      recentPlugins.value = JSON.parse(saved)
-    } catch (error) {
-      console.error('加载最近访问失败:', error)
-      recentPlugins.value = []
-    }
+// 分类展开/收起状态
+const expandedCategories = ref<Set<string>>(new Set(['formatter', 'tool', 'encoder']))
+
+// 切换分类展开状态
+const toggleCategory = (category: string): void => {
+  if (expandedCategories.value.has(category)) {
+    expandedCategories.value.delete(category)
+  } else {
+    expandedCategories.value.add(category)
   }
 }
 
-// 保存最近访问到 localStorage
-const saveRecentPlugins = (): void => {
-  localStorage.setItem('recentPlugins', JSON.stringify(recentPlugins.value))
+// 从数据库加载最近访问和收藏
+const loadPluginData = async (): Promise<void> => {
+  try {
+    // 加载最近访问
+    const recents = await window.api.db.getRecents(10)
+    recentPlugins.value = recents.map((r) => r.pluginId)
+
+    // 加载收藏
+    const favorites = await window.api.db.getFavorites()
+    favoritePlugins.value = favorites.map((f) => f.pluginId)
+  } catch (error) {
+    console.error('加载插件数据失败:', error)
+  }
 }
 
 // 添加到最近访问
-const addToRecent = (pluginId: string): void => {
-  // 移除已存在的
-  const index = recentPlugins.value.indexOf(pluginId)
-  if (index > -1) {
-    recentPlugins.value.splice(index, 1)
+const addToRecent = async (pluginId: string): Promise<void> => {
+  try {
+    await window.api.db.addRecent(pluginId)
+    // 重新加载最近访问列表
+    const recents = await window.api.db.getRecents(10)
+    recentPlugins.value = recents.map((r) => r.pluginId)
+  } catch (error) {
+    console.error('添加最近访问失败:', error)
   }
-  // 添加到开头
-  recentPlugins.value.unshift(pluginId)
-  // 限制最多10个
-  if (recentPlugins.value.length > 10) {
-    recentPlugins.value = recentPlugins.value.slice(0, 10)
+}
+
+// 切换收藏状态
+const toggleFavorite = async (pluginId: string): Promise<void> => {
+  try {
+    const isFav = await window.api.db.isFavorite(pluginId)
+    if (isFav) {
+      await window.api.db.removeFavorite(pluginId)
+    } else {
+      await window.api.db.addFavorite(pluginId)
+    }
+    // 重新加载收藏列表
+    const favorites = await window.api.db.getFavorites()
+    favoritePlugins.value = favorites.map((f) => f.pluginId)
+  } catch (error) {
+    console.error('切换收藏失败:', error)
   }
-  saveRecentPlugins()
 }
 
 onMounted(async () => {
@@ -73,8 +98,8 @@ onMounted(async () => {
     sidebarCollapsed.value = true
   }
 
-  // 加载最近访问
-  loadRecentPlugins()
+  // 加载最近访问和收藏
+  await loadPluginData()
 
   // 添加键盘快捷键监听
   window.addEventListener('keydown', handleKeyDown)
@@ -164,7 +189,7 @@ interface Tab {
   id: string
   pluginId: string
   title: string
-  type: 'plugin' | 'management' | 'settings'
+  type: 'plugin' | 'management' | 'settings' | 'favorites' | 'recents'
 }
 
 const tabs = ref<Tab[]>([])
@@ -301,6 +326,44 @@ const openSettings = (): void => {
   activeTabId.value = newTab.id
 }
 
+const openFavorites = (): void => {
+  // 检查是否已经打开
+  const existingTab = tabs.value.find((t) => t.type === 'favorites')
+  if (existingTab) {
+    activeTabId.value = existingTab.id
+    return
+  }
+
+  // 创建新标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId: 'favorites',
+    title: '收藏',
+    type: 'favorites'
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
+}
+
+const openRecents = (): void => {
+  // 检查是否已经打开
+  const existingTab = tabs.value.find((t) => t.type === 'recents')
+  if (existingTab) {
+    activeTabId.value = existingTab.id
+    return
+  }
+
+  // 创建新标签
+  const newTab: Tab = {
+    id: Date.now().toString(),
+    pluginId: 'recents',
+    title: '最近使用',
+    type: 'recents'
+  }
+  tabs.value.push(newTab)
+  activeTabId.value = newTab.id
+}
+
 const closeTab = (tabId: string): void => {
   const index = tabs.value.findIndex((t) => t.id === tabId)
   if (index === -1) return
@@ -416,29 +479,69 @@ const addHomeTab = (): void => {
             <span v-show="!sidebarCollapsed" class="whitespace-nowrap">主页</span>
           </button>
 
-          <template v-for="[category, plugins] in pluginsByCategory" :key="category">
-            <div
-              v-show="!sidebarCollapsed"
-              class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-3 py-2 mt-4"
-            >
-              {{ categoryNames[category] || category }}
-            </div>
+          <!-- 收藏按钮 -->
+          <button
+            :class="[
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              tabs.some((t) => t.id === activeTabId && t.type === 'favorites')
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+              sidebarCollapsed ? 'justify-center' : ''
+            ]"
+            :title="sidebarCollapsed ? '收藏' : ''"
+            @click="openFavorites"
+          >
+            <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              />
+            </svg>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">收藏</span>
+          </button>
 
-            <button
-              v-for="plugin in plugins"
-              :key="plugin.metadata.id"
-              :class="[
-                'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                tabs.some((t) => t.id === activeTabId && t.pluginId === plugin.metadata.id)
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
-                sidebarCollapsed ? 'justify-center' : ''
-              ]"
-              :title="sidebarCollapsed ? plugin.metadata.name : ''"
-              @click="openTab(plugin.metadata.id)"
+          <!-- 最近使用按钮 -->
+          <button
+            :class="[
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              tabs.some((t) => t.id === activeTabId && t.type === 'recents')
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+              sidebarCollapsed ? 'justify-center' : ''
+            ]"
+            :title="sidebarCollapsed ? '最近使用' : ''"
+            @click="openRecents"
+          >
+            <svg
+              class="w-4 h-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">最近使用</span>
+          </button>
+
+          <!-- 分隔线 -->
+          <div v-show="!sidebarCollapsed" class="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+
+          <!-- 所有工具 -->
+          <template v-for="[category, plugins] in pluginsByCategory" :key="category">
+            <!-- 分类标题（可点击展开/收起） -->
+            <button
+              class="w-full flex items-center gap-2 px-3 py-2 mt-4 rounded-md text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+              :class="{ 'justify-center': sidebarCollapsed }"
+              @click="toggleCategory(category)"
+            >
+              <!-- 展开/收起图标 -->
               <svg
-                class="w-4 h-4 flex-shrink-0"
+                class="w-3 h-3 transition-transform flex-shrink-0"
+                :class="{ 'rotate-90': expandedCategories.has(category) }"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -447,13 +550,66 @@ const addHomeTab = (): void => {
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  :d="plugin.metadata.icon"
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
-              <span v-show="!sidebarCollapsed" class="whitespace-nowrap">{{
-                plugin.metadata.name
-              }}</span>
+              <span v-show="!sidebarCollapsed" class="flex-1 text-left">
+                {{ categoryNames[category] || category }}
+              </span>
+              <!-- 工具数量 -->
+              <span
+                v-show="!sidebarCollapsed"
+                class="text-xs px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+              >
+                {{ plugins.length }}
+              </span>
             </button>
+
+            <!-- 工具列表（可折叠） -->
+            <template v-if="expandedCategories.has(category)">
+              <button
+                v-for="plugin in plugins"
+                :key="plugin.metadata.id"
+                :class="[
+                  'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors group relative',
+                  tabs.some((t) => t.id === activeTabId && t.pluginId === plugin.metadata.id)
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+                  sidebarCollapsed ? 'justify-center' : 'pl-8'
+                ]"
+                :title="sidebarCollapsed ? plugin.metadata.name : ''"
+                @click="openTab(plugin.metadata.id)"
+              >
+                <svg
+                  class="w-4 h-4 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="plugin.metadata.icon"
+                  />
+                </svg>
+                <span v-show="!sidebarCollapsed" class="whitespace-nowrap flex-1 text-left">{{
+                  plugin.metadata.name
+                }}</span>
+                <!-- 收藏状态指示器 -->
+                <svg
+                  v-if="favoritePlugins.includes(plugin.metadata.id)"
+                  v-show="!sidebarCollapsed"
+                  class="w-3 h-3 text-red-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  />
+                </svg>
+              </button>
+            </template>
           </template>
         </div>
       </nav>
@@ -679,7 +835,12 @@ const addHomeTab = (): void => {
       <div class="flex-1 flex flex-col min-h-0">
         <!-- 主页（无标签时） -->
         <div v-if="tabs.length === 0" class="flex-1 bg-white dark:bg-gray-900">
-          <HomePage :recent-plugins="recentPlugins" @open-tool="openTab" />
+          <HomePage
+            :recent-plugins="recentPlugins"
+            :favorite-plugins="favoritePlugins"
+            @open-tool="openTab"
+            @toggle-favorite="toggleFavorite"
+          />
         </div>
 
         <!-- 工具标签页 -->
@@ -687,7 +848,12 @@ const addHomeTab = (): void => {
           <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
             <!-- 主页标签 -->
             <div v-if="tab.pluginId === 'home'" class="flex-1 bg-white dark:bg-gray-900">
-              <HomePage :recent-plugins="recentPlugins" @open-tool="openTab" />
+              <HomePage
+                :recent-plugins="recentPlugins"
+                :favorite-plugins="favoritePlugins"
+                @open-tool="openTab"
+                @toggle-favorite="toggleFavorite"
+              />
             </div>
 
             <!-- 插件管理页面 -->
@@ -701,6 +867,20 @@ const addHomeTab = (): void => {
             <!-- 设置页面 -->
             <div v-else-if="tab.type === 'settings'" class="flex-1 bg-white dark:bg-gray-900">
               <SettingsPage />
+            </div>
+
+            <!-- 收藏页面 -->
+            <div v-else-if="tab.type === 'favorites'" class="flex-1 bg-white dark:bg-gray-900">
+              <FavoritesPage
+                :favorite-plugins="favoritePlugins"
+                @open-tool="openTab"
+                @toggle-favorite="toggleFavorite"
+              />
+            </div>
+
+            <!-- 最近使用页面 -->
+            <div v-else-if="tab.type === 'recents'" class="flex-1 bg-white dark:bg-gray-900">
+              <RecentsPage :recent-plugins="recentPlugins" @open-tool="openTab" />
             </div>
 
             <!-- 普通插件 - 无背景，让插件自己控制样式 -->
