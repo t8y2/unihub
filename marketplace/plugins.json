@@ -21,7 +21,7 @@
         "npm": "@unihub/h5-formatter",
         "github": "t8y2/unihub-plugin-h5-formatter"
       },
-      "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@a170314a7edfcd9d7d31b2f95d4b0f80feac25ec/examples/h5-formatter-plugin/plugin.zip",
+      "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@2504b9eadc4dae7f0e8f8c5942a65faa5d20e567/examples/h5-formatter-plugin/plugin.zip",
       "homepage": "https://github.com/t8y2/unihub",
       "repository": "https://github.com/t8y2/unihub",
       "screenshots": [],
