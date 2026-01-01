@@ -107,7 +107,7 @@ export const APP_INFO = {
 
 // ========== 插件市场 ==========
 export const MARKETPLACE_URL =
-  'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
+  'https://cdn.jsdelivr.net/gh/t8y2/unihub@a170314a7edfcd9d7d31b2f95d4b0f80feac25ec/marketplace/plugins.json'
 
 export const MARKETPLACE_CATEGORIES = [
   { value: 'all', label: '全部' },
