@@ -222,7 +222,12 @@ function setupIpcHandlers(): void {
       return { success: false, message: '插件 URL 不正确' }
     }
 
-    webContentsViewManager.createPluginView(pluginId, pluginUrl)
+    // 检查视图是否已存在，不存在才创建
+    const existingView = webContentsViewManager.getPluginView(pluginId)
+    if (!existingView) {
+      webContentsViewManager.createPluginView(pluginId, pluginUrl)
+    }
+    
     webContentsViewManager.showPluginView(pluginId)
     hasActiveThirdPartyPlugin = true
 
@@ -231,6 +236,15 @@ function setupIpcHandlers(): void {
 
   ipcMain.handle('plugin:close', async (_, pluginId: string) => {
     webContentsViewManager.hidePluginView(pluginId)
+    const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
+    if (!hasOtherActiveViews) {
+      hasActiveThirdPartyPlugin = false
+    }
+    return { success: true }
+  })
+
+  ipcMain.handle('plugin:destroy', async (_, pluginId: string) => {
+    webContentsViewManager.removePluginView(pluginId)
     const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
     if (!hasOtherActiveViews) {
       hasActiveThirdPartyPlugin = false

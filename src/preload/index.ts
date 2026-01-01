@@ -11,6 +11,7 @@ const api = {
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),
     open: (pluginId: string) => ipcRenderer.invoke('plugin:open', pluginId),
     close: (pluginId: string) => ipcRenderer.invoke('plugin:close', pluginId),
+    destroy: (pluginId: string) => ipcRenderer.invoke('plugin:destroy', pluginId),
     updateBounds: (
       pluginId: string,
       bounds: { x: number; y: number; width: number; height: number }

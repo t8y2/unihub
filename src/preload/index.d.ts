@@ -21,6 +21,7 @@ declare global {
         }>
         open: (pluginId: string) => Promise<{ success: boolean; message?: string }>
         close: (pluginId: string) => Promise<{ success: boolean }>
+        destroy: (pluginId: string) => Promise<{ success: boolean }>
         updateBounds: (
           pluginId: string,
           bounds: { x: number; y: number; width: number; height: number }

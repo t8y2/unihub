@@ -4,10 +4,13 @@ import { join } from 'path'
 /**
  * WebContentsView 管理器
  * 用于在主窗口中嵌入插件视图
+ * 使用 LRU 缓存策略管理视图生命周期
  */
 export class WebContentsViewManager {
   private views = new Map<string, WebContentsView>()
   private mainWindow: BrowserWindow | null = null
+  private lruQueue: string[] = [] // LRU 队列，最近使用的在前面
+  private maxCachedViews = 5 // 最多缓存 5 个视图
 
   /**
    * 设置主窗口
@@ -20,9 +23,15 @@ export class WebContentsViewManager {
    * 创建插件视图
    */
   createPluginView(pluginId: string, url: string): WebContentsView {
-    // 如果已存在，先移除
+    // 如果已存在，更新 LRU 并返回
     if (this.views.has(pluginId)) {
-      this.removePluginView(pluginId)
+      this.updateLRU(pluginId)
+      return this.views.get(pluginId)!
+    }
+
+    // 检查是否超过缓存限制
+    if (this.views.size >= this.maxCachedViews) {
+      this.evictLRU()
     }
 
     // 创建新的 WebContentsView（性能优化）
@@ -115,7 +124,33 @@ export class WebContentsViewManager {
     })
 
     this.views.set(pluginId, view)
+    this.updateLRU(pluginId)
     return view
+  }
+
+  /**
+   * 更新 LRU 队列
+   */
+  private updateLRU(pluginId: string): void {
+    // 移除旧位置
+    const index = this.lruQueue.indexOf(pluginId)
+    if (index > -1) {
+      this.lruQueue.splice(index, 1)
+    }
+    // 添加到队首（最近使用）
+    this.lruQueue.unshift(pluginId)
+  }
+
+  /**
+   * 驱逐最久未使用的视图
+   */
+  private evictLRU(): void {
+    if (this.lruQueue.length === 0) return
+
+    // 获取最久未使用的插件 ID（队尾）
+    const oldestPluginId = this.lruQueue[this.lruQueue.length - 1]
+    console.log(`🗑️ LRU 驱逐: ${oldestPluginId}`)
+    this.removePluginView(oldestPluginId)
   }
 
   /**
@@ -135,6 +170,9 @@ export class WebContentsViewManager {
       console.error(`插件视图不存在: ${pluginId}`)
       return
     }
+
+    // 更新 LRU
+    this.updateLRU(pluginId)
 
     // 添加到主窗口
     this.mainWindow.contentView.addChildView(view)
@@ -185,6 +223,12 @@ export class WebContentsViewManager {
     }
 
     this.views.delete(pluginId)
+    
+    // 从 LRU 队列中移除
+    const index = this.lruQueue.indexOf(pluginId)
+    if (index > -1) {
+      this.lruQueue.splice(index, 1)
+    }
   }
 
   /**

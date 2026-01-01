@@ -170,38 +170,28 @@ interface Tab {
 const tabs = ref<Tab[]>([])
 const activeTabId = ref('')
 
-// 监听 activeTabId 变化，自动显示/隐藏第三方插件视图（使用 requestIdleCallback 优化）
+// 监听 activeTabId 变化，自动显示/隐藏第三方插件视图
 watch(activeTabId, (newTabId, oldTabId) => {
-  // 使用 requestIdleCallback 延迟非关键操作
-  const performUpdate = (): void => {
-    // 隐藏旧标签的插件视图
-    if (oldTabId) {
-      const oldTab = tabs.value.find((t) => t.id === oldTabId)
-      if (oldTab && oldTab.type === 'plugin') {
-        const oldPlugin = pluginRegistry.get(oldTab.pluginId)
-        if (oldPlugin?.metadata.isThirdParty) {
-          window.api.plugin.close(oldTab.pluginId)
-        }
-      }
-    }
-
-    // 显示新标签的插件视图
-    if (newTabId) {
-      const newTab = tabs.value.find((t) => t.id === newTabId)
-      if (newTab && newTab.type === 'plugin') {
-        const newPlugin = pluginRegistry.get(newTab.pluginId)
-        if (newPlugin?.metadata.isThirdParty) {
-          window.api.plugin.open(newTab.pluginId)
-        }
+  // 隐藏旧标签的插件视图
+  if (oldTabId) {
+    const oldTab = tabs.value.find((t) => t.id === oldTabId)
+    if (oldTab && oldTab.type === 'plugin') {
+      const oldPlugin = pluginRegistry.get(oldTab.pluginId)
+      if (oldPlugin?.metadata.isThirdParty) {
+        window.api.plugin.close(oldTab.pluginId)
       }
     }
   }
 
-  // 优先使用 requestIdleCallback，降级到 setTimeout
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(performUpdate, { timeout: 100 })
-  } else {
-    setTimeout(performUpdate, 0)
+  // 显示新标签的插件视图
+  if (newTabId) {
+    const newTab = tabs.value.find((t) => t.id === newTabId)
+    if (newTab && newTab.type === 'plugin') {
+      const newPlugin = pluginRegistry.get(newTab.pluginId)
+      if (newPlugin?.metadata.isThirdParty) {
+        window.api.plugin.open(newTab.pluginId)
+      }
+    }
   }
 })
 
