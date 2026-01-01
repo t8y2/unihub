@@ -8,9 +8,9 @@
 - 🛡️ **权限管理** - 细粒度的插件权限控制
 - 🔒 **插件隔离** - 进程、数据、文件系统完全隔离
 - 🏪 **插件市场** - 零成本的插件分发系统（GitHub + jsDelivr）
-- 🔍 **全局搜索** - ⌘K/Ctrl+K 快速搜索插件
+- 🔍 **全局搜索** - <kbd>⌘K</kbd> 快速搜索插件
 - ⚡ **热重载** - 开发模式支持插件热重载
-- 🎨 **现代 UI** - 基于 Vue 3 + Tailwind CSS
+- 🎨 **现代 UI** - Vue 3 + Tailwind CSS + shadcn-vue
 
 ## 🚀 快速开始
 
@@ -29,39 +29,34 @@ pnpm dev
 ### 构建
 
 ```bash
-# 构建所有平台
-pnpm build
-
-# 构建特定平台
-pnpm build:mac
-pnpm build:win
-pnpm build:linux
+pnpm build              # 构建所有平台
+pnpm build:mac          # macOS
+pnpm build:win          # Windows
+pnpm build:linux        # Linux
 ```
 
 ## 📦 插件开发
 
-### 创建插件
+### 三个示例，由简到繁
+
+| 示例                                                  | 难度        | 技术栈         | 适合场景 |
+| ----------------------------------------------------- | ----------- | -------------- | -------- |
+| [simple-html-plugin](./examples/simple-html-plugin)   | ⭐ 入门     | 纯 HTML/CSS/JS | 快速原型 |
+| [h5-formatter-plugin](./examples/h5-formatter-plugin) | ⭐⭐ 进阶   | Vue 3 + Vite   | 现代工具 |
+| [modern-vue-plugin](./examples/modern-vue-plugin)     | ⭐⭐⭐ 高级 | Vue 3 + Python | 复杂应用 |
+
+👉 **[查看完整插件开发指南](./examples/README.md)**
+
+### 快速创建插件
 
 ```bash
-node tools/create-plugin.js
+# 从模板创建（即将推出）
+node tools/create-plugin.js my-plugin
 ```
 
-### 插件结构
+### 基本配置
 
-```
-my-plugin/
-├── package.json          # 插件配置
-├── index.html           # 入口文件
-├── src/
-│   ├── main.ts         # 主逻辑
-│   └── App.vue         # Vue 组件
-└── sidecar/            # 后端程序（可选）
-    └── main.go
-```
-
-### 插件配置
-
-在 `package.json` 中配置插件信息：
+在 `package.json` 中配置插件：
 
 ```json
 {
@@ -73,101 +68,62 @@ my-plugin/
     "description": "插件描述",
     "category": "tool",
     "icon": "🚀",
-    "permissions": ["fs", "clipboard", "http"]
+    "entry": "dist/index.html",
+    "permissions": ["clipboard"]
   }
 }
 ```
 
-### 可用权限
-
-- `fs` - 文件系统访问
-- `clipboard` - 剪贴板访问
-- `http` - 网络请求
-- `notification` - 系统通知
-- `spawn` - 执行外部程序
-- `system` - 系统信息
-
-### 插件 API
-
-```typescript
-// 文件系统
-await window.api.fs.readFile(path)
-await window.api.fs.writeFile(path, content)
-
-// 剪贴板
-await window.api.clipboard.writeText(text)
-const text = await window.api.clipboard.readText()
-
-// HTTP 请求
-const response = await window.api.http.request({ url, method, body })
-
-// 通知
-await window.api.notification.show({ title, body })
-
-// 执行程序
-await window.api.spawn.execute(command, args)
-```
+👉 **[查看完整配置说明](./docs/PACKAGE_JSON_TEMPLATE.md)**
 
 ## 🏪 插件市场
 
-### 配置市场
+### 使用插件商店
 
-1. 推送 `marketplace/` 目录到 GitHub
-2. 编辑 `src/renderer/src/components/PluginMarketplace.vue`
-3. 更新 `MARKETPLACE_URL` 为你的 CDN 地址：
+1. 打开 UniHub
+2. 进入「插件管理」→「插件商店」
+3. 浏览并安装插件
 
-```typescript
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
-```
+### 发布你的插件
 
-### 提交插件
+1. 开发并测试插件
+2. 提交 PR 到 `marketplace/plugins.json`
+3. 等待审核
 
-查看 [marketplace/CONTRIBUTING.md](./marketplace/CONTRIBUTING.md)
+👉 **[查看发布指南](./marketplace/CONTRIBUTING.md)**
+
+## 🔧 快捷键
+
+| 功能       | macOS         | Windows/Linux     |
+| ---------- | ------------- | ----------------- |
+| 全局搜索   | <kbd>⌘K</kbd> | <kbd>Ctrl+K</kbd> |
+| 新建标签   | <kbd>⌘T</kbd> | <kbd>Ctrl+T</kbd> |
+| 关闭标签   | <kbd>⌘W</kbd> | <kbd>Ctrl+W</kbd> |
+| 切换侧边栏 | <kbd>⌘B</kbd> | <kbd>Ctrl+B</kbd> |
 
 ## 📚 文档
 
-- [架构设计](./docs/ARCHITECTURE.md) - 系统架构说明
-- [插件开发](./docs/PLUGIN_DEVELOPMENT.md) - 插件开发指南
-- [插件 API](./docs/PLUGIN_API.md) - API 文档
-- [插件隔离](./docs/ISOLATION_DEMO.md) - 隔离机制说明
-- [市场指南](./docs/MARKETPLACE_GUIDE.md) - 插件市场使用指南
-- [市场部署](./docs/MARKETPLACE_DEPLOYMENT.md) - 市场部署指南
-- [快速开始](./MARKETPLACE_QUICKSTART.md) - 5 分钟搭建市场
-
-## 🔧 开发工具
-
-### 全局快捷键
-
-- `⌘⇧Space` / `Ctrl+Shift+Space` - 显示/隐藏主窗口
-- `⌘K` / `Ctrl+K` - 全局搜索
-- `⌘T` / `Ctrl+T` - 新建标签
-- `⌘W` / `Ctrl+W` - 关闭标签
-- `⌘B` / `Ctrl+B` - 切换侧边栏
-
-### 开发模式
-
-在插件管理页面点击「开发模式」按钮，可以：
-
-- 查看已安装插件
-- 重载插件
-- 查看插件日志
-- 测试插件功能
+- 📖 **[文档导航](./DOCS.md)** - 所有文档的索引
+- 🔌 **[插件示例](./examples/README.md)** - 三个不同难度的示例
+- ⚙️ **[插件配置](./docs/PACKAGE_JSON_TEMPLATE.md)** - package.json 配置详解
+- 📝 **[日志使用](./docs/LOGGER_GUIDE.md)** - 日志系统使用方法
+- 🏪 **[商店快速开始](./MARKETPLACE_QUICKSTART.md)** - 5 分钟搭建插件商店
 
 ## 🛡️ 安全性
 
-- ✅ 插件进程隔离（WebContentsView + contextIsolation）
+- ✅ 插件进程隔离（WebContentsView）
 - ✅ 权限系统（运行时验证）
 - ✅ 路径遍历攻击防护
-- ✅ 数据隔离（每个插件独立存储）
+- ✅ 数据隔离（独立存储）
 - ✅ 插件 ID 验证
-
-## 📄 许可证
-
-MIT
 
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+## 📄 许可证
+
+MIT License
 
 ---
 
