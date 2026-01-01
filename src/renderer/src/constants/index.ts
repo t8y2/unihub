@@ -53,3 +53,67 @@ export const SOURCE_LABELS: Record<string, string> = {
 
 // ========== 错误代码 ==========
 export const IGNORED_ERROR_CODES = ['ERR_ABORTED', 'ERR_FAILED']
+
+// ========== 设置页面 ==========
+export const SETTINGS_TABS = [
+  {
+    id: 'general',
+    name: '通用',
+    icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
+  },
+  {
+    id: 'shortcuts',
+    name: '快捷键',
+    icon: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z'
+  },
+  {
+    id: 'about',
+    name: '关于',
+    icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+  }
+] as const
+
+export const SHORTCUT_LABELS: Record<string, string> = {
+  toggleWindow: '显示/隐藏窗口',
+  globalSearch: '全局搜索'
+}
+
+export const BUILTIN_SHORTCUTS = [
+  { name: '关闭标签', shortcut: '⌘W / Ctrl+W' },
+  { name: '新建标签', shortcut: '⌘N / Ctrl+N' },
+  { name: '切换侧边栏', shortcut: '⌘B / Ctrl+B' },
+  { name: '打开搜索', shortcut: '⌘K / Ctrl+K' }
+] as const
+
+export const KEYBOARD_KEY_MAP: Record<string, string> = {
+  ' ': 'Space',
+  ArrowUp: 'Up',
+  ArrowDown: 'Down',
+  ArrowLeft: 'Left',
+  ArrowRight: 'Right'
+}
+
+export const MODIFIER_KEYS = ['Command', 'Ctrl', 'Alt', 'Shift'] as const
+export const EXCLUDED_KEYS = ['Meta', 'Control', 'Alt', 'Shift'] as const
+
+export const APP_INFO = {
+  name: 'UniHub',
+  version: '1.0.0',
+  description: '开发者的通用工具集',
+  author: 'UniHub Team',
+  license: 'MIT',
+  repository: 'https://github.com/unihub/unihub'
+} as const
+
+// ========== 插件市场 ==========
+export const MARKETPLACE_URL =
+  'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
+
+export const MARKETPLACE_CATEGORIES = [
+  { value: 'all', label: '全部' },
+  { value: 'tool', label: '工具' },
+  { value: 'formatter', label: '格式化' },
+  { value: 'encoder', label: '编码' },
+  { value: 'productivity', label: '效率' },
+  { value: 'developer', label: '开发者' }
+] as const

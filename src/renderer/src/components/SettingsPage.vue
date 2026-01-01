@@ -2,22 +2,17 @@
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { log } from '@/utils/logger'
+import {
+  SETTINGS_TABS,
+  SHORTCUT_LABELS,
+  BUILTIN_SHORTCUTS,
+  KEYBOARD_KEY_MAP,
+  MODIFIER_KEYS,
+  EXCLUDED_KEYS,
+  APP_INFO
+} from '@/constants'
 
 const activeTab = ref('general')
-
-const tabs = [
-  {
-    id: 'general',
-    name: '通用',
-    icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4'
-  },
-  {
-    id: 'shortcuts',
-    name: '快捷键',
-    icon: 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z'
-  },
-  { id: 'about', name: '关于', icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
-]
 
 // 设置数据
 interface Settings {
@@ -104,16 +99,9 @@ const handleKeyDown = (e: KeyboardEvent): void => {
 
   // 主键（排除单独的修饰键）
   const key = e.key
-  if (!['Meta', 'Control', 'Alt', 'Shift'].includes(key)) {
+  if (!EXCLUDED_KEYS.includes(key)) {
     // 转换特殊键名
-    const keyMap: Record<string, string> = {
-      ' ': 'Space',
-      ArrowUp: 'Up',
-      ArrowDown: 'Down',
-      ArrowLeft: 'Left',
-      ArrowRight: 'Right'
-    }
-    keys.push(keyMap[key] || key.toUpperCase())
+    keys.push(KEYBOARD_KEY_MAP[key] || key.toUpperCase())
   }
 
   recordedKeys.value = keys
@@ -124,9 +112,8 @@ const handleKeyUp = async (): Promise<void> => {
   if (!recordingShortcut.value || recordedKeys.value.length === 0) return
 
   // 必须有至少一个修饰键和一个主键
-  const modifiers = ['Command', 'Ctrl', 'Alt', 'Shift']
-  const hasModifier = recordedKeys.value.some((k) => modifiers.includes(k))
-  const hasMainKey = recordedKeys.value.some((k) => !modifiers.includes(k))
+  const hasModifier = recordedKeys.value.some((k) => MODIFIER_KEYS.includes(k))
+  const hasMainKey = recordedKeys.value.some((k) => !MODIFIER_KEYS.includes(k))
 
   if (hasModifier && hasMainKey) {
     const shortcut = recordedKeys.value.join('+')
@@ -175,16 +162,6 @@ onMounted(() => {
   loadSystemInfo()
 })
 
-// 从 package.json 获取版本信息
-const appInfo = {
-  name: 'UniHub',
-  version: '1.0.0',
-  description: '开发者的通用工具集',
-  author: 'UniHub Team',
-  license: 'MIT',
-  repository: 'https://github.com/unihub/unihub'
-}
-
 const systemInfo = ref({
   platform: navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Win') ? 'Windows' : 'Linux',
   userAgent: navigator.userAgent,
@@ -215,7 +192,7 @@ const openExternal = (url: string): void => {
 
 const exportSystemInfo = (): void => {
   const info = {
-    app: appInfo,
+    app: APP_INFO,
     system: systemInfo.value,
     timestamp: new Date().toISOString()
   }
@@ -232,19 +209,6 @@ const exportSystemInfo = (): void => {
   URL.revokeObjectURL(url)
 }
 
-// 快捷键显示名称
-const shortcutLabels: Record<string, string> = {
-  toggleWindow: '显示/隐藏窗口',
-  globalSearch: '全局搜索'
-}
-
-// 内置快捷键（不可修改）
-const builtinShortcuts = [
-  { name: '关闭标签', shortcut: '⌘W / Ctrl+W' },
-  { name: '新建标签', shortcut: '⌘N / Ctrl+N' },
-  { name: '切换侧边栏', shortcut: '⌘B / Ctrl+B' },
-  { name: '打开搜索', shortcut: '⌘K / Ctrl+K' }
-]
 </script>
 
 <template>
@@ -266,7 +230,7 @@ const builtinShortcuts = [
       >
         <nav class="p-4 space-y-1">
           <button
-            v-for="tab in tabs"
+            v-for="tab in SETTINGS_TABS"
             :key="tab.id"
             :class="[
               'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left',
@@ -346,7 +310,7 @@ const builtinShortcuts = [
                     class="flex items-center justify-between py-2"
                   >
                     <span class="text-sm text-gray-700 dark:text-gray-300">
-                      {{ shortcutLabels[key] || key }}
+                      {{ SHORTCUT_LABELS[key] || key }}
                     </span>
                     <div class="flex items-center gap-2">
                       <button
@@ -385,7 +349,7 @@ const builtinShortcuts = [
 
                 <div class="space-y-2">
                   <div
-                    v-for="item in builtinShortcuts"
+                    v-for="item in BUILTIN_SHORTCUTS"
                     :key="item.name"
                     class="flex items-center justify-between py-2"
                   >
@@ -429,11 +393,11 @@ const builtinShortcuts = [
                 </div>
                 <div>
                   <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">
-                    {{ appInfo.name }}
+                    {{ APP_INFO.name }}
                   </h3>
-                  <p class="text-gray-600 dark:text-gray-400">{{ appInfo.description }}</p>
+                  <p class="text-gray-600 dark:text-gray-400">{{ APP_INFO.description }}</p>
                   <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">
-                    版本 {{ appInfo.version }}
+                    版本 {{ APP_INFO.version }}
                   </p>
                 </div>
               </div>
@@ -441,18 +405,18 @@ const builtinShortcuts = [
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span class="text-gray-600 dark:text-gray-400">作者：</span>
-                  <span class="text-gray-900 dark:text-gray-100">{{ appInfo.author }}</span>
+                  <span class="text-gray-900 dark:text-gray-100">{{ APP_INFO.author }}</span>
                 </div>
                 <div class="flex items-center justify-between">
                   <div>
                     <span class="text-gray-600 dark:text-gray-400">许可证：</span>
-                    <span class="text-gray-900 dark:text-gray-100">{{ appInfo.license }}</span>
+                    <span class="text-gray-900 dark:text-gray-100">{{ APP_INFO.license }}</span>
                   </div>
                   <div class="flex gap-2">
                     <button
                       class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors text-xs font-medium"
-                      @click="openExternal(appInfo.repository)"
                       title="访问 GitHub 仓库"
+                      @click="openExternal(APP_INFO.repository)"
                     >
                       <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                         <path
@@ -463,8 +427,8 @@ const builtinShortcuts = [
                     </button>
                     <button
                       class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-medium"
-                      @click="openExternal('https://github.com/unihub/unihub/issues')"
                       title="反馈问题"
+                      @click="openExternal('https://github.com/unihub/unihub/issues')"
                     >
                       <svg
                         class="w-3.5 h-3.5"

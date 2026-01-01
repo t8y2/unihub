@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'vue-sonner'
 import PermissionDialog from './PermissionDialog.vue'
+import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
 
 interface Plugin {
   id: string
@@ -30,8 +31,6 @@ interface Plugin {
   updatedAt: string
 }
 
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
-
 const plugins = ref<Plugin[]>([])
 const loading = ref(true)
 const error = ref('')
@@ -40,27 +39,6 @@ const selectedCategory = ref('all')
 const selectedPlugin = ref<Plugin | null>(null)
 const showPermissionDialog = ref(false)
 const installing = ref(false)
-
-// 分类列表
-const categories = [
-  { value: 'all', label: '全部' },
-  { value: 'tool', label: '工具' },
-  { value: 'formatter', label: '格式化' },
-  { value: 'encoder', label: '编码' },
-  { value: 'productivity', label: '效率' },
-  { value: 'developer', label: '开发者' }
-]
-
-// 分类名称映射
-const categoryNames: Record<string, string> = {
-  tool: '工具',
-  formatter: '格式化',
-  encoder: '编码',
-  productivity: '效率',
-  developer: '开发者',
-  entertainment: '娱乐',
-  custom: '自定义'
-}
 
 // 加载插件列表
 const loadPlugins = async (): Promise<void> => {
@@ -161,23 +139,19 @@ onMounted(() => {
       <!-- 搜索和筛选 -->
       <div class="flex gap-4">
         <div class="flex-1">
-          <Input
-            v-model="searchQuery"
-            placeholder="搜索插件..."
-            class="w-full"
-          />
+          <Input v-model="searchQuery" placeholder="搜索插件..." class="w-full" />
         </div>
 
         <select
           v-model="selectedCategory"
           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         >
-          <option v-for="cat in categories" :key="cat.value" :value="cat.value">
+          <option v-for="cat in MARKETPLACE_CATEGORIES" :key="cat.value" :value="cat.value">
             {{ cat.label }}
           </option>
         </select>
 
-        <Button @click="loadPlugins" :disabled="loading">
+        <Button :disabled="loading" @click="loadPlugins">
           <svg
             class="w-4 h-4 mr-2"
             :class="{ 'animate-spin': loading }"
@@ -236,7 +210,10 @@ onMounted(() => {
       </div>
 
       <!-- 插件列表 -->
-      <div v-else-if="filteredPlugins.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        v-else-if="filteredPlugins.length > 0"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
         <div
           v-for="plugin in filteredPlugins"
           :key="plugin.id"
@@ -250,7 +227,9 @@ onMounted(() => {
             >
               <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
               <svg
-                v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
+                v-if="
+                  plugin.icon.startsWith('M') || plugin.icon.startsWith('m')
+                "
                 class="w-6 h-6 text-white"
                 fill="none"
                 stroke="currentColor"
@@ -283,9 +262,13 @@ onMounted(() => {
           <!-- 标签 -->
           <div class="flex flex-wrap gap-2 mb-3">
             <Badge variant="secondary">
-              {{ categoryNames[plugin.category] || plugin.category }}
+              {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
             </Badge>
-            <Badge v-for="keyword in plugin.keywords.slice(0, 2)" :key="keyword" variant="outline">
+            <Badge
+              v-for="keyword in plugin.keywords.slice(0, 2)"
+              :key="keyword"
+              variant="outline"
+            >
               {{ keyword }}
             </Badge>
           </div>
@@ -339,7 +322,10 @@ onMounted(() => {
                 >
                   <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
                   <svg
-                    v-if="selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')"
+                    v-if="
+                      selectedPlugin.icon.startsWith('M') ||
+                      selectedPlugin.icon.startsWith('m')
+                    "
                     class="w-8 h-8 text-white"
                     fill="none"
                     stroke="currentColor"
@@ -363,7 +349,7 @@ onMounted(() => {
                   </p>
                   <div class="flex gap-2">
                     <Badge variant="secondary">
-                      {{ categoryNames[selectedPlugin.category] }}
+                      {{ CATEGORY_NAMES[selectedPlugin.category] }}
                     </Badge>
                     <Badge variant="outline">{{ selectedPlugin.downloads }} 下载</Badge>
                     <Badge variant="outline">⭐ {{ selectedPlugin.rating.toFixed(1) }}</Badge>
@@ -395,7 +381,11 @@ onMounted(() => {
               <div class="mb-4">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">关键词</h3>
                 <div class="flex flex-wrap gap-2">
-                  <Badge v-for="keyword in selectedPlugin.keywords" :key="keyword" variant="outline">
+                  <Badge
+                    v-for="keyword in selectedPlugin.keywords"
+                    :key="keyword"
+                    variant="outline"
+                  >
                     {{ keyword }}
                   </Badge>
                 </div>
@@ -449,7 +439,7 @@ onMounted(() => {
             <!-- 详情底部 -->
             <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
               <Button variant="outline" @click="closePluginDetail">取消</Button>
-              <Button @click="installPlugin(selectedPlugin)" :disabled="installing">
+              <Button :disabled="installing" @click="installPlugin(selectedPlugin)">
                 {{ installing ? '安装中...' : '安装插件' }}
               </Button>
             </div>
@@ -484,6 +474,7 @@ onMounted(() => {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
