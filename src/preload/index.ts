@@ -66,6 +66,14 @@ const api = {
   },
   app: {
     getPath: (name: string) => ipcRenderer.invoke('app:getPath', name)
+  },
+  settings: {
+    getAll: () => ipcRenderer.invoke('settings:getAll'),
+    getShortcuts: () => ipcRenderer.invoke('settings:getShortcuts'),
+    setShortcut: (key: 'toggleWindow' | 'globalSearch', value: string) =>
+      ipcRenderer.invoke('settings:setShortcut', key, value),
+    update: (partial: Record<string, unknown>) => ipcRenderer.invoke('settings:update', partial),
+    reset: () => ipcRenderer.invoke('settings:reset')
   }
 }
 
@@ -293,12 +301,20 @@ function getPluginId(): string {
   return 'unknown'
 }
 
+// 版本信息
+const versions = {
+  electron: process.versions.electron,
+  node: process.versions.node,
+  chrome: process.versions.chrome
+}
+
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('unihub', unihubAPI)
     contextBridge.exposeInMainWorld('node', nodeAPI)
+    contextBridge.exposeInMainWorld('versions', versions)
   } catch (error) {
     console.error(error)
   }
@@ -311,4 +327,6 @@ if (process.contextIsolated) {
   window.unihub = unihubAPI
   // @ts-ignore (fallback for non-isolated context)
   window.node = nodeAPI
+  // @ts-ignore (fallback for non-isolated context)
+  window.versions = versions
 }

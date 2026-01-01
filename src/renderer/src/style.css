@@ -161,3 +161,6 @@
     display: none;
   }
 }
+
+/* 导入 vue-sonner 样式 */
+@import 'vue-sonner/style.css';

@@ -6,6 +6,7 @@ import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
 import SettingsPage from './components/SettingsPage.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
+import { Toaster } from './components/ui/sonner'
 
 const isDark = ref(false)
 const sidebarCollapsed = ref(false)
@@ -118,8 +119,8 @@ const handleKeyDown = async (e: KeyboardEvent): Promise<void> => {
     }
   }
 
-  // Cmd+T (Mac) 或 Ctrl+T (Windows/Linux) 新建主页标签
-  if ((e.metaKey || e.ctrlKey) && e.key === 't') {
+  // Cmd+N (Mac) 或 Ctrl+N (Windows/Linux) 新建主页标签
+  if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
     e.preventDefault()
     addHomeTab()
   }
@@ -172,7 +173,7 @@ const activeTabId = ref('')
 // 监听 activeTabId 变化，自动显示/隐藏第三方插件视图（使用 requestIdleCallback 优化）
 watch(activeTabId, (newTabId, oldTabId) => {
   // 使用 requestIdleCallback 延迟非关键操作
-  const performUpdate = () => {
+  const performUpdate = (): void => {
     // 隐藏旧标签的插件视图
     if (oldTabId) {
       const oldTab = tabs.value.find((t) => t.id === oldTabId)
@@ -656,7 +657,7 @@ const addHomeTab = (): void => {
           <!-- 新增标签页按钮 -->
           <button
             class="h-full px-3 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors no-drag flex-shrink-0"
-            title="新建主页标签 (⌘T)"
+            title="新建主页标签 (⌘N)"
             @click="addHomeTab"
           >
             <svg
@@ -724,4 +725,7 @@ const addHomeTab = (): void => {
       </div>
     </main>
   </div>
+  
+  <!-- Toast 通知 -->
+  <Toaster position="top-right" rich-colors :theme="isDark ? 'dark' : 'light'" />
 </template>

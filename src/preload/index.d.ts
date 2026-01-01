@@ -46,6 +46,20 @@ declare global {
       app: {
         getPath: (name: string) => Promise<string>
       }
+      settings: {
+        getAll: () => Promise<{
+          shortcuts: { toggleWindow: string; globalSearch: string }
+          general: { launchAtStartup: boolean; minimizeToTray: boolean; language: string }
+          appearance: { theme: 'light' | 'dark' | 'system'; sidebarWidth: number }
+        }>
+        getShortcuts: () => Promise<{ toggleWindow: string; globalSearch: string }>
+        setShortcut: (
+          key: 'toggleWindow' | 'globalSearch',
+          value: string
+        ) => Promise<{ success: boolean }>
+        update: (partial: Record<string, unknown>) => Promise<{ success: boolean }>
+        reset: () => Promise<{ success: boolean }>
+      }
     }
     // Node.js API（第一公民）
     node: {

@@ -27,7 +27,8 @@
     "adm-zip": "^0.5.10",
     "electron-updater": "^6.3.9",
     "pinyin-pro": "^3.27.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "3.0.0",
@@ -72,5 +73,6 @@
       "electron",
       "esbuild"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.11.0+sha1.4048eeefd564ff1ab248fac3e2854d38245fe2f1"
 }

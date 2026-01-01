@@ -5,6 +5,7 @@ import qrcode from 'qrcode-generator'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { toast } from 'vue-sonner'
 
 interface Account {
   id: string
@@ -43,7 +44,7 @@ const generateToken = (totp: OTPAuth.TOTP): string => {
 
 const addAccount = (): void => {
   if (!newAccount.value.name || !newAccount.value.secret) {
-    alert('请填写账户名称和密钥')
+    toast.error('请填写账户名称和密钥')
     return
   }
 
@@ -71,7 +72,7 @@ const addAccount = (): void => {
     newAccount.value = { name: '', issuer: '', secret: '' }
     showAddDialog.value = false
   } catch (e) {
-    alert(`添加失败: ${e instanceof Error ? e.message : String(e)}`)
+    toast.error(`添加失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -118,7 +119,7 @@ const copyToken = async (token: string, id: string): Promise<void> => {
       copied.value = null
     }, 2000)
   } catch {
-    alert('复制失败')
+    toast.error('复制失败')
   }
 }
 
@@ -166,7 +167,7 @@ const showQRCode = async (account: Account): Promise<void> => {
     }
     showQRDialog.value = true
   } catch (e) {
-    alert(`显示二维码失败: ${e instanceof Error ? e.message : String(e)}`)
+    toast.error(`显示二维码失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -185,7 +186,7 @@ const showTestQRCode = async (): Promise<void> => {
     }
     showQRDialog.value = true
   } catch (e) {
-    alert(`生成二维码失败: ${e instanceof Error ? e.message : String(e)}`)
+    toast.error(`生成二维码失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
@@ -198,7 +199,7 @@ const importFromUri = (): void => {
   try {
     const totp = OTPAuth.URI.parse(uri)
     if (!(totp instanceof OTPAuth.TOTP)) {
-      alert('只支持 TOTP 类型')
+      toast.error('只支持 TOTP 类型')
       return
     }
 
@@ -211,9 +212,9 @@ const importFromUri = (): void => {
     })
 
     saveAccounts()
-    alert('导入成功！')
+    toast.success('导入成功！')
   } catch (e) {
-    alert(`导入失败: ${e instanceof Error ? e.message : String(e)}`)
+    toast.error(`导入失败: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 

@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'vue-sonner'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import PluginDevMode from './PluginDevMode.vue'
 import PluginStore from './PluginStore.vue'
 
@@ -13,10 +22,10 @@ const activeTab = ref<'store' | 'installed' | 'install' | 'guide'>('store')
 const showDevMode = ref(false)
 const installUrl = ref('')
 const installing = ref(false)
-const error = ref('')
-const success = ref('')
 const isDragging = ref(false)
 const fileInput = ref<HTMLInputElement>()
+const showUninstallDialog = ref(false)
+const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
 
 // 强制刷新计数器
 const refreshKey = ref(0)
@@ -92,30 +101,23 @@ onMounted(() => {
 // 从 URL 安装
 const installFromUrl = async (): Promise<void> => {
   if (!installUrl.value.trim()) {
-    error.value = '请输入插件 URL'
+    toast.error('请输入插件 URL')
     return
   }
 
   try {
     installing.value = true
-    error.value = ''
-    success.value = ''
 
     await pluginInstaller.installFromUrl(installUrl.value)
 
-    success.value = '✅ 插件安装成功！'
+    toast.success('插件安装成功！')
     installUrl.value = ''
 
     // 重新加载插件列表
     await loadInstalledPlugins()
     await pluginInstaller.loadInstalledPlugins()
-
-    // 2秒后清除成功消息
-    setTimeout(() => {
-      success.value = ''
-    }, 2000)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '安装失败'
+    toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
     installing.value = false
   }
@@ -128,7 +130,7 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const files = event.dataTransfer?.files
   if (!files || files.length === 0) {
-    error.value = '请拖拽一个文件'
+    toast.error('请拖拽一个文件')
     return
   }
 
@@ -160,49 +162,49 @@ const handleFileSelect = async (event: Event): Promise<void> => {
 // 安装文件的通用方法
 const installFile = async (file: File): Promise<void> => {
   if (!file.name.endsWith('.zip')) {
-    error.value = '只支持 .zip 格式的插件文件'
+    toast.error('只支持 .zip 格式的插件文件')
     return
   }
 
   try {
     installing.value = true
-    error.value = ''
-    success.value = ''
 
     // 直接调用文件安装方法
     await pluginInstaller.installFromFile(file)
 
-    success.value = '✅ 插件安装成功！'
+    toast.success('插件安装成功！')
 
     // 重新加载插件列表
     await loadInstalledPlugins()
     await pluginInstaller.loadInstalledPlugins()
-
-    // 2秒后清除成功消息
-    setTimeout(() => {
-      success.value = ''
-    }, 2000)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '安装失败'
+    toast.error(e instanceof Error ? e.message : '安装失败')
   } finally {
     installing.value = false
   }
 }
 
-// 卸载插件
-const uninstallPlugin = async (pluginId: string): Promise<void> => {
+// 卸载插件 - 显示确认对话框
+const confirmUninstall = (pluginId: string, pluginName: string): void => {
+  pluginToUninstall.value = { id: pluginId, name: pluginName }
+  showUninstallDialog.value = true
+}
+
+// 执行卸载
+const uninstallPlugin = async (): Promise<void> => {
+  if (!pluginToUninstall.value) return
+
   try {
-    await pluginInstaller.uninstall(pluginId)
-    success.value = '✅ 插件已卸载！'
+    await pluginInstaller.uninstall(pluginToUninstall.value.id)
+    toast.success('插件已卸载')
 
     // 重新加载插件列表
     await loadInstalledPlugins()
-
-    setTimeout(() => {
-      success.value = ''
-    }, 1000)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : '卸载失败'
+    toast.error(e instanceof Error ? e.message : '卸载失败')
+  } finally {
+    showUninstallDialog.value = false
+    pluginToUninstall.value = null
   }
 }
 
@@ -327,7 +329,7 @@ const getSourceLabel = (source: string): string => {
                 size="sm"
                 variant="outline"
                 class="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                @click="uninstallPlugin(plugin.id)"
+                @click="confirmUninstall(plugin.id, plugin.metadata.name)"
               >
                 卸载
               </Button>
@@ -477,48 +479,6 @@ const getSourceLabel = (source: string): string => {
               {{ installing ? '安装中...' : '从 URL 安装' }}
             </Button>
           </div>
-
-          <!-- 成功消息 -->
-          <div
-            v-if="success"
-            class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2"
-          >
-            <svg
-              class="w-5 h-5 text-green-600 dark:text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <span class="text-sm text-green-900 dark:text-green-100">{{ success }}</span>
-          </div>
-
-          <!-- 错误消息 -->
-          <div
-            v-if="error"
-            class="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2"
-          >
-            <svg
-              class="w-5 h-5 text-red-600 dark:text-red-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span class="text-sm text-red-900 dark:text-red-100">{{ error }}</span>
-          </div>
         </div>
       </div>
 
@@ -644,5 +604,21 @@ python3 -m http.server 8080
 
     <!-- 开发模式对话框 -->
     <PluginDevMode v-if="showDevMode" @close="showDevMode = false" />
+
+    <!-- 卸载确认对话框 -->
+    <Dialog :open="showUninstallDialog" @update:open="showUninstallDialog = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>确认卸载插件</DialogTitle>
+          <DialogDescription>
+            确定要卸载插件 "{{ pluginToUninstall?.name }}" 吗？此操作无法撤销。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="showUninstallDialog = false">取消</Button>
+          <Button variant="destructive" @click="uninstallPlugin">确认卸载</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

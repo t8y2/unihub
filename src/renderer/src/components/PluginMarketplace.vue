@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'vue-sonner'
 import PermissionDialog from './PermissionDialog.vue'
 
 interface Plugin {
@@ -134,13 +135,13 @@ const confirmInstall = async (): Promise<void> => {
     const result = await window.api.plugin.install(selectedPlugin.value.downloadUrl)
 
     if (result.success) {
-      alert(`✅ ${selectedPlugin.value.name} 安装成功！`)
+      toast.success(`${selectedPlugin.value.name} 安装成功！`)
       closePluginDetail()
     } else {
-      alert(`❌ 安装失败: ${result.message}`)
+      toast.error(`安装失败: ${result.message}`)
     }
   } catch (err) {
-    alert(`❌ 安装失败: ${(err as Error).message}`)
+    toast.error(`安装失败: ${(err as Error).message}`)
   } finally {
     installing.value = false
   }

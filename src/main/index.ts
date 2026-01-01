@@ -9,6 +9,7 @@ import { NodeAPI } from './node-api'
 import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
+import { settingsManager } from './settings-manager'
 import { pathToFileURL } from 'url'
 
 // 标记是否有活动的第三方插件
@@ -253,6 +254,49 @@ function setupIpcHandlers(): void {
     return app.getPath(name)
   })
 
+  // 设置相关 IPC
+  ipcMain.handle('settings:getAll', () => {
+    return settingsManager.getAll()
+  })
+
+  ipcMain.handle('settings:getShortcuts', () => {
+    return settingsManager.getShortcuts()
+  })
+
+  ipcMain.handle(
+    'settings:setShortcut',
+    (_, key: 'toggleWindow' | 'globalSearch', value: string) => {
+      const oldShortcuts = settingsManager.getShortcuts()
+
+      // 先取消旧快捷键
+      if (key === 'toggleWindow' && oldShortcuts.toggleWindow !== value) {
+        shortcutManager.unregister(oldShortcuts.toggleWindow)
+        // 注册新快捷键
+        shortcutManager.register('system', value, () => {
+          shortcutManager.toggleMainWindow()
+        })
+      }
+
+      settingsManager.setShortcut(key, value)
+      return { success: true }
+    }
+  )
+
+  ipcMain.handle('settings:update', (_, partial) => {
+    settingsManager.update(partial)
+    return { success: true }
+  })
+
+  ipcMain.handle('settings:reset', () => {
+    // 先清理所有快捷键
+    shortcutManager.cleanup()
+    // 重置设置
+    settingsManager.resetToDefaults()
+    // 重新注册默认快捷键
+    registerGlobalShortcuts()
+    return { success: true }
+  })
+
   // 延迟初始化 API（不阻塞启动）
   setImmediate(() => {
     console.log('✅ PluginAPI 已初始化:', pluginAPI ? 'OK' : 'FAIL')
@@ -264,13 +308,14 @@ function setupIpcHandlers(): void {
  * 注册全局快捷键
  */
 function registerGlobalShortcuts(): void {
-  const toggleShortcut = process.platform === 'darwin' ? 'Command+Shift+Space' : 'Ctrl+Shift+Space'
-  
+  const shortcuts = settingsManager.getShortcuts()
+
   // 延迟注册快捷键，避免阻塞窗口显示
   setImmediate(() => {
-    shortcutManager.register('system', toggleShortcut, () => {
+    // 注册显示/隐藏窗口快捷键
+    shortcutManager.register('system', shortcuts.toggleWindow, () => {
       shortcutManager.toggleMainWindow()
     })
-    console.log(`✅ 已注册全局快捷键: ${toggleShortcut}`)
+    console.log(`✅ 已注册全局快捷键: ${shortcuts.toggleWindow}`)
   })
 }
