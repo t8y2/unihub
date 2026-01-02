@@ -142,20 +142,17 @@ export class PluginInstaller {
   /**
    * 卸载插件
    */
-  async uninstall(pluginId: string, options?: { keepData: boolean }): Promise<void> {
+  async uninstall(pluginId: string): Promise<void> {
     try {
       pluginRegistry.unregister(pluginId)
 
-      const result = await window.api.plugin.uninstall(pluginId, options)
+      const result = await window.api.plugin.uninstall(pluginId)
 
       if (!result.success) {
         throw new Error(result.message)
       }
 
       console.log('✅ 插件已卸载:', pluginId)
-      if (result.backupId) {
-        console.log('📦 数据已备份:', result.backupId)
-      }
     } catch (error) {
       console.error('卸载插件失败:', error)
       throw error

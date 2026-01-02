@@ -17,14 +17,12 @@ import {
 } from '@/components/ui/dialog'
 import PluginDevMode from './PluginDevMode.vue'
 import PluginStore from './PluginStore.vue'
-import PluginDataManager from './PluginDataManager.vue'
 import { CATEGORY_NAMES } from '@/constants'
 
 type ActiveTab = 'store' | 'installed' | 'install'
 
 const activeTab = ref<ActiveTab>('store')
 const showDevMode = ref(false)
-const showDataManager = ref(false)
 const installUrl = ref('')
 const installing = ref(false)
 const isDragging = ref(false)
@@ -33,7 +31,6 @@ const dragCounter = ref(0) // 用于跟踪拖拽进入/离开的次数
 const fileInput = ref<HTMLInputElement>()
 const showUninstallDialog = ref(false)
 const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
-const uninstallKeepData = ref(false)
 const refreshKey = ref(0)
 
 // 事件处理器引用
@@ -236,10 +233,8 @@ const uninstallPlugin = async (): Promise<void> => {
   if (!pluginToUninstall.value) return
 
   try {
-    await pluginInstaller.uninstall(pluginToUninstall.value.id, {
-      keepData: uninstallKeepData.value
-    })
-    toast.success(uninstallKeepData.value ? '插件已卸载，数据已备份' : '插件已卸载')
+    await pluginInstaller.uninstall(pluginToUninstall.value.id)
+    toast.success('插件已卸载')
     await loadInstalledPlugins()
     // 强制刷新视图
     refreshKey.value++
@@ -250,7 +245,6 @@ const uninstallPlugin = async (): Promise<void> => {
   } finally {
     showUninstallDialog.value = false
     pluginToUninstall.value = null
-    uninstallKeepData.value = false
   }
 }
 </script>
@@ -297,7 +291,6 @@ const uninstallPlugin = async (): Promise<void> => {
 
       <!-- 操作按钮 -->
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" @click="showDataManager = true"> 数据管理 </Button>
         <Button variant="outline" size="sm" @click="showDevMode = true"> 开发模式 </Button>
       </div>
     </div>
@@ -524,36 +517,15 @@ const uninstallPlugin = async (): Promise<void> => {
     <!-- 开发模式对话框 -->
     <PluginDevMode v-if="showDevMode" @close="showDevMode = false" />
 
-    <!-- 数据管理对话框 -->
-    <PluginDataManager v-if="showDataManager" @close="showDataManager = false" />
-
     <!-- 卸载确认对话框 -->
     <Dialog :open="showUninstallDialog" @update:open="showUninstallDialog = $event">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>确认卸载插件</DialogTitle>
           <DialogDescription>
-            确定要卸载插件 "{{ pluginToUninstall?.name }}" 吗？
+            确定要卸载插件 "{{ pluginToUninstall?.name }}" 吗？此操作无法撤销。
           </DialogDescription>
         </DialogHeader>
-
-        <div class="py-4">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input
-              v-model="uninstallKeepData"
-              type="checkbox"
-              class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span class="text-sm text-gray-700 dark:text-gray-300">
-              保留插件数据（将自动创建备份）
-            </span>
-          </label>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 ml-6">
-            {{
-              uninstallKeepData ? '插件数据将被备份，可在"数据管理"中恢复' : '插件数据将被永久删除'
-            }}
-          </p>
-        </div>
 
         <DialogFooter>
           <Button variant="outline" @click="showUninstallDialog = false">取消</Button>

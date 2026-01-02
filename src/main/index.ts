@@ -11,7 +11,6 @@ import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
 import { settingsManager } from './settings-manager'
 import { dbManager } from './db-manager'
-import { pluginDataManager } from './plugin-data-manager'
 import { pathToFileURL } from 'url'
 
 // 标记是否有活动的第三方插件
@@ -347,43 +346,6 @@ function setupIpcHandlers(): void {
   ipcMain.handle('db:clearRecents', () => {
     dbManager.clearRecents()
     return { success: true }
-  })
-
-  // 插件数据管理相关 IPC
-  ipcMain.handle('pluginData:getInfo', (_, pluginId: string) => {
-    return pluginDataManager.getPluginDataInfo(pluginId)
-  })
-
-  ipcMain.handle('pluginData:getAllInfo', () => {
-    return pluginDataManager.getAllPluginsDataInfo()
-  })
-
-  ipcMain.handle('pluginData:backup', async (_, pluginId: string) => {
-    return await pluginDataManager.backupPluginData(pluginId)
-  })
-
-  ipcMain.handle('pluginData:restore', async (_, backupId: string) => {
-    return await pluginDataManager.restorePluginData(backupId)
-  })
-
-  ipcMain.handle('pluginData:deleteBackup', (_, backupId: string) => {
-    return pluginDataManager.deleteBackup(backupId)
-  })
-
-  ipcMain.handle('pluginData:getAllBackups', () => {
-    return pluginDataManager.getAllBackups()
-  })
-
-  ipcMain.handle('pluginData:getPluginBackups', (_, pluginId: string) => {
-    return pluginDataManager.getPluginBackups(pluginId)
-  })
-
-  ipcMain.handle('pluginData:clear', (_, pluginId: string) => {
-    return pluginDataManager.clearPluginData(pluginId)
-  })
-
-  ipcMain.handle('pluginData:cleanupOldBackups', (_, daysToKeep?: number) => {
-    return pluginDataManager.cleanupOldBackups(daysToKeep)
   })
 
   // 延迟初始化 API（不阻塞启动）

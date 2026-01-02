@@ -13,6 +13,14 @@ import {
 import { toast } from 'vue-sonner'
 import PermissionDialog from './PermissionDialog.vue'
 import PluginRating from './PluginRating.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
 import { pluginStatsService } from '@/plugins/marketplace/stats'
 
@@ -46,6 +54,7 @@ const error = ref('')
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 const selectedPlugin = ref<Plugin | null>(null)
+const showPluginDetail = ref(false)
 const showPermissionDialog = ref(false)
 const installing = ref(false)
 const installedPluginIds = ref<Set<string>>(new Set())
@@ -146,11 +155,16 @@ const filteredPlugins = computed(() => {
 // 打开插件详情
 const openPluginDetail = (plugin: Plugin): void => {
   selectedPlugin.value = plugin
+  showPluginDetail.value = true
 }
 
 // 关闭插件详情
 const closePluginDetail = (): void => {
-  selectedPlugin.value = null
+  showPluginDetail.value = false
+  // 延迟清空，等动画结束
+  setTimeout(() => {
+    selectedPlugin.value = null
+  }, 200)
 }
 
 // 安装插件
@@ -352,7 +366,7 @@ onUnmounted(() => {
           </div>
 
           <!-- 描述 -->
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 truncate">
             {{ plugin.description }}
           </p>
 
@@ -399,175 +413,137 @@ onUnmounted(() => {
     </div>
 
     <!-- 插件详情对话框 -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div
-          v-if="selectedPlugin"
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          @click.self="closePluginDetail"
-        >
-          <div
-            class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-2xl overflow-hidden"
-            @click.stop
-          >
-            <!-- 详情头部 -->
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div class="flex items-start gap-4">
-                <div
-                  class="w-16 h-16 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
-                >
-                  <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
-                  <svg
-                    v-if="
-                      selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')
-                    "
-                    class="w-8 h-8 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      :d="selectedPlugin.icon"
-                    />
-                  </svg>
-                  <span v-else class="text-3xl">{{ selectedPlugin.icon }}</span>
-                </div>
-                <div class="flex-1">
-                  <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                    {{ selectedPlugin.name }}
-                  </h2>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                    {{ selectedPlugin.author.name }} · v{{ selectedPlugin.version }}
-                  </p>
-                  <div class="flex gap-2">
-                    <Badge variant="secondary">
-                      {{ CATEGORY_NAMES[selectedPlugin.category] }}
-                    </Badge>
-                    <Badge variant="outline">
-                      {{ getPluginDisplayStats(selectedPlugin).downloads }} 下载
-                    </Badge>
-                    <Badge variant="outline">
-                      ⭐ {{ getPluginDisplayStats(selectedPlugin).rating.toFixed(1) }}
-                    </Badge>
-                  </div>
-                </div>
-                <button
-                  class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                  @click="closePluginDetail"
-                >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <!-- 详情内容 -->
-            <div class="p-6 max-h-96 overflow-y-auto">
-              <p class="text-gray-700 dark:text-gray-300 mb-4">
-                {{ selectedPlugin.description }}
-              </p>
-
-              <!-- 关键词 -->
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">关键词</h3>
-                <div class="flex flex-wrap gap-2">
-                  <Badge
-                    v-for="keyword in selectedPlugin.keywords"
-                    :key="keyword"
-                    variant="outline"
-                  >
-                    {{ keyword }}
-                  </Badge>
-                </div>
-              </div>
-
-              <!-- 评分 -->
-              <PluginRating
-                v-if="isPluginInstalled(selectedPlugin.id)"
-                :plugin-id="selectedPlugin.id"
-                :plugin-name="selectedPlugin.name"
-              />
-
-              <!-- 权限 -->
-              <div class="mb-4">
-                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  需要的权限
-                </h3>
-                <div class="space-y-2">
-                  <div
-                    v-for="permission in selectedPlugin.permissions"
-                    :key="permission"
-                    class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    {{ permission }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- 链接 -->
-              <div class="flex gap-4 text-sm">
-                <a
-                  v-if="selectedPlugin.homepage"
-                  :href="selectedPlugin.homepage"
-                  target="_blank"
-                  class="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  主页
-                </a>
-                <a
-                  v-if="selectedPlugin.repository"
-                  :href="selectedPlugin.repository"
-                  target="_blank"
-                  class="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  源码
-                </a>
-              </div>
-            </div>
-
-            <!-- 详情底部 -->
-            <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-              <Button variant="outline" @click="closePluginDetail">取消</Button>
-              <Button
-                v-if="!isPluginInstalled(selectedPlugin.id)"
-                :disabled="installing"
-                @click="installPlugin(selectedPlugin)"
+    <Dialog v-model:open="showPluginDetail">
+      <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader v-if="selectedPlugin">
+          <div class="flex items-start gap-4 mb-4">
+            <div
+              class="w-16 h-16 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
+            >
+              <svg
+                v-if="selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')"
+                class="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {{ installing ? '安装中...' : '安装插件' }}
-              </Button>
-              <Button v-else variant="secondary" disabled>
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  :d="selectedPlugin.icon"
+                />
+              </svg>
+              <span v-else class="text-3xl">{{ selectedPlugin.icon }}</span>
+            </div>
+            <div class="flex-1">
+              <DialogTitle class="text-2xl">{{ selectedPlugin.name }}</DialogTitle>
+              <DialogDescription class="mt-1">
+                {{ selectedPlugin.author.name }} · v{{ selectedPlugin.version }}
+              </DialogDescription>
+              <div class="flex gap-2 mt-2">
+                <Badge variant="secondary">
+                  {{ CATEGORY_NAMES[selectedPlugin.category] }}
+                </Badge>
+                <Badge variant="outline">
+                  {{ getPluginDisplayStats(selectedPlugin).downloads }} 下载
+                </Badge>
+                <Badge variant="outline">
+                  ⭐ {{ getPluginDisplayStats(selectedPlugin).rating.toFixed(1) }}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div v-if="selectedPlugin" class="space-y-4">
+          <p class="text-gray-700 dark:text-gray-300">
+            {{ selectedPlugin.description }}
+          </p>
+
+          <!-- 关键词 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">关键词</h3>
+            <div class="flex flex-wrap gap-2">
+              <Badge v-for="keyword in selectedPlugin.keywords" :key="keyword" variant="outline">
+                {{ keyword }}
+              </Badge>
+            </div>
+          </div>
+
+          <!-- 评分 -->
+          <PluginRating
+            v-if="isPluginInstalled(selectedPlugin.id)"
+            :plugin-id="selectedPlugin.id"
+            :plugin-name="selectedPlugin.name"
+          />
+
+          <!-- 权限 -->
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">需要的权限</h3>
+            <div class="space-y-2">
+              <div
+                v-for="permission in selectedPlugin.permissions"
+                :key="permission"
+                class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M5 13l4 4L19 7"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                已安装
-              </Button>
+                {{ permission }}
+              </div>
             </div>
           </div>
+
+          <!-- 链接 -->
+          <div class="flex gap-4 text-sm">
+            <a
+              v-if="selectedPlugin.homepage"
+              :href="selectedPlugin.homepage"
+              target="_blank"
+              class="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              主页
+            </a>
+            <a
+              v-if="selectedPlugin.repository"
+              :href="selectedPlugin.repository"
+              target="_blank"
+              class="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              源码
+            </a>
+          </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <DialogFooter v-if="selectedPlugin">
+          <Button variant="outline" @click="closePluginDetail">取消</Button>
+          <Button
+            v-if="!isPluginInstalled(selectedPlugin.id)"
+            :disabled="installing"
+            @click="installPlugin(selectedPlugin)"
+          >
+            {{ installing ? '安装中...' : '安装插件' }}
+          </Button>
+          <Button v-else variant="secondary" disabled>
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            已安装
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 权限对话框 -->
     <PermissionDialog
@@ -580,23 +556,3 @@ onUnmounted(() => {
     />
   </div>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

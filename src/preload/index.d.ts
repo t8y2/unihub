@@ -5,15 +5,12 @@ declare global {
     electron: ElectronAPI
     api: {
       plugin: {
-        install: (url: string) => Promise<{ success: boolean; message: string }>
+        install: (url: string) => Promise<{ success: boolean; message: string; pluginId?: string }>
         installFromBuffer: (
           buffer: number[],
           filename: string
-        ) => Promise<{ success: boolean; message: string }>
-        uninstall: (
-          pluginId: string,
-          options?: { keepData: boolean }
-        ) => Promise<{ success: boolean; message: string; backupId?: string }>
+        ) => Promise<{ success: boolean; message: string; pluginId?: string }>
+        uninstall: (pluginId: string) => Promise<{ success: boolean; message: string }>
         list: () => Promise<Array<Record<string, unknown>>>
         load: (pluginId: string) => Promise<{
           success: boolean
@@ -74,66 +71,6 @@ declare global {
           limit?: number
         ) => Promise<Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>>
         clearRecents: () => Promise<{ success: boolean }>
-      }
-      pluginData: {
-        getInfo: (pluginId: string) => Promise<{
-          pluginId: string
-          pluginName: string
-          dataSize: number
-          fileCount: number
-          lastModified: string
-        } | null>
-        getAllInfo: () => Promise<
-          Array<{
-            pluginId: string
-            pluginName: string
-            dataSize: number
-            fileCount: number
-            lastModified: string
-          }>
-        >
-        backup: (pluginId: string) => Promise<{
-          success: boolean
-          message: string
-          backupId?: string
-        }>
-        restore: (backupId: string) => Promise<{
-          success: boolean
-          message: string
-        }>
-        deleteBackup: (backupId: string) => Promise<{
-          success: boolean
-          message: string
-        }>
-        getAllBackups: () => Promise<
-          Array<{
-            id: string
-            pluginId: string
-            pluginName: string
-            createdAt: string
-            size: number
-            fileCount: number
-          }>
-        >
-        getPluginBackups: (pluginId: string) => Promise<
-          Array<{
-            id: string
-            pluginId: string
-            pluginName: string
-            createdAt: string
-            size: number
-            fileCount: number
-          }>
-        >
-        clear: (pluginId: string) => Promise<{
-          success: boolean
-          message: string
-        }>
-        cleanupOldBackups: (daysToKeep?: number) => Promise<{
-          success: boolean
-          message: string
-          deletedCount: number
-        }>
       }
     }
     // Node.js API（第一公民）
