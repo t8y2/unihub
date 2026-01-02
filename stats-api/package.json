@@ -1,0 +1,17 @@
+{
+  "name": "unihub-stats-api",
+  "version": "1.0.0",
+  "description": "UniHub Plugin Statistics API",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

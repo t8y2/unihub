@@ -4,3 +4,9 @@ out
 .DS_Store
 .eslintcache
 *.log*
+.env
+.env.local
+
+# Vercel
+.vercel
+stats-api/.vercel

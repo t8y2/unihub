@@ -12,7 +12,9 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner'
 import PermissionDialog from './PermissionDialog.vue'
+import PluginRating from './PluginRating.vue'
 import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
+import { pluginStatsService } from '@/plugins/marketplace/stats'
 
 interface Plugin {
   id: string
@@ -47,6 +49,8 @@ const selectedPlugin = ref<Plugin | null>(null)
 const showPermissionDialog = ref(false)
 const installing = ref(false)
 const installedPluginIds = ref<Set<string>>(new Set())
+const pluginStats = ref<Map<string, { downloads: number; averageRating: number }>>(new Map())
+const loadingStats = ref(false)
 
 // 事件处理器引用
 let pluginChangeHandler: (() => void) | null = null
@@ -79,11 +83,39 @@ const loadPlugins = async (): Promise<void> => {
 
     const data = await response.json()
     plugins.value = data.plugins || []
+
+    // 加载统计数据
+    loadPluginStats()
   } catch (err) {
     error.value = (err as Error).message
     console.error('加载插件失败:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// 加载插件统计数据
+const loadPluginStats = async (): Promise<void> => {
+  if (plugins.value.length === 0) return
+
+  try {
+    loadingStats.value = true
+    const pluginIds = plugins.value.map((p) => p.id)
+    const stats = await pluginStatsService.getBatchStats(pluginIds)
+    pluginStats.value = stats
+  } catch (err) {
+    console.warn('加载统计数据失败:', err)
+  } finally {
+    loadingStats.value = false
+  }
+}
+
+// 获取插件显示的统计数据（优先使用实时数据）
+const getPluginDisplayStats = (plugin: Plugin): { downloads: number; rating: number } => {
+  const liveStats = pluginStats.value.get(plugin.id)
+  return {
+    downloads: liveStats?.downloads ?? plugin.downloads ?? 0,
+    rating: liveStats?.averageRating ?? plugin.rating ?? 0
   }
 }
 
@@ -136,9 +168,20 @@ const confirmInstall = async (): Promise<void> => {
     installing.value = true
     showPermissionDialog.value = false
 
+    console.log('📦 [Marketplace] 开始安装插件:', selectedPlugin.value.name)
     const result = await window.api.plugin.install(selectedPlugin.value.downloadUrl)
 
     if (result.success) {
+      console.log('✅ [Marketplace] 插件安装成功')
+
+      // 记录下载统计
+      if (selectedPlugin.value.id) {
+        console.log('📊 [Marketplace] 记录下载统计:', selectedPlugin.value.id)
+        pluginStatsService.trackDownload(selectedPlugin.value.id).catch((err) => {
+          console.warn('⚠️ [Marketplace] 记录下载失败:', err)
+        })
+      }
+
       toast.success(`${selectedPlugin.value.name} 安装成功！`)
       closePluginDetail()
 
@@ -328,8 +371,8 @@ onUnmounted(() => {
 
           <!-- 统计 -->
           <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{{ plugin.downloads }} 下载</span>
-            <span>⭐ {{ plugin.rating.toFixed(1) }}</span>
+            <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
+            <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
           </div>
         </div>
       </div>
@@ -403,8 +446,12 @@ onUnmounted(() => {
                     <Badge variant="secondary">
                       {{ CATEGORY_NAMES[selectedPlugin.category] }}
                     </Badge>
-                    <Badge variant="outline">{{ selectedPlugin.downloads }} 下载</Badge>
-                    <Badge variant="outline">⭐ {{ selectedPlugin.rating.toFixed(1) }}</Badge>
+                    <Badge variant="outline">
+                      {{ getPluginDisplayStats(selectedPlugin).downloads }} 下载
+                    </Badge>
+                    <Badge variant="outline">
+                      ⭐ {{ getPluginDisplayStats(selectedPlugin).rating.toFixed(1) }}
+                    </Badge>
                   </div>
                 </div>
                 <button
@@ -442,6 +489,13 @@ onUnmounted(() => {
                   </Badge>
                 </div>
               </div>
+
+              <!-- 评分 -->
+              <PluginRating
+                v-if="isPluginInstalled(selectedPlugin.id)"
+                :plugin-id="selectedPlugin.id"
+                :plugin-name="selectedPlugin.name"
+              />
 
               <!-- 权限 -->
               <div class="mb-4">

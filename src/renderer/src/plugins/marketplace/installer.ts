@@ -56,15 +56,28 @@ export class PluginInstaller {
         throw new Error('仅支持 .zip 格式的插件包')
       }
 
+      console.log('📦 [Installer] 开始安装插件:', url)
       const result = await window.api.plugin.install(url)
 
       if (!result.success) {
         throw new Error(result.message)
       }
 
-      console.log('✅ 插件安装成功')
+      console.log('✅ [Installer] 插件安装成功')
+      console.log('📊 [Installer] 插件信息:', result)
+
+      // 记录下载（异步，不阻塞）
+      if (result.pluginId) {
+        console.log('📊 [Installer] 准备记录下载，pluginId:', result.pluginId)
+        const { pluginStatsService } = await import('./stats')
+        pluginStatsService.trackDownload(result.pluginId).catch((err) => {
+          console.warn('🔴 [Installer] 记录下载失败:', err)
+        })
+      } else {
+        console.warn('⚠️ [Installer] 没有 pluginId，无法记录下载')
+      }
     } catch (error) {
-      console.error('安装插件失败:', error)
+      console.error('❌ [Installer] 安装插件失败:', error)
       throw error
     }
   }

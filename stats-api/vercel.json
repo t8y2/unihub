@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "regions": ["hnd1"],
+  "functions": {
+    "api/**/*.ts": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
+}
