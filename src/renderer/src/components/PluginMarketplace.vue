@@ -24,6 +24,8 @@ import {
 import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
 import { pluginStatsService } from '@/plugins/marketplace/stats'
 
+type ViewMode = 'grid' | 'list'
+
 interface Plugin {
   id: string
   name: string
@@ -60,6 +62,7 @@ const installing = ref(false)
 const installedPluginIds = ref<Set<string>>(new Set())
 const pluginStats = ref<Map<string, { downloads: number; averageRating: number }>>(new Map())
 const loadingStats = ref(false)
+const viewMode = ref<ViewMode>('grid')
 
 // 事件处理器引用
 let pluginChangeHandler: (() => void) | null = null
@@ -243,12 +246,9 @@ onUnmounted(() => {
 
 <template>
   <div class="h-full flex flex-col bg-white dark:bg-gray-900">
-    <!-- 头部 -->
+    <!-- 搜索和筛选 -->
     <div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 p-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">插件市场</h1>
-
-      <!-- 搜索和筛选 -->
-      <div class="flex gap-4">
+      <div class="flex gap-4 items-center">
         <div class="flex-1">
           <Input v-model="searchQuery" placeholder="搜索插件..." class="w-full" />
         </div>
@@ -263,6 +263,48 @@ onUnmounted(() => {
             </SelectItem>
           </SelectContent>
         </Select>
+
+        <!-- 视图切换按钮 -->
+        <div class="flex items-center border border-gray-200 dark:border-gray-700 rounded-md">
+          <button
+            title="网格视图"
+            :class="[
+              'p-1.5 rounded-l-md transition-colors',
+              viewMode === 'grid'
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            ]"
+            @click="viewMode = 'grid'"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+              />
+            </svg>
+          </button>
+          <button
+            title="列表视图"
+            :class="[
+              'p-1.5 rounded-r-md transition-colors border-l border-gray-200 dark:border-gray-700',
+              viewMode === 'list'
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+            ]"
+            @click="viewMode = 'list'"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        </div>
 
         <Button :disabled="loading" @click="loadPlugins">
           <svg
@@ -323,25 +365,95 @@ onUnmounted(() => {
       </div>
 
       <!-- 插件列表 -->
-      <div
-        v-else-if="filteredPlugins.length > 0"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
+      <div v-else-if="filteredPlugins.length > 0">
+        <!-- 网格视图 -->
         <div
-          v-for="plugin in filteredPlugins"
-          :key="plugin.id"
-          class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
-          @click="openPluginDetail(plugin)"
+          v-if="viewMode === 'grid'"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          <!-- 插件图标和信息 -->
-          <div class="flex items-start gap-3 mb-3">
+          <div
+            v-for="plugin in filteredPlugins"
+            :key="plugin.id"
+            class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
+            @click="openPluginDetail(plugin)"
+          >
+            <!-- 插件图标和信息 -->
+            <div class="flex items-start gap-3 mb-3">
+              <div
+                class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
+              >
+                <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
+                <svg
+                  v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
+                  class="w-6 h-6 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    :d="plugin.icon"
+                  />
+                </svg>
+                <span v-else class="text-2xl">{{ plugin.icon }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {{ plugin.name }}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ plugin.author.name }} · v{{ plugin.version }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 描述 -->
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 truncate">
+              {{ plugin.description }}
+            </p>
+
+            <!-- 标签 -->
+            <div class="flex flex-wrap gap-2 mb-3">
+              <Badge v-if="isPluginInstalled(plugin.id)" variant="default" class="bg-green-600">
+                ✓ 已安装
+              </Badge>
+              <Badge variant="secondary">
+                {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
+              </Badge>
+              <Badge
+                v-for="keyword in plugin.keywords.slice(0, 2)"
+                :key="keyword"
+                variant="outline"
+              >
+                {{ keyword }}
+              </Badge>
+            </div>
+
+            <!-- 统计 -->
+            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
+              <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 列表视图 -->
+        <div v-if="viewMode === 'list'" class="space-y-2">
+          <div
+            v-for="plugin in filteredPlugins"
+            :key="plugin.id"
+            class="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+            @click="openPluginDetail(plugin)"
+          >
+            <!-- 图标 -->
             <div
-              class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
+              class="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
             >
-              <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
               <svg
                 v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
-                class="w-6 h-6 text-white"
+                class="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -353,40 +465,48 @@ onUnmounted(() => {
                   :d="plugin.icon"
                 />
               </svg>
-              <span v-else class="text-2xl">{{ plugin.icon }}</span>
+              <span v-else class="text-xl">{{ plugin.icon }}</span>
             </div>
+
+            <!-- 信息 -->
             <div class="flex-1 min-w-0">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
-                {{ plugin.name }}
-              </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                {{ plugin.author.name }} · v{{ plugin.version }}
+              <div class="flex items-center gap-2 mb-0.5">
+                <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {{ plugin.name }}
+                </h3>
+                <Badge
+                  v-if="isPluginInstalled(plugin.id)"
+                  variant="default"
+                  class="bg-green-600 text-xs py-0"
+                >
+                  ✓ 已安装
+                </Badge>
+                <Badge variant="secondary" class="text-xs py-0">
+                  {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
+                </Badge>
+              </div>
+              <p class="text-xs text-gray-600 dark:text-gray-400 truncate mb-0.5">
+                {{ plugin.description }}
               </p>
+              <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <span>{{ plugin.author.name }}</span>
+                <span>v{{ plugin.version }}</span>
+                <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
+                <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
+              </div>
             </div>
-          </div>
 
-          <!-- 描述 -->
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 truncate">
-            {{ plugin.description }}
-          </p>
-
-          <!-- 标签 -->
-          <div class="flex flex-wrap gap-2 mb-3">
-            <Badge v-if="isPluginInstalled(plugin.id)" variant="default" class="bg-green-600">
-              ✓ 已安装
-            </Badge>
-            <Badge variant="secondary">
-              {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
-            </Badge>
-            <Badge v-for="keyword in plugin.keywords.slice(0, 2)" :key="keyword" variant="outline">
-              {{ keyword }}
-            </Badge>
-          </div>
-
-          <!-- 统计 -->
-          <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-            <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
-            <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
+            <!-- 关键词标签 -->
+            <div class="flex gap-1.5">
+              <Badge
+                v-for="keyword in plugin.keywords.slice(0, 3)"
+                :key="keyword"
+                variant="outline"
+                class="text-xs py-0"
+              >
+                {{ keyword }}
+              </Badge>
+            </div>
           </div>
         </div>
       </div>

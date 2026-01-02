@@ -50,11 +50,6 @@ const thirdPartyPlugins = computed(() => {
   return pluginRegistry.getAll().filter((p) => p.metadata.isThirdParty)
 })
 
-// 总插件数
-const totalPluginsCount = computed(() => {
-  return builtInPlugins.value.length + thirdPartyPlugins.value.length
-})
-
 interface InstalledPlugin {
   id: string
   version: string
@@ -263,7 +258,7 @@ const uninstallPlugin = async (): Promise<void> => {
           ]"
           @click="activeTab = 'installed'"
         >
-          已安装 ({{ totalPluginsCount }})
+          已安装
         </button>
         <button
           :class="[
@@ -274,7 +269,7 @@ const uninstallPlugin = async (): Promise<void> => {
           ]"
           @click="activeTab = 'store'"
         >
-          插件商店
+          插件市场
         </button>
         <button
           :class="[
@@ -439,7 +434,7 @@ const uninstallPlugin = async (): Promise<void> => {
         </div>
       </div>
 
-      <!-- 插件商店标签页 -->
+      <!-- 插件市场标签页 -->
       <div v-show="activeTab === 'store'" class="h-full">
         <PluginStore />
       </div>
