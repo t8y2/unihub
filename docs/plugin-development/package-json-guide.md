@@ -1,6 +1,6 @@
-# 插件配置完整指南
+# 插件配置指南
 
-## 📋 最小配置（必填字段）
+## 📋 最小配置
 
 ```json
 {
@@ -10,33 +10,14 @@
   "author": "你的名字",
   "unihub": {
     "id": "com.yourname.myplugin",
-    "entry": "dist/index.html"
-  }
-}
-```
-
-> **✨ 自动继承功能**: 除了 `name` 字段外，unihub 配置中的其他字段如果未提供，会自动从 package.json 的对应字段继承。
-
-### 完整的最小配置示例
-
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "unihub": {
-    "id": "com.yourname.myplugin",
-    "name": "我的插件",
-    "version": "1.0.0",
-    "description": "插件描述",
-    "author": {
-      "name": "你的名字"
-    },
     "icon": "🚀",
     "category": "tool",
     "entry": "dist/index.html"
   }
 }
 ```
+
+> **✨ 自动继承**: `unihub` 中未提供的字段会自动从 `package.json` 继承（除了 `name` 字段）。
 
 ## 📝 完整配置（所有字段）
 
@@ -88,172 +69,41 @@
 
 ## 🔄 自动继承功能
 
-UniHub 支持从 package.json 的标准字段自动继承到 unihub 配置中，减少重复配置。
+UniHub 支持从 `package.json` 自动继承字段到 `unihub` 配置，减少重复。
 
 ### 继承规则
 
-| unihub 字段   | 继承自 package.json | 说明         |
-| ------------- | ------------------- | ------------ |
-| `name`        | `name`              | 插件显示名称 |
-| `version`     | `version`           | 插件版本号   |
-| `description` | `description`       | 插件描述     |
-| `author`      | `author`            | 作者信息     |
-| `keywords`    | `keywords`          | 关键词数组   |
-| `homepage`    | `homepage`          | 主页链接     |
-| `repository`  | `repository`        | 仓库地址     |
-| `license`     | `license`           | 许可证       |
+| unihub 字段   | 继承自        | 说明       |
+| ------------- | ------------- | ---------- |
+| `version`     | `version`     | 插件版本号 |
+| `description` | `description` | 插件描述   |
+| `author`      | `author`      | 作者信息   |
+| `keywords`    | `keywords`    | 关键词数组 |
+| `homepage`    | `homepage`    | 主页链接   |
+| `repository`  | `repository`  | 仓库地址   |
+| `license`     | `license`     | 许可证     |
 
-### 继承优先级
+**优先级**: unihub 中的字段 > package.json 中的字段 > 默认值
 
-1. **unihub 字段优先**: 如果 unihub 中已定义字段，则使用 unihub 中的值
-2. **package.json 继承**: 如果 unihub 中未定义，则从 package.json 继承
-3. **默认值**: 如果两处都未定义，使用默认值（如果有）
-
-### 示例对比
-
-#### ❌ 传统方式（重复配置）
+### 示例
 
 ```json
 {
   "name": "my-awesome-plugin",
   "version": "2.1.0",
-  "description": "一个很棒的插件，提供强大的功能",
-  "author": {
-    "name": "张三",
-    "email": "zhangsan@example.com"
-  },
-  "keywords": ["tool", "utility", "awesome"],
-  "homepage": "https://github.com/zhangsan/my-awesome-plugin",
-  "repository": "https://github.com/zhangsan/my-awesome-plugin",
-  "license": "MIT",
+  "description": "一个很棒的插件",
+  "author": "张三",
+  "keywords": ["tool", "utility"],
+  "homepage": "https://github.com/zhangsan/my-plugin",
   "unihub": {
     "id": "com.zhangsan.awesome",
-    "name": "我的很棒插件", // 重复
-    "version": "2.1.0", // 重复
-    "description": "一个很棒的插件，提供强大的功能", // 重复
-    "author": {
-      // 重复
-      "name": "张三",
-      "email": "zhangsan@example.com"
-    },
-    "keywords": ["tool", "utility", "awesome"], // 重复
-    "homepage": "https://github.com/zhangsan/my-awesome-plugin", // 重复
-    "repository": "https://github.com/zhangsan/my-awesome-plugin", // 重复
     "icon": "⚡",
     "category": "tool",
     "entry": "dist/index.html"
+    // 其他字段自动继承
   }
 }
 ```
-
-#### ✅ 新方式（自动继承）
-
-```json
-{
-  "name": "my-awesome-plugin",
-  "version": "2.1.0",
-  "description": "一个很棒的插件，提供强大的功能",
-  "author": {
-    "name": "张三",
-    "email": "zhangsan@example.com"
-  },
-  "keywords": ["tool", "utility", "awesome"],
-  "homepage": "https://github.com/zhangsan/my-awesome-plugin",
-  "repository": "https://github.com/zhangsan/my-awesome-plugin",
-  "license": "MIT",
-  "unihub": {
-    "id": "com.zhangsan.awesome",
-    "name": "我的很棒插件", // 可选：覆盖 package.json 中的 name
-    "icon": "⚡",
-    "category": "tool",
-    "entry": "dist/index.html"
-    // 其他字段自动从 package.json 继承
-  }
-}
-```
-
-### 特殊字段处理
-
-#### author 字段
-
-支持字符串和对象两种格式的自动转换：
-
-```json
-// package.json 中的字符串格式
-"author": "张三 <zhangsan@example.com>"
-
-// 或对象格式
-"author": {
-  "name": "张三",
-  "email": "zhangsan@example.com",
-  "url": "https://zhangsan.com"
-}
-
-// unihub 中可以覆盖
-"unihub": {
-  "author": {
-    "name": "张三（UniHub版）"
-  }
-}
-```
-
-#### repository 字段
-
-支持字符串和对象格式：
-
-```json
-// package.json 中的字符串格式
-"repository": "https://github.com/user/repo"
-
-// 或对象格式
-"repository": {
-  "type": "git",
-  "url": "https://github.com/user/repo"
-}
-
-// 都会被继承为字符串格式的 URL
-```
-
-### 最佳实践
-
-1. **标准字段放在 package.json 根级别**
-
-   ```json
-   {
-     "name": "plugin-name",
-     "version": "1.0.0",
-     "description": "插件描述",
-     "author": "作者名",
-     "keywords": ["关键词"],
-     "homepage": "主页地址",
-     "repository": "仓库地址",
-     "license": "MIT"
-   }
-   ```
-
-2. **UniHub 特有字段放在 unihub 中**
-
-   ```json
-   {
-     "unihub": {
-       "id": "com.author.plugin",
-       "icon": "🚀",
-       "category": "tool",
-       "entry": "dist/index.html",
-       "permissions": ["clipboard"]
-     }
-   }
-   ```
-
-3. **需要覆盖时才在 unihub 中重新定义**
-   ```json
-   {
-     "name": "technical-plugin-name",
-     "unihub": {
-       "name": "用户友好的插件名称" // 覆盖 package.json 中的 name
-     }
-   }
-   ```
 
 ## 🔍 字段说明
 
@@ -477,98 +327,6 @@ UniHub 支持从 package.json 的标准字段自动继承到 unihub 配置中，
     "autoReload": true
   }
   ```
-
-## 🎯 快速开始模板
-
-### 纯 HTML 插件（最简配置）
-
-```json
-{
-  "name": "my-simple-plugin",
-  "version": "1.0.0",
-  "description": "一个简单的插件",
-  "author": "你的名字",
-  "unihub": {
-    "id": "com.yourname.simpleplugin",
-    "icon": "🎨",
-    "category": "tool",
-    "entry": "dist/index.html"
-  }
-}
-```
-
-### Vue/React 插件（推荐配置）
-
-```json
-{
-  "name": "my-vue-plugin",
-  "version": "1.0.0",
-  "description": "我的 Vue 插件",
-  "author": {
-    "name": "你的名字",
-    "email": "your@email.com"
-  },
-  "license": "MIT",
-  "keywords": ["vue", "tool", "utility"],
-  "homepage": "https://github.com/yourname/my-vue-plugin",
-  "repository": "https://github.com/yourname/my-vue-plugin",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "package": "npm run build && node scripts/package.js"
-  },
-  "unihub": {
-    "id": "com.yourname.vueplugin",
-    "name": "我的 Vue 插件",
-    "icon": "⚡",
-    "category": "tool",
-    "entry": "dist/index.html",
-    "permissions": ["clipboard", "db"],
-    "dev": {
-      "enabled": false,
-      "url": "http://localhost:5173",
-      "autoReload": true
-    }
-  }
-}
-```
-
-### 对比：传统 vs 新方式
-
-#### ❌ 传统方式（重复配置）
-
-```json
-{
-  "name": "awesome-plugin",
-  "version": "2.0.0",
-  "description": "很棒的插件",
-  "author": "张三",
-  "unihub": {
-    "id": "com.zhangsan.awesome",
-    "name": "awesome-plugin", // 重复
-    "version": "2.0.0", // 重复
-    "description": "很棒的插件", // 重复
-    "author": "张三", // 重复
-    "entry": "dist/index.html"
-  }
-}
-```
-
-#### ✅ 新方式（自动继承）
-
-```json
-{
-  "name": "awesome-plugin",
-  "version": "2.0.0",
-  "description": "很棒的插件",
-  "author": "张三",
-  "unihub": {
-    "id": "com.zhangsan.awesome",
-    "entry": "dist/index.html"
-    // 其他字段自动继承
-  }
-}
-```
 
 ## ⚠️ 常见错误
 

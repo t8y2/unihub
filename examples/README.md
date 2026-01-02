@@ -150,9 +150,7 @@ npm run dev
 ## 📚 相关文档
 
 - 📘 [插件配置指南](../docs/plugin-development/package-json-guide.md)
-- 📗 [API 参考文档](../docs/plugin-development/api-reference.md)
-- 📙 [性能优化指南](../docs/plugin-development/performance.md)
-- 📕 [日志使用指南](../docs/development/logging.md)
+- 📗 [发布插件](../marketplace/CONTRIBUTING.md)
 
 ---
 
@@ -181,7 +179,7 @@ npm run dev
 - 剪贴板 API
 - 数据库 API（SQLite）
 - 系统 API（文件、通知等）
-- 详见 [API 文档](../docs/plugin-development/api-reference.md)
+- 详见 [插件配置指南](../docs/plugin-development/package-json-guide.md)
 
 ### Q: 如何发布插件？
 

@@ -103,10 +103,9 @@ node tools/create-plugin.js my-plugin
 
 ## 📚 文档
 
-- 📖 **[完整文档](./docs/README.md)** - 所有文档的索引和导航
 - 🔌 **[插件示例](./examples/README.md)** - 三个不同难度的完整示例
-- ⚙️ **[配置指南](./docs/plugin-development/package-json-guide.md)** - 插件配置详解
-- 🏪 **[插件市场](./docs/marketplace/user-guide.md)** - 插件市场使用指南
+- ⚙️ **[插件配置指南](./docs/plugin-development/package-json-guide.md)** - package.json 配置详解
+- 🏪 **[发布插件](./marketplace/CONTRIBUTING.md)** - 如何发布插件到市场
 
 ## 🛡️ 安全性
 
