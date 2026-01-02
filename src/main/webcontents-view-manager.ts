@@ -1,5 +1,8 @@
 import { BrowserWindow, WebContentsView } from 'electron'
 import { join } from 'path'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('webcontents-view-manager')
 
 /**
  * WebContentsView 管理器
@@ -64,7 +67,7 @@ export class WebContentsViewManager {
       if (ignoredErrors.includes(err.code)) {
         return
       }
-      console.error(`加载插件 ${pluginId} 失败:`, err)
+      logger.error({ err, pluginId }, '加载插件失败')
     })
 
     // 只在 dom-ready 时注入一次（更早且足够）
@@ -83,7 +86,7 @@ export class WebContentsViewManager {
       `
 
       view.webContents.executeJavaScript(script).catch((err) => {
-        console.error('注入插件 ID 失败:', err)
+        logger.error({ err }, '注入插件 ID 失败')
       })
     })
 
@@ -95,7 +98,7 @@ export class WebContentsViewManager {
     // 监听控制台消息（仅开发模式）
     if (process.env.NODE_ENV === 'development') {
       view.webContents.on('console-message', (_event, _level, message) => {
-        console.log(`[Plugin ${pluginId}]:`, message)
+        logger.info({ pluginId, message }, '[Plugin]')
       })
     }
 
@@ -108,7 +111,7 @@ export class WebContentsViewManager {
         if (!isMainFrame || errorCode === -3 || errorCode === -2) {
           return
         }
-        console.error(`[Plugin ${pluginId}] 加载失败:`, errorCode, errorDescription, validatedURL)
+        logger.error({ pluginId, errorCode, errorDescription, validatedURL }, '[Plugin] 加载失败')
       }
     )
 
@@ -117,7 +120,7 @@ export class WebContentsViewManager {
       // 检查是否是 Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
       if (input.type === 'keyDown' && input.key === 'w' && (input.meta || input.control)) {
         event.preventDefault()
-        console.log(`🚫 阻止插件 ${pluginId} 中的 Cmd+W 关闭窗口`)
+        logger.info({ pluginId }, '🚫 阻止插件中的 Cmd+W 关闭窗口')
         // 通知主窗口的渲染进程处理关闭标签
         this.mainWindow?.webContents.send('handle-close-tab')
       }
@@ -149,7 +152,7 @@ export class WebContentsViewManager {
 
     // 获取最久未使用的插件 ID（队尾）
     const oldestPluginId = this.lruQueue[this.lruQueue.length - 1]
-    console.log(`🗑️ LRU 驱逐: ${oldestPluginId}`)
+    logger.info({ pluginId: oldestPluginId }, '🗑️ LRU 驱逐')
     this.removePluginView(oldestPluginId)
   }
 
@@ -161,13 +164,13 @@ export class WebContentsViewManager {
     bounds?: { x: number; y: number; width: number; height: number }
   ): void {
     if (!this.mainWindow) {
-      console.error('主窗口未设置')
+      logger.error('主窗口未设置')
       return
     }
 
     const view = this.views.get(pluginId)
     if (!view) {
-      console.error(`插件视图不存在: ${pluginId}`)
+      logger.error({ pluginId }, '插件视图不存在')
       return
     }
 

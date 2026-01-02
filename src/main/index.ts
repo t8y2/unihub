@@ -12,6 +12,9 @@ import { shortcutManager } from './shortcut-manager'
 import { settingsManager } from './settings-manager'
 import { dbManager } from './db-manager'
 import { pathToFileURL } from 'url'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('main')
 
 // 标记是否有活动的第三方插件
 let hasActiveThirdPartyPlugin = false
@@ -78,7 +81,7 @@ function createWindow(): void {
       // 如果有活动的第三方插件，阻止默认行为
       if (hasActiveThirdPartyPlugin) {
         event.preventDefault()
-        console.log('🚫 阻止 Cmd+W 关闭窗口（第三方插件正在运行）')
+        logger.info('🚫 阻止 Cmd+W 关闭窗口（第三方插件正在运行）')
         // 通知渲染进程处理关闭标签
         mainWindow?.webContents.send('handle-close-tab')
       }
@@ -115,14 +118,14 @@ app.whenReady().then(async () => {
 
       // 检查文件是否存在
       if (!existsSync(fullPath)) {
-        console.error('❌ 插件文件不存在:', fullPath)
+        logger.error({ path: fullPath }, '❌ 插件文件不存在')
         return new Response('File not found', { status: 404 })
       }
 
       // 使用 net.fetch 加载本地文件
       return net.fetch(pathToFileURL(fullPath).href)
     } catch (error) {
-      console.error('❌ 加载插件资源失败:', error)
+      logger.error({ err: error }, '❌ 加载插件资源失败')
       return new Response('Internal error', { status: 500 })
     }
   })
@@ -135,7 +138,7 @@ app.whenReady().then(async () => {
 
   // 异步初始化插件系统（不阻塞窗口显示）
   setImmediate(() => {
-    console.log('🔄 开始异步初始化插件系统...')
+    logger.info('🔄 开始异步初始化插件系统...')
 
     // 预热插件缓存（异步）
     pluginManager.warmupCache()
@@ -143,7 +146,7 @@ app.whenReady().then(async () => {
     // 初始化已安装插件的权限（异步）
     pluginManager.initializePermissions()
 
-    console.log('✅ 插件系统初始化完成')
+    logger.info('✅ 插件系统初始化完成')
   })
 
   app.on('browser-window-created', (_, window) => {
@@ -350,8 +353,10 @@ function setupIpcHandlers(): void {
 
   // 延迟初始化 API（不阻塞启动）
   setImmediate(() => {
-    console.log('✅ PluginAPI 已初始化:', pluginAPI ? 'OK' : 'FAIL')
-    console.log('✅ NodeAPI 已初始化:', nodeAPI ? 'OK' : 'FAIL')
+    logger.info(
+      { pluginAPI: pluginAPI ? 'OK' : 'FAIL', nodeAPI: nodeAPI ? 'OK' : 'FAIL' },
+      '✅ API 已初始化'
+    )
   })
 }
 
@@ -367,6 +372,6 @@ function registerGlobalShortcuts(): void {
     shortcutManager.register('system', shortcuts.toggleWindow, () => {
       shortcutManager.toggleMainWindow()
     })
-    console.log(`✅ 已注册全局快捷键: ${shortcuts.toggleWindow}`)
+    logger.info({ shortcut: shortcuts.toggleWindow }, '✅ 已注册全局快捷键')
   })
 }

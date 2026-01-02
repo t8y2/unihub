@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
-import { log } from '@/utils/logger'
 
 const props = defineProps<{
   favoritePlugins: string[]
@@ -18,19 +17,19 @@ const favoritePluginsList = computed(() => {
     .map((id) => pluginRegistry.get(id))
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
 
-  log.debug('收藏列表加载', { count: plugins.length })
+  console.log('收藏列表加载', plugins.length, '个插件')
   return plugins
 })
 
 // 处理打开工具
 const handleOpenTool = (pluginId: string): void => {
-  log.info('打开收藏的工具', { pluginId })
+  console.log('打开收藏的工具:', pluginId)
   emit('openTool', pluginId)
 }
 
 // 处理取消收藏
 const handleToggleFavorite = (pluginId: string): void => {
-  log.info('取消收藏', { pluginId })
+  console.log('取消收藏:', pluginId)
   emit('toggleFavorite', pluginId)
 }
 </script>

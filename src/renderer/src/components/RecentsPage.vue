@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
-import { log } from '@/utils/logger'
 
 const props = defineProps<{
   recentPlugins: string[]
@@ -17,13 +16,13 @@ const recentPluginsList = computed(() => {
     .map((id) => pluginRegistry.get(id))
     .filter((plugin): plugin is NonNullable<typeof plugin> => plugin?.enabled === true)
 
-  log.debug('最近使用列表加载', { count: plugins.length })
+  console.log('最近使用列表加载', plugins.length, '个插件')
   return plugins
 })
 
 // 处理打开工具
 const handleOpenTool = (pluginId: string): void => {
-  log.info('打开最近使用的工具', { pluginId })
+  console.log('打开最近使用的工具:', pluginId)
   emit('openTool', pluginId)
 }
 </script>

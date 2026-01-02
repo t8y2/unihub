@@ -1,6 +1,9 @@
 import { app } from 'electron'
 import { join } from 'path'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('settings')
 
 /**
  * 应用设置接口
@@ -75,7 +78,7 @@ export class SettingsManager {
         return this.mergeSettings(defaultSettings, loaded)
       }
     } catch (error) {
-      console.error('加载设置失败:', error)
+      logger.error({ err: error }, '加载设置失败')
     }
     return { ...defaultSettings }
   }
@@ -98,7 +101,7 @@ export class SettingsManager {
     try {
       writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2))
     } catch (error) {
-      console.error('保存设置失败:', error)
+      logger.error({ err: error }, '保存设置失败')
     }
   }
 

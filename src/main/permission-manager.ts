@@ -2,6 +2,9 @@
  * 权限管理器
  * 管理插件的权限请求和验证
  */
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('permission-manager')
 
 export type Permission =
   | 'fs' // 文件系统访问
@@ -29,7 +32,7 @@ export class PermissionManager {
     ) as Permission[]
 
     this.permissions.set(pluginId, new Set(validPermissions))
-    console.log(`✅ 已注册插件权限: ${pluginId}`, validPermissions)
+    logger.info({ pluginId, permissions: validPermissions }, '✅ 已注册插件权限')
   }
 
   /**
@@ -43,13 +46,13 @@ export class PermissionManager {
 
     const pluginPermissions = this.permissions.get(pluginId)
     if (!pluginPermissions) {
-      console.warn(`⚠️ 插件 ${pluginId} 未注册权限`)
+      logger.warn({ pluginId }, '⚠️ 插件未注册权限')
       return false
     }
 
     const has = pluginPermissions.has(permission)
     if (!has) {
-      console.warn(`⚠️ 插件 ${pluginId} 缺少权限: ${permission}`)
+      logger.warn({ pluginId, permission }, '⚠️ 插件缺少权限')
     }
     return has
   }
@@ -93,7 +96,7 @@ export class PermissionManager {
    */
   unregisterPlugin(pluginId: string): void {
     this.permissions.delete(pluginId)
-    console.log(`✅ 已移除插件权限: ${pluginId}`)
+    logger.info({ pluginId }, '✅ 已移除插件权限')
   }
 
   /**

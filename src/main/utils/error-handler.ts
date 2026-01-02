@@ -3,6 +3,9 @@
  */
 
 import { ERROR_CODES } from '../constants'
+import { createLogger } from '../../shared/logger'
+
+const logger = createLogger('error-handler')
 
 /**
  * 检查是否为可忽略的错误
@@ -23,7 +26,7 @@ export async function safeAsync<T>(
     return await fn()
   } catch (error) {
     if (errorMessage) {
-      console.error(errorMessage, error)
+      logger.error({ err: error }, errorMessage)
     }
     return fallback
   }

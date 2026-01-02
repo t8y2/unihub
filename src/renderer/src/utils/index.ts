@@ -2,8 +2,8 @@
  * 通用工具函数
  */
 
-// 导出日志系统
-export * from './logger'
+// 导出工具函数
+export * from './format'
 
 /**
  * 格式化日期

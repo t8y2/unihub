@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
-import { log } from '@/utils/logger'
 import { Kbd } from '@/components/ui/kbd'
 import {
   SETTINGS_TABS,
@@ -55,24 +54,24 @@ const recordedKeys = ref<string[]>([])
 // 加载设置
 const loadSettings = async (): Promise<void> => {
   try {
-    log.info('加载设置')
+    console.log('加载设置')
     const data = await window.api.settings.getAll()
     settings.value = data
-    log.debug('设置加载成功', data)
+    console.log('设置加载成功', data)
   } catch (error) {
-    log.error('加载设置失败', error)
+    console.error('加载设置失败', error)
   }
 }
 
 // 保存快捷键
 const saveShortcut = async (key: 'toggleWindow' | 'globalSearch', value: string): Promise<void> => {
   try {
-    log.info('保存快捷键', { key, value })
+    console.log('保存快捷键', key, value)
     await window.api.settings.setShortcut(key, value)
     settings.value.shortcuts[key] = value
     toast.success('快捷键已保存')
   } catch (error) {
-    log.error('保存快捷键失败', error)
+    console.error('保存快捷键失败', error)
     toast.error('保存快捷键失败')
   }
 }
@@ -135,12 +134,12 @@ const cancelRecording = (): void => {
 const resetSettings = async (): Promise<void> => {
   if (confirm('确定要重置所有设置吗？')) {
     try {
-      log.warn('重置所有设置')
+      console.warn('重置所有设置')
       await window.api.settings.reset()
       await loadSettings()
       toast.success('设置已重置')
     } catch (error) {
-      log.error('重置设置失败', error)
+      console.error('重置设置失败', error)
       toast.error('重置设置失败')
     }
   }
@@ -149,11 +148,11 @@ const resetSettings = async (): Promise<void> => {
 // 清除最近访问记录
 const clearRecentPlugins = async (): Promise<void> => {
   try {
-    log.info('清除最近访问记录')
+    console.log('清除最近访问记录')
     await window.api.db.clearRecents()
     toast.success('已清除最近访问记录')
   } catch (error) {
-    log.error('清除最近访问记录失败', error)
+    console.error('清除最近访问记录失败', error)
     toast.error('清除失败')
   }
 }
@@ -179,7 +178,7 @@ const systemInfo = ref({
 // 加载系统信息
 const loadSystemInfo = async (): Promise<void> => {
   try {
-    log.debug('加载系统信息')
+    console.log('加载系统信息')
     const versions = (window as unknown as { versions?: Record<string, string> }).versions
     if (versions) {
       systemInfo.value.electron = versions.electron || 'N/A'
@@ -187,7 +186,7 @@ const loadSystemInfo = async (): Promise<void> => {
       systemInfo.value.chrome = versions.chrome || 'N/A'
     }
   } catch (error) {
-    log.error('加载系统信息失败', error)
+    console.error('加载系统信息失败', error)
   }
 }
 

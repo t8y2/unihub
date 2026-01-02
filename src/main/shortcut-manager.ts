@@ -1,4 +1,7 @@
 import { globalShortcut, BrowserWindow } from 'electron'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('shortcut-manager')
 
 /**
  * 快捷键管理器
@@ -29,7 +32,7 @@ export class ShortcutManager {
     try {
       // 检查快捷键是否已被占用
       if (this.shortcuts.has(accelerator)) {
-        console.warn(`⚠️ 快捷键 ${accelerator} 已被占用`)
+        logger.warn({ accelerator }, '⚠️ 快捷键已被占用')
         return false
       }
 
@@ -38,14 +41,14 @@ export class ShortcutManager {
 
       if (success) {
         this.shortcuts.set(accelerator, { pluginId, accelerator, callback })
-        console.log(`✅ 已注册快捷键: ${accelerator} (插件: ${pluginId})`)
+        logger.info({ accelerator, pluginId }, '✅ 已注册快捷键')
         return true
       } else {
-        console.warn(`⚠️ 注册快捷键失败: ${accelerator}`)
+        logger.warn({ accelerator }, '⚠️ 注册快捷键失败')
         return false
       }
     } catch (error) {
-      console.error(`❌ 注册快捷键失败: ${accelerator}`, error)
+      logger.error({ err: error, accelerator }, '❌ 注册快捷键失败')
       return false
     }
   }
@@ -57,16 +60,16 @@ export class ShortcutManager {
     try {
       const handler = this.shortcuts.get(accelerator)
       if (!handler) {
-        console.warn(`⚠️ 快捷键 ${accelerator} 未注册`)
+        logger.warn({ accelerator }, '⚠️ 快捷键未注册')
         return false
       }
 
       globalShortcut.unregister(accelerator)
       this.shortcuts.delete(accelerator)
-      console.log(`✅ 已取消注册快捷键: ${accelerator}`)
+      logger.info({ accelerator }, '✅ 已取消注册快捷键')
       return true
     } catch (error) {
-      console.error(`❌ 取消注册快捷键失败: ${accelerator}`, error)
+      logger.error({ err: error, accelerator }, '❌ 取消注册快捷键失败')
       return false
     }
   }
@@ -87,7 +90,7 @@ export class ShortcutManager {
       this.unregister(accelerator)
     })
 
-    console.log(`✅ 已取消插件 ${pluginId} 的所有快捷键`)
+    logger.info({ pluginId }, '✅ 已取消插件的所有快捷键')
   }
 
   /**
@@ -128,7 +131,7 @@ export class ShortcutManager {
   cleanup(): void {
     globalShortcut.unregisterAll()
     this.shortcuts.clear()
-    console.log('✅ 已清理所有快捷键')
+    logger.info('✅ 已清理所有快捷键')
   }
 
   /**

@@ -4,6 +4,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
 import { pluginDevServer } from './plugin-dev-server'
 import { permissionManager } from './permission-manager'
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('plugin-manager')
 
 interface PackageJson {
   name: string
@@ -88,12 +91,12 @@ export class PluginManager {
     url: string
   ): Promise<{ success: boolean; message: string; pluginId?: string }> {
     try {
-      console.log('开始安装插件:', url)
+      logger.info({ url }, '开始安装插件')
 
       const buffer = await this.downloadWithRetry(url, 3)
       return await this.installFromBuffer(buffer, url)
     } catch (error) {
-      console.error('安装插件失败:', error)
+      logger.error({ err: error }, '安装插件失败')
       return { success: false, message: (error as Error).message }
     }
   }
@@ -106,7 +109,7 @@ export class PluginManager {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`下载尝试 ${attempt}/${maxRetries}:`, url)
+        logger.debug({ attempt, maxRetries, url }, '下载尝试')
 
         // 使用 Electron 的 net.fetch，它没有内置的超时限制
         const response = await net.fetch(url, {
@@ -121,16 +124,16 @@ export class PluginManager {
         }
 
         const buffer = Buffer.from(await response.arrayBuffer())
-        console.log(`✅ 下载成功，大小: ${(buffer.length / 1024).toFixed(2)} KB`)
+        logger.info({ size: `${(buffer.length / 1024).toFixed(2)} KB` }, '下载成功')
         return buffer
       } catch (error) {
         lastError = error as Error
-        console.warn(`下载失败 (尝试 ${attempt}/${maxRetries}):`, lastError.message)
+        logger.warn({ attempt, maxRetries, error: lastError.message }, '下载失败')
 
         // 如果不是最后一次尝试，等待后重试
         if (attempt < maxRetries) {
           const delay = 2000 * attempt // 递增延迟：2s, 4s, 6s
-          console.log(`等待 ${delay}ms 后重试...`)
+          logger.debug({ delay }, '等待后重试')
           await new Promise((resolve) => setTimeout(resolve, delay))
         }
       }
@@ -154,7 +157,7 @@ export class PluginManager {
     filename: string
   ): Promise<{ success: boolean; message: string; pluginId?: string }> {
     try {
-      console.log('开始安装插件:', filename)
+      logger.info({ filename }, '开始安装插件')
 
       // 如果是数组，转换为 Buffer
       const zipBuffer = Array.isArray(buffer) ? Buffer.from(buffer) : buffer
@@ -224,11 +227,11 @@ export class PluginManager {
             // 给所有可执行文件添加执行权限
             if (file.endsWith('.exe') || !file.includes('.')) {
               await chmod(filePath, 0o755)
-              console.log(`✅ 已添加执行权限: ${file}`)
+              logger.debug({ file }, '已添加执行权限')
             }
           }
         } catch (error) {
-          console.warn('添加执行权限失败:', error)
+          logger.warn({ error }, '添加执行权限失败')
         }
       }
 
@@ -247,10 +250,10 @@ export class PluginManager {
       // 注册插件权限
       permissionManager.registerPlugin(manifest.id, manifest.permissions || [])
 
-      console.log('插件安装成功:', manifest.name)
+      logger.info({ name: manifest.name, id: manifest.id }, '插件安装成功')
       return { success: true, message: `插件 ${manifest.name} 安装成功`, pluginId: manifest.id }
     } catch (error) {
-      console.error('安装插件失败:', error)
+      logger.error({ error }, '安装插件失败')
       return { success: false, message: (error as Error).message }
     }
   }
@@ -295,7 +298,10 @@ export class PluginManager {
     installed.forEach((plugin) => {
       if (plugin.enabled && plugin.metadata.permissions) {
         permissionManager.registerPlugin(plugin.id, plugin.metadata.permissions)
-        console.log(`✅ 已加载插件权限: ${plugin.metadata.name}`, plugin.metadata.permissions)
+        logger.info(
+          { pluginName: plugin.metadata.name, permissions: plugin.metadata.permissions },
+          '✅ 已加载插件权限'
+        )
       }
     })
   }
@@ -436,11 +442,11 @@ export class PluginManager {
     if (existingIndex >= 0) {
       // 更新现有插件
       installed[existingIndex] = plugin
-      console.log('更新插件信息:', plugin.metadata.name)
+      logger.info({ pluginName: plugin.metadata.name }, '更新插件信息')
     } else {
       // 添加新插件
       installed.push(plugin)
-      console.log('添加新插件:', plugin.metadata.name)
+      logger.info({ pluginName: plugin.metadata.name }, '添加新插件')
     }
 
     writeFileSync(this.pluginsDataFile, JSON.stringify(installed, null, 2))

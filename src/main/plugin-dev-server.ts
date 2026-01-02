@@ -2,6 +2,10 @@
  * 插件开发服务器
  * 支持热重载功能
  */
+import { createLogger } from '../shared/logger'
+
+const logger = createLogger('plugin-dev-server')
+
 export class PluginDevServer {
   private devPlugins = new Map<string, { url: string; autoReload: boolean }>()
 
@@ -10,7 +14,7 @@ export class PluginDevServer {
    */
   registerDevPlugin(pluginId: string, devUrl: string, autoReload = true): void {
     this.devPlugins.set(pluginId, { url: devUrl, autoReload })
-    console.log(`✅ 已注册开发模式插件: ${pluginId} -> ${devUrl}`)
+    logger.info({ pluginId, devUrl }, '✅ 已注册开发模式插件')
   }
 
   /**
@@ -18,7 +22,7 @@ export class PluginDevServer {
    */
   unregisterDevPlugin(pluginId: string): void {
     this.devPlugins.delete(pluginId)
-    console.log(`❌ 已取消开发模式插件: ${pluginId}`)
+    logger.info({ pluginId }, '❌ 已取消开发模式插件')
   }
 
   /**
