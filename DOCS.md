@@ -1,84 +1,64 @@
 # 📚 UniHub 文档导航
 
-## 核心文档
+> **新的文档结构已经重新整理！** 所有文档现在都在 `docs/` 目录下，按功能分类组织。
 
-### 🚀 快速开始
-
-- **[README.md](./README.md)** - 项目介绍、安装和使用
-
-### 🔌 插件开发
-
-- **[插件示例](./examples/README.md)** - 三个不同难度的插件示例
-- **[插件配置指南](./docs/PACKAGE_JSON_TEMPLATE.md)** - package.json 配置详解
-- **[日志使用指南](./docs/LOGGER_GUIDE.md)** - 日志系统使用方法
-
-### 🏪 插件商店
-
-- **[商店快速开始](./MARKETPLACE_QUICKSTART.md)** - 插件商店使用指南
-- **[商店贡献指南](./marketplace/CONTRIBUTING.md)** - 如何提交插件
-
-## 文档结构
-
-```
-UniHub/
-├── README.md                          # 项目主文档
-├── DOCS.md                            # 文档导航（本文件）
-├── MARKETPLACE_QUICKSTART.md          # 插件商店快速开始
-│
-├── docs/                              # 开发文档
-│   ├── PACKAGE_JSON_TEMPLATE.md       # 插件配置模板
-│   └── LOGGER_GUIDE.md                # 日志使用指南
-│
-├── examples/                          # 插件示例
-│   ├── README.md                      # 示例说明
-│   ├── simple-html-plugin/            # 入门示例
-│   ├── h5-formatter-plugin/           # 进阶示例
-│   └── modern-vue-plugin/             # 高级示例
-│
-└── marketplace/                       # 插件商店
-    ├── README.md                      # 商店说明
-    ├── CONTRIBUTING.md                # 贡献指南
-    └── plugins.json                   # 插件列表
-```
-
-## 快速链接
+## 🚀 快速导航
 
 ### 我想...
 
-#### 开始使用 UniHub
+#### 🔰 开始使用 UniHub
 
-→ [README.md](./README.md)
+→ [项目介绍](./README.md)
 
-#### 开发我的第一个插件
+#### 🔌 开发我的第一个插件
 
-→ [插件示例](./examples/README.md) → 从 `simple-html-plugin` 开始
+→ [插件示例](./examples/README.md) - 从简单示例开始学习
 
-#### 使用 Vue 3 开发插件
+#### 📖 查看完整文档
 
-→ [h5-formatter-plugin](./examples/h5-formatter-plugin/README.md)
+→ [完整文档索引](./docs/README.md)
 
-#### 开发带后端的插件
+#### 🏪 使用插件市场
 
-→ [modern-vue-plugin](./examples/modern-vue-plugin/README.md)
+→ [插件市场指南](./docs/marketplace/user-guide.md)
 
-#### 配置插件的 package.json
+#### 📝 发布我的插件
 
-→ [插件配置指南](./docs/PACKAGE_JSON_TEMPLATE.md)
+→ [插件发布指南](./docs/marketplace/publishing-guide.md)
 
-#### 在插件中使用日志
+## 📁 新的文档结构
 
-→ [日志使用指南](./docs/LOGGER_GUIDE.md)
+```
+docs/
+├── README.md                          # 完整文档索引
+├── plugin-development/                # 插件开发
+│   ├── getting-started.md            # 入门指南
+│   ├── package-json-guide.md         # 配置指南
+│   └── api-reference.md              # API 参考
+├── marketplace/                       # 插件市场
+│   ├── user-guide.md                 # 使用指南
+│   ├── publishing-guide.md           # 发布指南
+│   └── quickstart.md                 # 快速开始
+├── development/                       # 开发工具
+│   ├── logging.md                    # 日志系统
+│   └── debugging.md                  # 调试技巧
+├── features/                          # 功能特性
+│   └── field-inheritance.md          # 字段继承
+└── reference/                         # 参考资料
+    └── api-cheatsheet.md             # API 速查表
+```
 
-#### 发布插件到商店
+## 🔄 迁移说明
 
-→ [商店贡献指南](./marketplace/CONTRIBUTING.md)
+原来分散的文档已经重新整理：
 
-## 获取帮助
-
-- 📖 查看文档
-- 💬 提交 Issue
-- 🤝 参与贡献
+- ✅ `DOCS.md` → `docs/README.md` (完整文档索引)
+- ✅ `docs/PACKAGE_JSON_TEMPLATE.md` → `docs/plugin-development/package-json-guide.md`
+- ✅ `docs/LOGGER_GUIDE.md` → `docs/development/logging.md`
+- ✅ `MARKETPLACE_QUICKSTART.md` → `docs/marketplace/quickstart.md`
+- ✅ `UNIHUB_INHERITANCE_FEATURE.md` → `docs/features/field-inheritance.md`
+- ✅ `marketplace/CONTRIBUTING.md` → `docs/marketplace/publishing-guide.md`
 
 ---
 
-**文档最后更新**: 2026-01-01
+**查看 [完整文档](./docs/README.md) 获取更多信息！** 📖

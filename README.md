@@ -74,7 +74,7 @@ node tools/create-plugin.js my-plugin
 }
 ```
 
-👉 **[查看完整配置说明](./docs/PACKAGE_JSON_TEMPLATE.md)**
+👉 **[查看完整配置说明](./docs/plugin-development/package-json-guide.md)**
 
 ## 🏪 插件市场
 
@@ -90,7 +90,7 @@ node tools/create-plugin.js my-plugin
 2. 提交 PR 到 `marketplace/plugins.json`
 3. 等待审核
 
-👉 **[查看发布指南](./marketplace/CONTRIBUTING.md)**
+👉 **[查看发布指南](./docs/marketplace/publishing-guide.md)**
 
 ## 🔧 快捷键
 
@@ -103,11 +103,10 @@ node tools/create-plugin.js my-plugin
 
 ## 📚 文档
 
-- 📖 **[文档导航](./DOCS.md)** - 所有文档的索引
-- 🔌 **[插件示例](./examples/README.md)** - 三个不同难度的示例
-- ⚙️ **[插件配置](./docs/PACKAGE_JSON_TEMPLATE.md)** - package.json 配置详解
-- 📝 **[日志使用](./docs/LOGGER_GUIDE.md)** - 日志系统使用方法
-- 🏪 **[商店快速开始](./MARKETPLACE_QUICKSTART.md)** - 5 分钟搭建插件商店
+- 📖 **[完整文档](./docs/README.md)** - 所有文档的索引和导航
+- 🔌 **[插件示例](./examples/README.md)** - 三个不同难度的完整示例
+- ⚙️ **[配置指南](./docs/plugin-development/package-json-guide.md)** - 插件配置详解
+- 🏪 **[插件市场](./docs/marketplace/user-guide.md)** - 插件市场使用指南
 
 ## 🛡️ 安全性
 

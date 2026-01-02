@@ -53,9 +53,7 @@ Fork [unihub-plugins](https://github.com/yourname/unihub-plugins) 仓库到你�
   "homepage": "https://github.com/yourname/myplugin",
   "repository": "https://github.com/yourname/myplugin",
   "issues": "https://github.com/yourname/myplugin/issues",
-  "screenshots": [
-    "https://cdn.jsdelivr.net/gh/yourname/unihub-plugins/screenshots/myplugin/1.png"
-  ],
+  "screenshots": ["https://cdn.jsdelivr.net/gh/yourname/unihub-plugins/screenshots/myplugin/1.png"],
   "stats": {
     "downloads": 0,
     "rating": 0,
@@ -217,7 +215,7 @@ git push origin main
 
 ```json
 {
-  "permissions": ["clipboard"]  // 只需要剪贴板
+  "permissions": ["clipboard"] // 只需要剪贴板
 }
 ```
 

@@ -148,7 +148,7 @@ private mergePackageJsonWithUnihub(pkg: PackageJson): PluginMetadata {
 
 ## 📚 相关文档
 
-- [package.json 配置模板](docs/PACKAGE_JSON_TEMPLATE.md) - 完整的配置说明和示例
+- [插件配置指南](docs/plugin-development/package-json-guide.md) - 完整的配置说明和示例
 - [插件开发指南](DOCS.md) - 插件开发的完整指南
 
 ## 🎉 总结

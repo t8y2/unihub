@@ -19,7 +19,7 @@ import PluginDevMode from './PluginDevMode.vue'
 import PluginStore from './PluginStore.vue'
 import { CATEGORY_NAMES } from '@/constants'
 
-type ActiveTab = 'store' | 'installed' | 'install' | 'guide'
+type ActiveTab = 'store' | 'installed' | 'install'
 
 const activeTab = ref<ActiveTab>('store')
 const showDevMode = ref(false)
@@ -287,17 +287,6 @@ const uninstallPlugin = async (): Promise<void> => {
         >
           手动安装
         </button>
-        <button
-          :class="[
-            'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
-            activeTab === 'guide'
-              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-          ]"
-          @click="activeTab = 'guide'"
-        >
-          开发指南
-        </button>
       </div>
 
       <!-- 开发模式按钮 -->
@@ -518,125 +507,6 @@ const uninstallPlugin = async (): Promise<void> => {
             <Button :disabled="installing || !installUrl.trim()" @click="installFromUrl">
               {{ installing ? '安装中...' : '从 URL 安装' }}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 开发指南标签页 -->
-      <div v-show="activeTab === 'guide'" class="space-y-4 pt-4">
-        <!-- 插件开发指南 -->
-        <div
-          class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800"
-        >
-          <h3
-            class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            插件开发指南
-          </h3>
-          <p class="text-sm text-blue-800 dark:text-blue-200 mb-4">
-            UniHub 支持完全开放的插件系统，你可以使用任意前端框架和后端语言开发插件。
-          </p>
-
-          <div class="space-y-4">
-            <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                📚 文档资源
-              </h4>
-              <ul
-                class="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-disc list-inside ml-4"
-              >
-                <li>
-                  完整指南：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
-                    >PLUGIN_GUIDE.md</code
-                  >
-                </li>
-                <li>
-                  架构设计：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
-                    >PLUGIN_ARCHITECTURE.md</code
-                  >
-                </li>
-                <li>
-                  示例代码：<code class="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/50 rounded"
-                    >examples/</code
-                  >
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                🎨 支持的技术栈
-              </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-                    前端框架
-                  </h5>
-                  <ul class="text-xs text-blue-600 dark:text-blue-400 space-y-0.5 ml-2">
-                    <li>• 原生 JavaScript</li>
-                    <li>• Vue 3</li>
-                    <li>• React</li>
-                    <li>• Svelte</li>
-                  </ul>
-                </div>
-                <div>
-                  <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-                    后端语言
-                  </h5>
-                  <ul class="text-xs text-blue-600 dark:text-blue-400 space-y-0.5 ml-2">
-                    <li>• Python</li>
-                    <li>• Go</li>
-                    <li>• Node.js</li>
-                    <li>• Rust</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                🚀 快速开始
-              </h4>
-              <div class="bg-blue-100 dark:bg-blue-900/30 rounded p-3">
-                <pre
-                  class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"
-                ><code># 1. 查看示例插件
-cd examples/vanilla-go-plugin
-
-# 2. 构建插件
-./build.sh && ./package.sh
-
-# 3. 启动测试服务器
-python3 -m http.server 8080
-
-# 4. 在手动安装页面输入
-# http://localhost:8080/plugin.zip</code></pre>
-              </div>
-            </div>
-
-            <div>
-              <h4 class="text-md font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                📦 插件结构
-              </h4>
-              <div class="bg-blue-100 dark:bg-blue-900/30 rounded p-3">
-                <pre
-                  class="text-xs text-blue-800 dark:text-blue-200 overflow-x-auto"
-                ><code>plugin.zip
-├── manifest.json      # 插件元数据
-├── frontend/          # 前端代码
-│   └── index.html    # 入口文件
-└── backend/           # 后端代码（可选）
-    └── main.*        # 可执行文件</code></pre>
-              </div>
-            </div>
           </div>
         </div>
       </div>

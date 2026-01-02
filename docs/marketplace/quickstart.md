@@ -11,7 +11,8 @@
 
 ```typescript
 // PluginMarketplace.vue
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
+const MARKETPLACE_URL =
+  'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
 ```
 
 ### 方案 B：独立插件仓库（推荐正式发布）
@@ -51,7 +52,8 @@ git push
 编辑 `src/renderer/src/components/PluginMarketplace.vue` 第 47 行：
 
 ```typescript
-const MARKETPLACE_URL = 'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
+const MARKETPLACE_URL =
+  'https://cdn.jsdelivr.net/gh/你的用户名/unihub@main/marketplace/plugins.json'
 //                                              ^^^^^^^^ 改成你的 GitHub 用户名
 ```
 
