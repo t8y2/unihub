@@ -6,6 +6,8 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getStats, updateStats, initPluginStats } from '../lib/gist'
 import { setCorsHeaders, handleOptions } from '../lib/cors'
+import { checkRateLimit, getClientIp } from '../lib/rate-limit'
+import { detectSuspiciousRating } from '../lib/fraud-detection'
 
 export default async function handler(
   req: VercelRequest,
@@ -30,6 +32,23 @@ export default async function handler(
 
     if (typeof rating !== 'number' || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Rating must be between 1 and 5' })
+    }
+
+    // 限流检查：每个 IP 每小时最多评分 10 次
+    const clientIp = getClientIp(req)
+    if (!checkRateLimit(`rate:${clientIp}`, 10, 60 * 60 * 1000)) {
+      return res.status(429).json({
+        error: 'Too many requests',
+        message: '评分过于频繁，请稍后再试'
+      })
+    }
+
+    // 限流检查：每个用户对同一插件每小时最多评分 3 次（防止刷分）
+    if (!checkRateLimit(`rate:${userId}:${pluginId}`, 3, 60 * 60 * 1000)) {
+      return res.status(429).json({
+        error: 'Too many requests',
+        message: '您对该插件的评分过于频繁，请稍后再试'
+      })
     }
 
     const stats = await getStats()
@@ -59,6 +78,16 @@ export default async function handler(
     stats[pluginId].averageRating =
       Math.round((totalRating / stats[pluginId].ratings.length) * 10) / 10
     stats[pluginId].lastUpdated = new Date().toISOString()
+
+    // 异常检测
+    if (detectSuspiciousRating(pluginId, stats)) {
+      console.warn(`⚠️ 检测到可疑评分: ${pluginId}, userId: ${userId}`)
+      // 可以选择：
+      // 1. 拒绝请求
+      // 2. 标记但仍然保存
+      // 3. 发送通知
+      // 这里选择标记但仍然保存
+    }
 
     await updateStats(stats)
 

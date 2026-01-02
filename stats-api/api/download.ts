@@ -6,6 +6,7 @@
 import { VercelRequest, VercelResponse } from '@vercel/node'
 import { getStats, updateStats, initPluginStats } from '../lib/gist'
 import { setCorsHeaders, handleOptions } from '../lib/cors'
+import { checkRateLimit, getClientIp } from '../lib/rate-limit'
 
 export default async function handler(
   req: VercelRequest,
@@ -26,6 +27,15 @@ export default async function handler(
 
     if (!pluginId) {
       return res.status(400).json({ error: 'Missing pluginId' })
+    }
+
+    // 限流检查：每个 IP 每分钟最多记录 20 次下载
+    const clientIp = getClientIp(req)
+    if (!checkRateLimit(`download:${clientIp}`, 20, 60 * 1000)) {
+      return res.status(429).json({
+        error: 'Too many requests',
+        message: '请求过于频繁，请稍后再试'
+      })
     }
 
     const stats = await getStats()
