@@ -8,8 +8,8 @@ import { permissionManager } from './permission-manager'
 interface PackageJson {
   name: string
   version: string
-  description: string
-  author: string | { name: string; email?: string }
+  description?: string
+  author?: string | { name: string; email?: string }
   license?: string
   keywords?: string[]
   homepage?: string
@@ -26,6 +26,9 @@ interface PackageJson {
     keywords?: string[]
     permissions?: string[]
     screenshots?: string[]
+    homepage?: string
+    repository?: string
+    license?: string
     dev?: {
       enabled?: boolean
       url?: string
@@ -46,6 +49,9 @@ interface PluginMetadata {
   keywords?: string[]
   permissions?: string[]
   isThirdParty?: boolean // 标记是否为第三方插件
+  homepage?: string
+  repository?: string
+  license?: string
   dev?: {
     enabled?: boolean
     url?: string
@@ -177,19 +183,8 @@ export class PluginManager {
           throw new Error('package.json 中缺少 unihub 配置')
         }
 
-        manifest = {
-          id: pkg.unihub.id,
-          name: pkg.unihub.name || pkg.name,
-          version: pkg.unihub.version || pkg.version,
-          description: pkg.unihub.description || pkg.description,
-          author: pkg.unihub.author || pkg.author,
-          entry: pkg.unihub.entry,
-          icon: pkg.unihub.icon,
-          category: pkg.unihub.category || 'tool',
-          keywords: pkg.unihub.keywords || pkg.keywords || [],
-          permissions: pkg.unihub.permissions || [],
-          dev: pkg.unihub.dev
-        }
+        // 自动继承 package.json 字段到 unihub 配置
+        manifest = this.mergePackageJsonWithUnihub(pkg)
       } else if (existsSync(manifestPath)) {
         // 旧格式：兼容 manifest.json
         const oldManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
@@ -337,6 +332,61 @@ export class PluginManager {
       return { success: true, htmlPath }
     } catch (error) {
       return { success: false, message: (error as Error).message }
+    }
+  }
+
+  /**
+   * 将 package.json 字段自动继承到 unihub 配置中
+   * 只有当 unihub 字段未提供时才会继承
+   */
+  private mergePackageJsonWithUnihub(pkg: PackageJson): PluginMetadata {
+    const unihub = pkg.unihub!
+
+    // 处理 author 字段的继承
+    const getAuthorInfo = (
+      unihubAuthor?: string | { name: string; email?: string },
+      pkgAuthor?: string | { name: string; email?: string }
+    ): string | { name: string; email?: string } => {
+      if (unihubAuthor) return unihubAuthor
+      if (pkgAuthor) return pkgAuthor
+      return 'Unknown'
+    }
+
+    // 处理 repository 字段的继承
+    const getRepositoryUrl = (
+      unihubRepo?: string,
+      pkgRepo?: string | { type: string; url: string }
+    ): string | undefined => {
+      if (unihubRepo) return unihubRepo
+      if (typeof pkgRepo === 'string') return pkgRepo
+      if (pkgRepo && typeof pkgRepo === 'object' && pkgRepo.url) return pkgRepo.url
+      return undefined
+    }
+
+    return {
+      // 必填字段
+      id: unihub.id,
+      entry: unihub.entry,
+
+      // 可继承字段
+      name: unihub.name || pkg.name,
+      version: unihub.version || pkg.version,
+      description: unihub.description || pkg.description || '',
+      author: getAuthorInfo(unihub.author, pkg.author),
+
+      // 可选字段的继承
+      icon: unihub.icon,
+      category: unihub.category || 'tool',
+      keywords: unihub.keywords || pkg.keywords || [],
+      permissions: unihub.permissions || [],
+
+      // 扩展字段的继承
+      homepage: unihub.homepage || pkg.homepage,
+      repository: getRepositoryUrl(unihub.repository, pkg.repository),
+      license: unihub.license || pkg.license,
+
+      // 开发配置
+      dev: unihub.dev
     }
   }
 
