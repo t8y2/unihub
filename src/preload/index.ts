@@ -6,7 +6,8 @@ const api = {
     install: (url: string) => ipcRenderer.invoke('plugin:install', url),
     installFromBuffer: (buffer: number[], filename: string) =>
       ipcRenderer.invoke('plugin:install-from-buffer', buffer, filename),
-    uninstall: (pluginId: string) => ipcRenderer.invoke('plugin:uninstall', pluginId),
+    uninstall: (pluginId: string, options?: { keepData: boolean }) =>
+      ipcRenderer.invoke('plugin:uninstall', pluginId, options),
     list: () => ipcRenderer.invoke('plugin:list'),
     load: (pluginId: string) => ipcRenderer.invoke('plugin:load', pluginId),
     open: (pluginId: string) => ipcRenderer.invoke('plugin:open', pluginId),
@@ -84,6 +85,19 @@ const api = {
     addRecent: (pluginId: string) => ipcRenderer.invoke('db:addRecent', pluginId),
     getRecents: (limit?: number) => ipcRenderer.invoke('db:getRecents', limit),
     clearRecents: () => ipcRenderer.invoke('db:clearRecents')
+  },
+  pluginData: {
+    getInfo: (pluginId: string) => ipcRenderer.invoke('pluginData:getInfo', pluginId),
+    getAllInfo: () => ipcRenderer.invoke('pluginData:getAllInfo'),
+    backup: (pluginId: string) => ipcRenderer.invoke('pluginData:backup', pluginId),
+    restore: (backupId: string) => ipcRenderer.invoke('pluginData:restore', backupId),
+    deleteBackup: (backupId: string) => ipcRenderer.invoke('pluginData:deleteBackup', backupId),
+    getAllBackups: () => ipcRenderer.invoke('pluginData:getAllBackups'),
+    getPluginBackups: (pluginId: string) =>
+      ipcRenderer.invoke('pluginData:getPluginBackups', pluginId),
+    clear: (pluginId: string) => ipcRenderer.invoke('pluginData:clear', pluginId),
+    cleanupOldBackups: (daysToKeep?: number) =>
+      ipcRenderer.invoke('pluginData:cleanupOldBackups', daysToKeep)
   }
 }
 

@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import type { TabsRootEmits, TabsRootProps } from 'reka-ui'
-import { TabsRoot, useForwardPropsEmits } from 'reka-ui'
+import { TabsRoot, type TabsRootProps } from 'reka-ui'
+import { computed, type HTMLAttributes } from 'vue'
+import { cn } from '@/lib/utils'
 
-const props = defineProps<TabsRootProps>()
-const emits = defineEmits<TabsRootEmits>()
+const props = defineProps<TabsRootProps & { class?: HTMLAttributes['class'] }>()
 
-const forwarded = useForwardPropsEmits(props, emits)
+const delegatedProps = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { class: _, ...delegated } = props
+
+  return delegated
+})
 </script>
 
 <template>
-  <TabsRoot v-bind="forwarded">
+  <TabsRoot v-bind="delegatedProps" :class="cn('', props.class)">
     <slot />
   </TabsRoot>
 </template>

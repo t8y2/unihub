@@ -75,14 +75,8 @@ export class PluginInstaller {
   async installFromNpm(packageName: string): Promise<void> {
     try {
       console.log('从 npm 安装插件:', packageName)
-
-      const result = await window.api.plugin.installFromNpm(packageName)
-
-      if (!result.success) {
-        throw new Error(result.message)
-      }
-
-      console.log('✅ 插件安装成功')
+      // TODO: 实现 npm 安装逻辑
+      throw new Error('npm 安装功能暂未实现')
     } catch (error) {
       console.error('从 npm 安装插件失败:', error)
       throw error
@@ -135,17 +129,20 @@ export class PluginInstaller {
   /**
    * 卸载插件
    */
-  async uninstall(pluginId: string): Promise<void> {
+  async uninstall(pluginId: string, options?: { keepData: boolean }): Promise<void> {
     try {
       pluginRegistry.unregister(pluginId)
 
-      const result = await window.api.plugin.uninstall(pluginId)
+      const result = await window.api.plugin.uninstall(pluginId, options)
 
       if (!result.success) {
         throw new Error(result.message)
       }
 
       console.log('✅ 插件已卸载:', pluginId)
+      if (result.backupId) {
+        console.log('📦 数据已备份:', result.backupId)
+      }
     } catch (error) {
       console.error('卸载插件失败:', error)
       throw error

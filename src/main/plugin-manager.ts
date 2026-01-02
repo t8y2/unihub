@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
 import { pluginDevServer } from './plugin-dev-server'
 import { permissionManager } from './permission-manager'
+import { pluginDataManager, type UninstallOptions } from './plugin-data-manager'
 
 interface PackageJson {
   name: string
@@ -253,13 +254,18 @@ export class PluginManager {
     }
   }
 
-  async uninstallPlugin(pluginId: string): Promise<{ success: boolean; message: string }> {
+  async uninstallPlugin(
+    pluginId: string,
+    options: UninstallOptions = { keepData: false }
+  ): Promise<{ success: boolean; message: string; backupId?: string }> {
     try {
-      const pluginDir = join(this.pluginsDir, pluginId)
-      if (existsSync(pluginDir)) {
-        rmSync(pluginDir, { recursive: true, force: true })
+      // 处理插件数据（备份或删除）
+      const dataResult = await pluginDataManager.handleUninstallData(pluginId, options)
+      if (!dataResult.success) {
+        return dataResult
       }
 
+      // 从已安装列表中移除
       const installed = this.getInstalledPlugins()
       const filtered = installed.filter((p) => p.id !== pluginId)
       writeFileSync(this.pluginsDataFile, JSON.stringify(filtered, null, 2))
@@ -270,7 +276,11 @@ export class PluginManager {
       // 移除插件权限
       permissionManager.unregisterPlugin(pluginId)
 
-      return { success: true, message: '插件已卸载' }
+      return {
+        success: true,
+        message: dataResult.message,
+        backupId: dataResult.backupId
+      }
     } catch (error) {
       return { success: false, message: (error as Error).message }
     }
