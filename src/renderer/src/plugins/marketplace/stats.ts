@@ -24,7 +24,7 @@ class PluginStatsService {
 
   constructor() {
     // 配置你的 API 地址
-    this.apiBaseUrl = import.meta.env.VITE_STATS_API_URL || 'https://stats-api-nu.vercel.app/api'
+    this.apiBaseUrl = import.meta.env.VITE_PLUGIN_API_URL || 'https://plugin-api.vercel.app/api'
     this.cache = new Map()
 
     if (this.debug) {

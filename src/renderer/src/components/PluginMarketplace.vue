@@ -21,7 +21,12 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { MARKETPLACE_URL, MARKETPLACE_CATEGORIES, CATEGORY_NAMES } from '@/constants'
+import {
+  MARKETPLACE_URL,
+  MARKETPLACE_CDN_URL,
+  MARKETPLACE_CATEGORIES,
+  CATEGORY_NAMES
+} from '@/constants'
 import { pluginStatsService } from '@/plugins/marketplace/stats'
 
 type ViewMode = 'grid' | 'list'
@@ -88,7 +93,15 @@ const loadPlugins = async (): Promise<void> => {
     loading.value = true
     error.value = ''
 
-    const response = await fetch(MARKETPLACE_URL)
+    // 优先从 API 获取，失败时降级到 CDN
+    let response = await fetch(MARKETPLACE_URL)
+
+    // 如果 API 失败，尝试 CDN
+    if (!response.ok && MARKETPLACE_CDN_URL) {
+      console.warn('API 获取失败，尝试从 CDN 获取插件列表')
+      response = await fetch(MARKETPLACE_CDN_URL)
+    }
+
     if (!response.ok) {
       throw new Error('加载插件列表失败')
     }

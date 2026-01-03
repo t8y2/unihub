@@ -1,108 +1,82 @@
 # UniHub 插件市场
 
-官方插件仓库，收录优质的 UniHub 插件。
+## 📦 插件列表管理
 
-## 📦 浏览插件
+所有插件（包括官方和第三方）统一在 `plugins.json` 中管理。
 
-### 在应用内浏览
+### 插件分类
 
-1. 打开 UniHub
-2. 点击侧边栏的「插件管理」
-3. 切换到「插件商店」标签
-4. 浏览和安装插件
+- **官方插件**: `author.name` 为 "UniHub Team"
+- **第三方插件**: 其他作者
 
-### 在线浏览
+### 自动同步到 Gist
 
-查看 [plugins.json](./plugins.json) 获取完整的插件列表。
+当你提交代码时，`plugins.json` 会自动同步到 GitHub Gist，确保插件商店实时更新。
 
-## 🚀 提交插件
+**首次使用需要配置**，详见 [配置指南](./SETUP.md)。
 
-想要提交你的插件？查看 [提交指南](./CONTRIBUTING.md)
+### 工作原理
 
-### 快速开始
+```
+提交代码
+  ↓
+pre-commit hook
+  ↓
+同步 plugins.json 到 Gist
+  ↓
+前端从 Gist API 获取最新列表
+  ↓
+降级到 CDN（如果 API 不可用）
+```
 
-1. Fork 本仓库
-2. 创建插件配置文件 `plugins/com.yourname.myplugin.json`
-3. 更新 `plugins.json`
-4. 提交 Pull Request
+## 📝 添加新插件
 
-## 📊 插件统计
+编辑 `plugins.json`，添加插件信息：
 
-- **插件总数**：1
-- **分类**：
-  - 工具：1
-  - 格式化：0
-  - 编码：0
-  - 效率：0
-  - 开发者：0
+```json
+{
+  "id": "com.example.plugin",
+  "name": "插件名称",
+  "version": "1.0.0",
+  "description": "插件描述",
+  "author": {
+    "name": "作者名",
+    "email": "email@example.com",
+    "url": "https://github.com/author"
+  },
+  "icon": "🔧",
+  "category": "tool",
+  "keywords": ["keyword1", "keyword2"],
+  "permissions": ["clipboard"],
+  "downloadUrl": "https://example.com/plugin.zip",
+  "homepage": "https://github.com/author/plugin",
+  "repository": "https://github.com/author/plugin",
+  "screenshots": [],
+  "downloads": 0,
+  "rating": 5.0,
+  "createdAt": "2025-01-03T00:00:00Z",
+  "updatedAt": "2025-01-03T00:00:00Z"
+}
+```
 
-## 🏆 精选插件
+提交后会自动同步到 Gist，用户立即可见。
 
-### Modern Vue Plugin 🚀
+## 🎯 计划迁移的官方插件
 
-使用 Vite + Vue 3 + TypeScript 构建的现代化插件示例。
+### 高优先级
 
-- **功能**：Base64 编码、文本加密、数据压缩
-- **作者**：UniHub Team
-- **下载**：[GitHub Release](https://github.com/yourname/modern-vue-plugin/releases)
+- [ ] Base64 工具
+- [ ] URL 编码工具
+- [ ] 时间戳工具
 
-## 📋 插件分类
+### 中优先级
 
-### 工具 (Tool)
+- [ ] 二维码工具
+- [ ] 2FA 验证码
+- [ ] 格式转换工具
+- [ ] 代码格式化工具
 
-通用工具类插件，如 Base64 编码、时间戳转换等。
+## 📚 相关文档
 
-### 格式化 (Formatter)
-
-代码格式化工具，如 JSON、XML、HTML 格式化。
-
-### 编码 (Encoder)
-
-编码/解码工具，如 URL 编码、Unicode 转换等。
-
-### 效率 (Productivity)
-
-提升工作效率的工具，如 TODO 列表、笔记等。
-
-### 开发者 (Developer)
-
-开发者工具，如 API 测试、正则表达式测试等。
-
-## 🔍 搜索插件
-
-你可以通过以下方式搜索插件：
-
-- **关键词**：在应用内搜索框输入关键词
-- **分类**：按分类筛选
-- **作者**：搜索特定作者的插件
-
-## 📝 插件开发
-
-想要开发自己的插件？
-
-1. 查看 [插件开发指南](../docs/PLUGIN_DEVELOPMENT.md)
-2. 查看 [API 文档](../docs/PLUGIN_API.md)
-3. 参考 [示例插件](../examples/modern-vue-plugin)
-
-## 🛡️ 安全性
-
-所有提交的插件都会经过审核：
-
-- ✅ 代码审查
-- ✅ 功能测试
-- ✅ 安全检查
-- ✅ 权限验证
-
-## 📞 联系我们
-
-- **GitHub Issues**：[提交问题](https://github.com/yourname/unihub-plugins/issues)
-- **Email**：team@unihub.dev
-- **Discord**：[加入社区](https://discord.gg/unihub)
-
-## 📄 许可证
-
-本仓库采用 MIT 许可证。
-
----
-
-**让我们一起打造更好的 UniHub 生态！** 🎉
+- [插件开发指南](../docs/plugin-development/)
+- [贡献指南](./CONTRIBUTING.md)

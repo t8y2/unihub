@@ -2,7 +2,7 @@
  * CORS 配置
  */
 
-import { VercelResponse } from '@vercel/node'
+import { VercelRequest, VercelResponse } from '@vercel/node'
 
 // 允许的域名白名单（可选）
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['*']
@@ -24,6 +24,23 @@ export function setCorsHeaders(res: VercelResponse, origin?: string): void {
   res.setHeader('Access-Control-Max-Age', '86400')
 }
 
-export function handleOptions(res: VercelResponse): void {
+export function handleCors(req: VercelRequest, res: VercelResponse): void {
+  setCorsHeaders(res, req.headers.origin as string)
   res.status(200).end()
 }
+
+// 导出 CORS headers 配置（用于 Vercel config）
+export const corsHeaders = [
+  {
+    key: 'Access-Control-Allow-Origin',
+    value: '*'
+  },
+  {
+    key: 'Access-Control-Allow-Methods',
+    value: 'GET, POST, OPTIONS'
+  },
+  {
+    key: 'Access-Control-Allow-Headers',
+    value: 'Content-Type, X-API-Key'
+  }
+]

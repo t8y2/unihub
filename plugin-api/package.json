@@ -1,7 +1,7 @@
 {
-  "name": "unihub-stats-api",
+  "name": "unihub-plugin-api",
   "version": "1.0.0",
-  "description": "UniHub Plugin Statistics API",
+  "description": "UniHub Plugin API - 插件列表和统计数据服务",
   "main": "index.js",
   "scripts": {
     "dev": "vercel dev",

@@ -1,10 +1,12 @@
 /**
  * GitHub Gist 操作封装
+ * 支持插件统计数据和插件列表的存储
  */
 
 const GIST_ID = process.env.GIST_ID!
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN!
-const GIST_FILENAME = 'unihub-plugin-stats.json'
+const STATS_FILENAME = 'unihub-plugin-stats.json'
+const PLUGINS_FILENAME = 'unihub-plugins.json'
 
 export interface PluginStats {
   downloads: number
@@ -38,11 +40,11 @@ export async function getStats(): Promise<StatsData> {
 
     const gist = await response.json()
 
-    if (!gist.files[GIST_FILENAME]) {
+    if (!gist.files[STATS_FILENAME]) {
       throw new Error('Stats file not found in gist')
     }
 
-    const content = gist.files[GIST_FILENAME].content
+    const content = gist.files[STATS_FILENAME].content
     return JSON.parse(content)
   } catch (error) {
     console.error('Error fetching stats from gist:', error)
@@ -66,7 +68,7 @@ export async function updateStats(stats: StatsData): Promise<void> {
       },
       body: JSON.stringify({
         files: {
-          [GIST_FILENAME]: {
+          [STATS_FILENAME]: {
             content: JSON.stringify(stats, null, 2)
           }
         }
@@ -78,6 +80,38 @@ export async function updateStats(stats: StatsData): Promise<void> {
     }
   } catch (error) {
     console.error('Error updating stats in gist:', error)
+    throw error
+  }
+}
+
+/**
+ * 从 GitHub Gist 获取插件列表
+ */
+export async function getPluginsList(): Promise<unknown> {
+  try {
+    const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: {
+        Authorization: `token ${GITHUB_TOKEN}`,
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'UniHub-Stats-API'
+      },
+      next: { revalidate: 60 } as Record<string, unknown>
+    })
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`)
+    }
+
+    const gist = await response.json()
+
+    if (!gist.files[PLUGINS_FILENAME]) {
+      throw new Error('Plugins file not found in gist')
+    }
+
+    const content = gist.files[PLUGINS_FILENAME].content
+    return JSON.parse(content)
+  } catch (error) {
+    console.error('Error fetching plugins from gist:', error)
     throw error
   }
 }

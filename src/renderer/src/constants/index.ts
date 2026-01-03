@@ -106,8 +106,14 @@ export const APP_INFO = {
 } as const
 
 // ========== 插件市场 ==========
-export const MARKETPLACE_URL =
-  'https://cdn.jsdelivr.net/gh/t8y2/unihub@3e7f35c5278dc08d43044661583ed4454333658e/marketplace/plugins.json'
+// 优先从 API 获取插件列表（实时更新），失败时回退到 CDN
+export const MARKETPLACE_URL = import.meta.env.VITE_PLUGIN_API_URL
+  ? `${import.meta.env.VITE_PLUGIN_API_URL}/plugins`
+  : 'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
+
+// CDN 备用地址（用于 API 不可用时的降级）
+export const MARKETPLACE_CDN_URL =
+  'https://cdn.jsdelivr.net/gh/t8y2/unihub@main/marketplace/plugins.json'
 
 export const MARKETPLACE_CATEGORIES = [
   { value: 'all', label: '全部' },

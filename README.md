@@ -35,6 +35,12 @@ pnpm build:win          # Windows
 pnpm build:linux        # Linux
 ```
 
+### Fork 项目后的部署
+
+如果你 fork 了本项目，需要配置插件市场后端服务。
+
+👉 **[查看完整部署指南](./DEPLOYMENT.md)**
+
 ## 📦 插件开发
 
 ### 三个示例，由简到繁
@@ -103,9 +109,11 @@ node tools/create-plugin.js my-plugin
 
 ## 📚 文档
 
+- � **[[部署指南](./DEPLOYMENT.md)** - Fork 项目后的完整部署流程
 - 🔌 **[插件示例](./examples/README.md)** - 三个不同难度的完整示例
 - ⚙️ **[插件配置指南](./docs/plugin-development/package-json-guide.md)** - package.json 配置详解
 - 🏪 **[发布插件](./marketplace/CONTRIBUTING.md)** - 如何发布插件到市场
+- 🔧 **[Plugin API 文档](./plugin-api/README.md)** - 后端 API 说明
 
 ## 🛡️ 安全性
 
