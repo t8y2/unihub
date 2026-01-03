@@ -18,9 +18,9 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "package": "node scripts/package.js"
+    "dev": "vite --config ../_shared/vite.config.ts",
+    "build": "vite build --config ../_shared/vite.config.ts",
+    "package": "node ../_shared/scripts/package.js"
   },
   "unihub": {
     "id": "com.unihub.jwt-tool",
