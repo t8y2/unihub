@@ -32,10 +32,11 @@ npm run dev
 plugins/
 ├── _template/          # 插件模板（包含所有配置和 UI 组件）
 ├── jwt-tool/           # JWT 工具插件
-├── official-plugins.json  # 官方插件管理配置
 ├── QUICK_START.md      # 快速开始指南
 └── README.md           # 本文件
 ```
+
+> 注：所有插件（包括官方和第三方）统一在 `marketplace/plugins.json` 中管理
 
 ## 🎯 计划迁移的插件
 
