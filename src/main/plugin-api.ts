@@ -185,14 +185,29 @@ export class PluginAPI {
           body: options.body ? JSON.stringify(options.body) : undefined
         })
 
-        const data = await response.text()
+        // 检查是否是图片类型
+        const contentType = response.headers.get('content-type') || ''
+        const isImage = contentType.startsWith('image/')
+
+        let data: string
+        if (isImage) {
+          // 对于图片，转换为 base64 data URL
+          const buffer = await response.arrayBuffer()
+          const base64 = Buffer.from(buffer).toString('base64')
+          data = `data:${contentType};base64,${base64}`
+        } else {
+          // 对于文本，直接返回
+          data = await response.text()
+        }
+
         return {
           success: true,
           data: {
             status: response.status,
             statusText: response.statusText,
             headers: Object.fromEntries(response.headers.entries()),
-            body: data
+            body: data,
+            isImage
           }
         }
       } catch (error: unknown) {

@@ -3,7 +3,13 @@
  */
 
 // 标签类型
-export type TabType = 'plugin' | 'management' | 'settings' | 'favorites' | 'recents'
+export type TabType =
+  | 'plugin'
+  | 'management'
+  | 'settings'
+  | 'favorites'
+  | 'recents'
+  | 'web-navigator'
 
 // 标签接口
 export interface Tab {

@@ -16,9 +16,6 @@ import { createLogger } from '../shared/logger'
 
 const logger = createLogger('main')
 
-// 标记是否有活动的第三方插件
-let hasActiveThirdPartyPlugin = false
-
 // 在开发环境中禁用安全警告
 if (is.dev) {
   process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
@@ -78,13 +75,10 @@ function createWindow(): void {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     // 检查是否是 Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
     if (input.type === 'keyDown' && input.key === 'w' && (input.meta || input.control)) {
-      // 如果有活动的第三方插件，阻止默认行为
-      if (hasActiveThirdPartyPlugin) {
-        event.preventDefault()
-        logger.info('🚫 阻止 Cmd+W 关闭窗口（第三方插件正在运行）')
-        // 通知渲染进程处理关闭标签
-        mainWindow?.webContents.send('handle-close-tab')
-      }
+      // 阻止默认行为，让渲染进程处理
+      event.preventDefault()
+      // 通知渲染进程处理关闭标签或窗口
+      mainWindow?.webContents.send('handle-close-tab')
     }
   })
 
@@ -179,12 +173,9 @@ function setupIpcHandlers(): void {
     return await pluginManager.installFromBuffer(buffer, filename)
   })
 
-  ipcMain.handle(
-    'plugin:uninstall',
-    async (_, pluginId: string, options?: { keepData: boolean }) => {
-      return await pluginManager.uninstallPlugin(pluginId, options)
-    }
-  )
+  ipcMain.handle('plugin:uninstall', async (_, pluginId: string) => {
+    return await pluginManager.uninstallPlugin(pluginId)
+  })
 
   ipcMain.handle('plugin:list', async () => {
     return await pluginManager.listPlugins()
@@ -236,26 +227,17 @@ function setupIpcHandlers(): void {
     }
 
     webContentsViewManager.showPluginView(pluginId)
-    hasActiveThirdPartyPlugin = true
 
     return { success: true }
   })
 
   ipcMain.handle('plugin:close', async (_, pluginId: string) => {
     webContentsViewManager.hidePluginView(pluginId)
-    const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
-    if (!hasOtherActiveViews) {
-      hasActiveThirdPartyPlugin = false
-    }
     return { success: true }
   })
 
   ipcMain.handle('plugin:destroy', async (_, pluginId: string) => {
     webContentsViewManager.removePluginView(pluginId)
-    const hasOtherActiveViews = webContentsViewManager.hasActiveViews()
-    if (!hasOtherActiveViews) {
-      hasActiveThirdPartyPlugin = false
-    }
     return { success: true }
   })
 
@@ -349,6 +331,11 @@ function setupIpcHandlers(): void {
   ipcMain.handle('db:clearRecents', () => {
     dbManager.clearRecents()
     return { success: true }
+  })
+
+  // 窗口控制
+  ipcMain.on('window:close', () => {
+    mainWindow?.close()
   })
 
   // 延迟初始化 API（不阻塞启动）

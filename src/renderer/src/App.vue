@@ -7,6 +7,7 @@ import PluginManagementPage from './components/PluginManagementPage.vue'
 import SettingsPage from './components/SettingsPage.vue'
 import FavoritesPage from './components/FavoritesPage.vue'
 import RecentsPage from './components/RecentsPage.vue'
+import WebNavigator from './components/WebNavigator.vue'
 import GlobalSearch from './components/GlobalSearch.vue'
 import { Toaster } from './components/ui/sonner'
 import { Kbd } from './components/ui/kbd'
@@ -60,7 +61,13 @@ const initializeApp = async (): Promise<void> => {
 onMounted(() => {
   initializeApp()
   window.electron.ipcRenderer.on('handle-close-tab', () => {
-    if (activeTabId.value) closeTab(activeTabId.value)
+    if (tabs.value.length === 0) {
+      // 没有标签页，关闭窗口
+      window.electron.ipcRenderer.send('window:close')
+    } else if (activeTabId.value) {
+      // 有标签页，关闭当前标签
+      closeTab(activeTabId.value)
+    }
   })
 })
 
@@ -199,6 +206,9 @@ const openFavorites = (): void => createOrActivateTab('favorites', 'favorites', 
 
 const openRecents = (): void => createOrActivateTab('recents', 'recents', '最近使用')
 
+const openWebNavigator = (): void =>
+  createOrActivateTab('web-navigator', 'web-navigator', '网站导航')
+
 // 关闭标签
 const closeTab = (tabId: string): void => {
   const index = tabs.value.findIndex((t) => t.id === tabId)
@@ -331,6 +341,34 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
               />
             </svg>
             <span v-show="!sidebarCollapsed" class="whitespace-nowrap">最近使用</span>
+          </button>
+
+          <!-- 网站导航按钮 -->
+          <button
+            :class="[
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              tabs.some((t) => t.id === activeTabId && t.type === 'web-navigator')
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+              sidebarCollapsed ? 'justify-center' : ''
+            ]"
+            :title="sidebarCollapsed ? '网站导航' : ''"
+            @click="openWebNavigator"
+          >
+            <svg
+              class="w-4 h-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+              />
+            </svg>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">网站导航</span>
           </button>
 
           <!-- 分隔线 -->
@@ -686,6 +724,14 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
             <!-- 最近使用页面 -->
             <div v-else-if="tab.type === 'recents'" class="flex-1 bg-white dark:bg-gray-900">
               <RecentsPage :recent-plugins="recentPlugins" @open-tool="openTab" />
+            </div>
+
+            <!-- 网站导航页面 -->
+            <div
+              v-else-if="tab.type === 'web-navigator'"
+              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
+            >
+              <WebNavigator />
             </div>
 
             <!-- 普通插件 - 无背景，让插件自己控制样式 -->
