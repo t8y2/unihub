@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-03T00:00:00Z",
+  "description": "UniHub 官方插件列表和管理配置",
+  "plugins": [
+    {
+      "id": "com.unihub.jwt-tool",
+      "name": "JWT 工具",
+      "directory": "jwt-tool",
+      "status": "published",
+      "version": "1.0.0",
+      "migratedFrom": "builtin",
+      "migratedAt": "2025-01-03",
+      "maintainer": "UniHub Team",
+      "notes": "首个从内置迁移的官方插件"
+    }
+  ],
+  "planned": [
+    {
+      "name": "Base64 工具",
+      "builtinId": "base64",
+      "priority": "high",
+      "estimatedDate": "2025-Q1"
+    },
+    {
+      "name": "URL 编码工具",
+      "builtinId": "url",
+      "priority": "high",
+      "estimatedDate": "2025-Q1"
+    },
+    {
+      "name": "时间戳工具",
+      "builtinId": "timestamp",
+      "priority": "medium",
+      "estimatedDate": "2025-Q1"
+    },
+    {
+      "name": "二维码工具",
+      "builtinId": "qrcode",
+      "priority": "medium",
+      "estimatedDate": "2025-Q2"
+    },
+    {
+      "name": "2FA 验证码",
+      "builtinId": "2fa",
+      "priority": "medium",
+      "estimatedDate": "2025-Q2"
+    },
+    {
+      "name": "格式转换工具",
+      "builtinId": "converter",
+      "priority": "low",
+      "estimatedDate": "2025-Q2"
+    },
+    {
+      "name": "代码格式化工具",
+      "builtinId": "javascript,css,html",
+      "priority": "low",
+      "estimatedDate": "2025-Q2"
+    }
+  ],
+  "guidelines": {
+    "naming": "使用 com.unihub.* 作为官方插件 ID 前缀",
+    "directory": "插件目录名应该使用 kebab-case",
+    "version": "遵循语义化版本规范",
+    "permissions": "最小化权限请求，明确说明用途",
+    "ui": "保持与主应用一致的设计风格",
+    "testing": "确保在 macOS/Windows/Linux 上测试通过"
+  }
+}

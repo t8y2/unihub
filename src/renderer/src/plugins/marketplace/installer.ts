@@ -152,6 +152,10 @@ export class PluginInstaller {
         throw new Error(result.message)
       }
 
+      // 清理该插件相关的缓存（如果有的话）
+      // 注意：这里不清理所有缓存，只是标记需要重新加载
+      // 实际上 Electron 的 WebContentsView 在关闭时会自动清理
+
       console.log('✅ 插件已卸载:', pluginId)
     } catch (error) {
       console.error('卸载插件失败:', error)

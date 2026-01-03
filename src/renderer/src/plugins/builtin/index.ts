@@ -1,7 +1,7 @@
 import type { Plugin } from '@/types/plugin'
 import JsonFormatter from '@/components/JsonFormatter.vue'
 import CodeFormatter from '@/components/CodeFormatter.vue'
-import JwtTool from '@/components/JwtTool.vue'
+// import JwtTool from '@/components/JwtTool.vue' // 已迁移为官方插件
 import DataConverter from '@/components/DataConverter.vue'
 import TwoFactorAuth from '@/components/TwoFactorAuth.vue'
 import QRCodeTool from '@/components/QRCodeTool.vue'
@@ -73,20 +73,21 @@ export const builtinPlugins: Plugin[] = [
   },
 
   // 工具
-  {
-    metadata: {
-      id: 'jwt',
-      name: 'JWT 工具',
-      description: 'JWT 编码解码与验证',
-      version: '1.0.0',
-      author: 'UniHub',
-      icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
-      category: 'tool',
-      keywords: ['jwt', 'token', 'auth', '认证']
-    },
-    component: JwtTool,
-    enabled: true
-  },
+  // JWT 工具已迁移为官方插件，可在插件市场安装
+  // {
+  //   metadata: {
+  //     id: 'jwt',
+  //     name: 'JWT 工具',
+  //     description: 'JWT 编码解码与验证',
+  //     version: '1.0.0',
+  //     author: 'UniHub',
+  //     icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
+  //     category: 'tool',
+  //     keywords: ['jwt', 'token', 'auth', '认证']
+  //   },
+  //   component: JwtTool,
+  //   enabled: true
+  // },
   {
     metadata: {
       id: 'converter',

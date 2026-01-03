@@ -1,7 +1,35 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2024-12-31T00:00:00Z",
+  "lastUpdated": "2025-01-03T00:00:00Z",
   "plugins": [
+    {
+      "id": "com.unihub.jwt-tool",
+      "name": "JWT 工具",
+      "version": "1.0.0",
+      "description": "JWT 编码解码与验证工具 - 支持 HS256/HS384/HS512 算法",
+      "author": {
+        "name": "UniHub Team",
+        "email": "team@unihub.dev",
+        "url": "https://github.com/unihub"
+      },
+      "icon": "🔐",
+      "category": "tool",
+      "keywords": ["jwt", "token", "auth", "encode", "decode", "verify", "认证"],
+      "permissions": ["clipboard"],
+      "install": {
+        "zip": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/plugins/jwt-tool/plugin.zip",
+        "npm": "@unihub/jwt-tool",
+        "github": "t8y2/unihub-plugin-jwt-tool"
+      },
+      "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/plugins/jwt-tool/plugin.zip",
+      "homepage": "https://github.com/t8y2/unihub",
+      "repository": "https://github.com/t8y2/unihub",
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-01-03T00:00:00Z",
+      "updatedAt": "2025-01-03T00:00:00Z"
+    },
     {
       "id": "com.unihub.h5-formatter",
       "name": "H5 格式化工具",

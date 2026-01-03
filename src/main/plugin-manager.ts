@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'fs'
 import AdmZip from 'adm-zip'
 import { pluginDevServer } from './plugin-dev-server'
 import { permissionManager } from './permission-manager'
+import { webContentsViewManager } from './webcontents-view-manager'
 import { createLogger } from '../shared/logger'
 
 const logger = createLogger('plugin-manager')
@@ -260,6 +261,9 @@ export class PluginManager {
 
   async uninstallPlugin(pluginId: string): Promise<{ success: boolean; message: string }> {
     try {
+      // 关闭插件视图（如果打开的话）
+      webContentsViewManager.removePluginView(pluginId)
+
       // 从已安装列表中移除
       const installed = this.getInstalledPlugins()
       const filtered = installed.filter((p) => p.id !== pluginId)
@@ -277,11 +281,14 @@ export class PluginManager {
       // 移除插件权限
       permissionManager.unregisterPlugin(pluginId)
 
+      logger.info({ pluginId }, '插件已卸载')
+
       return {
         success: true,
         message: '插件已卸载'
       }
     } catch (error) {
+      logger.error({ err: error, pluginId }, '卸载插件失败')
       return { success: false, message: (error as Error).message }
     }
   }

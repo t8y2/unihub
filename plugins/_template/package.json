@@ -1,0 +1,49 @@
+{
+  "name": "jwt-tool-plugin",
+  "version": "1.0.0",
+  "description": "JWT 编码解码与验证工具 - 支持 HS256/HS384/HS512 算法",
+  "author": {
+    "name": "UniHub Team",
+    "email": "team@unihub.dev",
+    "url": "https://github.com/unihub"
+  },
+  "keywords": [
+    "jwt",
+    "token",
+    "auth",
+    "encode",
+    "decode",
+    "verify",
+    "认证"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "package": "node scripts/package.js"
+  },
+  "unihub": {
+    "id": "com.unihub.jwt-tool",
+    "name": "JWT 工具",
+    "icon": "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z",
+    "category": "tool",
+    "permissions": [
+      "clipboard"
+    ],
+    "entry": "dist/index.html"
+  },
+  "dependencies": {
+    "highlight.js": "^11.10.0",
+    "jose": "^5.9.6",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "archiver": "^7.0.1",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.3"
+  }
+}
