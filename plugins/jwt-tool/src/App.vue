@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import * as jose from 'jose'
 import hljs from 'highlight.js/lib/core'
 import json from 'highlight.js/lib/languages/json'
 import 'highlight.js/styles/github-dark.css'
+import { toast } from 'vue-sonner'
+import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -13,22 +15,12 @@ hljs.registerLanguage('json', json)
 const mode = ref<'decode' | 'encode'>('decode')
 const input = ref('')
 const output = ref('')
-const error = ref('')
 
 // 编码参数
 const payload = ref('{\n  "sub": "1234567890",\n  "name": "John Doe",\n  "iat": 1516239022\n}')
 const secret = ref('your-secret-key')
 const algorithm = ref<'HS256' | 'HS384' | 'HS512'>('HS256')
 const expiresIn = ref('1h')
-
-const highlightedOutput = computed(() => {
-  if (!output.value) return ''
-  try {
-    return hljs.highlight(output.value, { language: 'json' }).value
-  } catch {
-    return output.value
-  }
-})
 
 // 解析过期时间字符串为秒数
 const parseExpiresIn = (exp: string): number | undefined => {
@@ -51,9 +43,8 @@ const parseExpiresIn = (exp: string): number | undefined => {
 
 const decodeJwt = (): void => {
   try {
-    error.value = ''
     if (!input.value.trim()) {
-      error.value = '请输入 JWT Token'
+      toast.warning('请输入 JWT Token')
       return
     }
 
@@ -68,19 +59,20 @@ const decodeJwt = (): void => {
 
     output.value = JSON.stringify(result, null, 2)
   } catch (e) {
-    error.value = `解码失败: ${e instanceof Error ? e.message : String(e)}`
+    toast.error('解码失败', {
+      description: e instanceof Error ? e.message : String(e)
+    })
   }
 }
 
 const verifyJwt = async (): Promise<void> => {
   try {
-    error.value = ''
     if (!input.value.trim()) {
-      error.value = '请输入 JWT Token'
+      toast.warning('请输入 JWT Token')
       return
     }
     if (!secret.value.trim()) {
-      error.value = '请输入密钥'
+      toast.warning('请输入密钥')
       return
     }
 
@@ -90,19 +82,20 @@ const verifyJwt = async (): Promise<void> => {
 
     output.value = JSON.stringify(decoded, null, 2)
   } catch (e) {
-    error.value = `验证失败: ${e instanceof Error ? e.message : String(e)}`
+    toast.error('验证失败', {
+      description: e instanceof Error ? e.message : String(e)
+    })
   }
 }
 
 const encodeJwt = async (): Promise<void> => {
   try {
-    error.value = ''
     if (!payload.value.trim()) {
-      error.value = '请输入 Payload'
+      toast.warning('请输入 Payload')
       return
     }
     if (!secret.value.trim()) {
-      error.value = '请输入密钥'
+      toast.warning('请输入密钥')
       return
     }
 
@@ -120,26 +113,31 @@ const encodeJwt = async (): Promise<void> => {
     const token = await jwt.sign(secretKey)
     output.value = token
   } catch (e) {
-    error.value = `编码失败: ${e instanceof Error ? e.message : String(e)}`
+    toast.error('编码失败', {
+      description: e instanceof Error ? e.message : String(e)
+    })
   }
 }
 
 const copyToClipboard = async (): Promise<void> => {
   try {
     await navigator.clipboard.writeText(output.value)
+    toast.success('已复制到剪贴板')
   } catch (e) {
-    console.error('复制失败:', e)
+    toast.error('复制失败', {
+      description: e instanceof Error ? e.message : '无法访问剪贴板'
+    })
   }
 }
 
 const clearAll = (): void => {
   input.value = ''
   output.value = ''
-  error.value = ''
 }
 </script>
 
 <template>
+  <Toaster position="top-center" :duration="3000" rich-colors />
   <div class="flex-1 flex flex-col min-h-0">
     <!-- 工具栏 -->
     <div
@@ -269,7 +267,7 @@ const clearAll = (): void => {
           <pre
             v-if="output && mode === 'decode'"
             class="p-4 text-sm whitespace-pre-wrap break-words"
-          ><code class="hljs" v-html="highlightedOutput"></code></pre>
+          ><code class="hljs">{{ output }}</code></pre>
           <pre
             v-else-if="output"
             class="p-4 text-sm text-green-400 font-mono whitespace-pre-wrap break-all"
@@ -278,42 +276,6 @@ const clearAll = (): void => {
           <div v-else class="p-4 text-sm text-gray-500 dark:text-gray-400 font-mono">结果...</div>
         </div>
       </div>
-    </div>
-
-    <!-- 错误提示 -->
-    <div
-      v-if="error"
-      class="h-12 bg-red-50 border-t border-red-200 flex items-center px-4 gap-3 flex-shrink-0"
-    >
-      <svg
-        class="w-5 h-5 text-red-600 flex-shrink-0"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      <span class="text-sm text-red-900 flex-1">{{ error }}</span>
-      <Button
-        size="icon"
-        variant="ghost"
-        class="text-red-400 hover:text-red-600"
-        @click="error = ''"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </Button>
     </div>
   </div>
 </template>
