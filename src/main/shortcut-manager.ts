@@ -137,8 +137,14 @@ export class ShortcutManager {
   /**
    * 显示/隐藏主窗口
    */
+  /**
+   * 显示/隐藏主窗口
+   */
   toggleMainWindow(): void {
-    if (!this.mainWindow || this.mainWindow.isDestroyed()) return
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      logger.warn('⚠️ 主窗口已销毁，无法切换显示状态')
+      return
+    }
 
     if (this.mainWindow.isVisible()) {
       this.mainWindow.hide()

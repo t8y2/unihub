@@ -41,6 +41,9 @@ const pluginManager = new PluginManager()
 const pluginAPI = new PluginAPI()
 const nodeAPI = new NodeAPI()
 
+// 标志：应用是否正在退出
+let isQuitting = false
+
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -71,6 +74,19 @@ function createWindow(): void {
 
     // 注册全局快捷键
     registerGlobalShortcuts()
+  })
+
+  // 拦截窗口关闭事件，改为隐藏窗口（而不是销毁）
+  mainWindow.on('close', (event) => {
+    if (process.platform === 'darwin' && !isQuitting) {
+      // macOS: 如果不是真正退出，阻止窗口关闭，改为隐藏
+      event.preventDefault()
+      mainWindow?.hide()
+      logger.info('🙈 窗口已隐藏（macOS）')
+    } else {
+      // Windows/Linux 或 macOS 真正退出时：允许关闭
+      logger.info('👋 窗口正在关闭')
+    }
   })
 
   // 拦截 Cmd+W / Ctrl+W 快捷键
@@ -150,19 +166,36 @@ app.whenReady().then(async () => {
   })
 
   app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    // macOS: 点击 Dock 图标时
+    if (BrowserWindow.getAllWindows().length === 0) {
+      // 没有窗口，创建新窗口
+      createWindow()
+    } else if (mainWindow && !mainWindow.isDestroyed()) {
+      // 窗口存在但隐藏，显示它
+      mainWindow.show()
+      mainWindow.focus()
+      logger.info('👁️ 窗口已显示（通过 Dock）')
+    }
   })
 })
 
 app.on('window-all-closed', () => {
-  // 清理快捷键
-  shortcutManager.cleanup()
   // 清理搜索窗口
   searchWindowManager.destroy()
 
   if (process.platform !== 'darwin') {
+    // 非 macOS 平台：关闭所有窗口时退出应用
     app.quit()
   }
+  // macOS 平台：关闭窗口后应用仍在后台运行，保留快捷键以便重新打开窗口
+})
+
+// 应用退出前清理资源
+app.on('before-quit', () => {
+  // 设置退出标志，允许窗口真正关闭
+  isQuitting = true
+  // 清理所有快捷键
+  shortcutManager.cleanup()
 })
 
 function setupIpcHandlers(): void {
@@ -354,7 +387,14 @@ function setupIpcHandlers(): void {
 
   // 窗口控制
   ipcMain.on('window:close', () => {
-    mainWindow?.close()
+    if (process.platform === 'darwin') {
+      // macOS: 隐藏窗口而不是关闭
+      mainWindow?.hide()
+      logger.info('🙈 窗口已隐藏（通过 IPC）')
+    } else {
+      // Windows/Linux: 关闭窗口（会触发应用退出）
+      mainWindow?.close()
+    }
   })
 
   // 搜索窗口相关
