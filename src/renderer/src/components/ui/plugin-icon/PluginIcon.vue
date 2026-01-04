@@ -43,13 +43,26 @@ const iconType = computed(() => {
 
   return 'emoji'
 })
+
+// 根据图标类型决定背景样式
+const backgroundClass = computed(() => {
+  if (!props.showBackground) return ''
+
+  // 彩色图标使用浅色背景
+  if (iconType.value === 'image') {
+    return 'bg-gray-100 dark:bg-gray-800'
+  }
+
+  // SVG 和 emoji 使用渐变背景
+  return 'bg-gradient-to-br from-blue-500 to-purple-600'
+})
 </script>
 
 <template>
   <div
     v-if="showBackground"
-    :class="containerSizeClasses[size]"
-    class="flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
+    :class="[containerSizeClasses[size], backgroundClass]"
+    class="flex items-center justify-center rounded-lg flex-shrink-0"
   >
     <!-- SVG Path -->
     <svg
@@ -63,12 +76,12 @@ const iconType = computed(() => {
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icon" />
     </svg>
 
-    <!-- Image URL - 强制固定尺寸，object-cover 裁剪 -->
+    <!-- Image URL - 彩色图标，保持原始比例 -->
     <img
       v-else-if="iconType === 'image'"
       :src="icon"
       :class="iconSizeClasses[size]"
-      class="object-cover rounded flex-shrink-0"
+      class="object-contain rounded flex-shrink-0"
       style="min-width: inherit; min-height: inherit; max-width: 100%; max-height: 100%"
       alt="Plugin icon"
       @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
@@ -95,7 +108,7 @@ const iconType = computed(() => {
       v-else-if="iconType === 'image'"
       :src="icon"
       :class="iconSizeClasses[size]"
-      class="object-cover rounded flex-shrink-0"
+      class="object-contain rounded flex-shrink-0"
       style="min-width: inherit; min-height: inherit; max-width: 100%; max-height: 100%"
       alt="Plugin icon"
       @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
