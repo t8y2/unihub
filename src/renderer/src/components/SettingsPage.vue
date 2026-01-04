@@ -435,11 +435,7 @@ const exportSystemInfo = (): void => {
                   <span class="text-gray-600 dark:text-gray-400">作者：</span>
                   <span class="text-gray-900 dark:text-gray-100">{{ APP_INFO.author }}</span>
                 </div>
-                <div class="flex items-center justify-between">
-                  <div>
-                    <span class="text-gray-600 dark:text-gray-400">许可证：</span>
-                    <span class="text-gray-900 dark:text-gray-100">{{ APP_INFO.license }}</span>
-                  </div>
+                <div class="flex items-center justify-end">
                   <div class="flex gap-2">
                     <button
                       class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors text-xs font-medium"
@@ -456,7 +452,7 @@ const exportSystemInfo = (): void => {
                     <button
                       class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-medium"
                       title="反馈问题"
-                      @click="openExternal('https://github.com/unihub/unihub/issues')"
+                      @click="openExternal(APP_INFO.issues)"
                     >
                       <svg
                         class="w-3.5 h-3.5"

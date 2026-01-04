@@ -101,8 +101,8 @@ export const APP_INFO = {
   version: '1.0.0',
   description: '开发者的通用工具集',
   author: 'UniHub Team',
-  license: 'MIT',
-  repository: 'https://github.com/unihub/unihub'
+  repository: 'https://github.com/t8y2/unihub',
+  issues: 'https://github.com/t8y2/unihub/issues'
 } as const
 
 // ========== 插件市场 ==========
