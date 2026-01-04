@@ -53,7 +53,6 @@ interface Plugin {
   keywords: string[]
   permissions: string[]
   install: PluginInstallOptions
-  downloadUrl?: string // 兼容旧格式
   homepage?: string
   repository?: string
   screenshots: string[]
@@ -208,11 +207,11 @@ const confirmInstall = async (): Promise<void> => {
 
     console.log('📦 [Marketplace] 开始安装插件:', selectedPlugin.value.name)
 
-    // 优先使用 install 对象，回退到 downloadUrl
-    const installUrl = selectedPlugin.value.install?.zip || selectedPlugin.value.downloadUrl
+    // 使用 install.zip
+    const installUrl = selectedPlugin.value.install?.zip
 
     if (!installUrl) {
-      throw new Error('插件没有提供安装地址')
+      throw new Error('插件没有提供 ZIP 安装地址')
     }
 
     const result = await window.api.plugin.install(installUrl)

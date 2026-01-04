@@ -12,7 +12,7 @@
         "email": "team@unihub.dev",
         "url": "https://github.com/unihub"
       },
-      "icon": "🔐",
+      "icon": "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
       "category": "tool",
       "keywords": ["jwt", "token", "auth", "encode", "decode", "verify", "认证"],
       "permissions": ["clipboard"],
@@ -21,7 +21,6 @@
         "npm": "@unihub/jwt-tool",
         "github": "t8y2/unihub-plugin-jwt-tool"
       },
-      "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/plugins/jwt-tool/plugin.zip",
       "homepage": "https://github.com/t8y2/unihub",
       "repository": "https://github.com/t8y2/unihub",
       "screenshots": [],
@@ -40,7 +39,7 @@
         "email": "team@unihub.dev",
         "url": "https://github.com/unihub"
       },
-      "icon": "🌐",
+      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f310.svg",
       "category": "formatter",
       "keywords": ["h5", "html", "formatter", "beautify", "minify", "格式化", "压缩"],
       "permissions": ["clipboard"],
@@ -49,7 +48,6 @@
         "npm": "@unihub/h5-formatter",
         "github": "t8y2/unihub-plugin-h5-formatter"
       },
-      "downloadUrl": "https://cdn.jsdelivr.net/gh/t8y2/unihub@2504b9eadc4dae7f0e8f8c5942a65faa5d20e567/examples/h5-formatter-plugin/plugin.zip",
       "homepage": "https://github.com/t8y2/unihub",
       "repository": "https://github.com/t8y2/unihub",
       "screenshots": [],
@@ -77,7 +75,6 @@
         "npm": "@unihub/modern-vue-plugin",
         "github": "yourname/modern-vue-plugin"
       },
-      "downloadUrl": "https://github.com/yourname/modern-vue-plugin/releases/download/v1.0.0/plugin.zip",
       "homepage": "https://github.com/yourname/modern-vue-plugin",
       "repository": "https://github.com/yourname/modern-vue-plugin",
       "screenshots": [],

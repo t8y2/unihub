@@ -53,8 +53,7 @@ export interface RemotePlugin {
   downloads?: number
   rating?: number
   updatedAt?: string
-  install: PluginInstallOptions // 新格式
-  downloadUrl?: string // 兼容旧格式
+  install: PluginInstallOptions
 }
 
 export interface PluginUpdate {
@@ -63,7 +62,6 @@ export interface PluginUpdate {
   latestVersion: string
   changelog?: string
   install: PluginInstallOptions
-  downloadUrl?: string // 兼容旧格式
 }
 
 export interface PluginStoreConfig {
