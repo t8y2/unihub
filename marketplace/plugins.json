@@ -12,7 +12,7 @@
         "email": "team@unihub.dev",
         "url": "https://github.com/unihub"
       },
-      "icon": "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z",
+      "icon": "https://api.iconify.design/twemoji/locked-with-key.svg",
       "category": "tool",
       "keywords": ["jwt", "token", "auth", "encode", "decode", "verify", "认证"],
       "permissions": ["clipboard"],
@@ -39,7 +39,7 @@
         "email": "team@unihub.dev",
         "url": "https://github.com/unihub"
       },
-      "icon": "https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f310.svg",
+      "icon": "https://api.iconify.design/vscode-icons/file-type-html.svg",
       "category": "formatter",
       "keywords": ["h5", "html", "formatter", "beautify", "minify", "格式化", "压缩"],
       "permissions": ["clipboard"],
@@ -66,7 +66,7 @@
         "email": "team@unihub.dev",
         "url": "https://github.com/unihub"
       },
-      "icon": "🚀",
+      "icon": "https://api.iconify.design/logos/vue.svg",
       "category": "tool",
       "keywords": ["vue", "typescript", "encode", "encrypt", "compress", "base64"],
       "permissions": ["fs", "clipboard", "http", "spawn"],
