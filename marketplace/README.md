@@ -2,9 +2,32 @@
 
 ## 发布插件
 
+### 给开发者
+
+如果你想发布自己的插件到市场：
+
 1. 开发并测试你的插件
-2. 提交 PR 到 `plugins.json`
-3. 等待审核
+2. 将插件包上传到公开可访问的地址（GitHub Release、jsDelivr 等）
+3. Fork 本项目，编辑 `plugins.json` 添加你的插件信息
+4. 提交 PR，等待审核
+
+详细步骤请查看：[插件发布指南](../docs/plugin-development/publishing-guide.md)
+
+### 给维护者
+
+如果你是项目维护者，需要上传插件到官方 COS：
+
+```bash
+# 打包插件
+cd plugins/your-plugin
+npm run package
+
+# 上传到 COS
+cd ../..
+npm run upload:cos plugins/your-plugin
+```
+
+详细说明请查看：[COS 上传指南](../docs/plugin-development/upload-to-cos.md)
 
 ## plugins.json 格式
 

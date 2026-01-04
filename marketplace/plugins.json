@@ -17,7 +17,7 @@
       "keywords": ["jwt", "token", "auth", "encode", "decode", "verify", "认证"],
       "permissions": ["clipboard"],
       "install": {
-        "zip": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/plugins/jwt-tool/plugin.zip",
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/jwt-tool/plugin.zip",
         "npm": "@unihub/jwt-tool",
         "github": "t8y2/unihub-plugin-jwt-tool"
       },
@@ -44,7 +44,7 @@
       "keywords": ["h5", "html", "formatter", "beautify", "minify", "格式化", "压缩"],
       "permissions": ["clipboard"],
       "install": {
-        "zip": "https://cdn.jsdelivr.net/gh/t8y2/unihub@main/examples/h5-formatter-plugin/plugin.zip",
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/h5-formatter-plugin/plugin.zip",
         "npm": "@unihub/h5-formatter",
         "github": "t8y2/unihub-plugin-h5-formatter"
       },
@@ -71,7 +71,7 @@
       "keywords": ["vue", "typescript", "encode", "encrypt", "compress", "base64"],
       "permissions": ["fs", "clipboard", "http", "spawn"],
       "install": {
-        "zip": "https://github.com/yourname/modern-vue-plugin/releases/download/v1.0.0/plugin.zip",
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/modern-vue-plugin/plugin.zip",
         "npm": "@unihub/modern-vue-plugin",
         "github": "yourname/modern-vue-plugin"
       },
