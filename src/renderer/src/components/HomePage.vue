@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { pluginRegistry } from '@/plugins'
+import { PluginIcon } from '@/components/ui/plugin-icon'
 import { CATEGORY_NAMES, CATEGORY_ORDER, LIMITS } from '@/constants'
 
 const props = defineProps<{
@@ -165,19 +166,7 @@ const clearSearch = (): void => {
             @click="emit('openTool', plugin.metadata.id)"
           >
             <div class="flex items-start gap-3">
-              <div
-                class="w-10 h-10 rounded-lg bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/20 dark:group-hover:bg-red-500/30 transition-colors"
-              >
-                <svg
-                  class="w-5 h-5 text-red-600 dark:text-red-400"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  />
-                </svg>
-              </div>
+              <PluginIcon :icon="plugin.metadata.icon" size="md" />
               <div class="flex-1 min-w-0">
                 <h3
                   class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
@@ -224,23 +213,7 @@ const clearSearch = (): void => {
             @click="emit('openTool', plugin.metadata.id)"
           >
             <div class="flex items-start gap-3">
-              <div
-                class="w-10 h-10 rounded-lg bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/20 dark:group-hover:bg-green-500/30 transition-colors"
-              >
-                <svg
-                  class="w-5 h-5 text-green-600 dark:text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.metadata.icon"
-                  />
-                </svg>
-              </div>
+              <PluginIcon :icon="plugin.metadata.icon" size="md" />
               <div class="flex-1 min-w-0">
                 <h3
                   class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
@@ -294,23 +267,7 @@ const clearSearch = (): void => {
               @click="emit('openTool', plugin.metadata.id)"
             >
               <div class="flex items-start gap-3">
-                <div
-                  class="w-10 h-10 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500/20 dark:group-hover:bg-blue-500/30 transition-colors"
-                >
-                  <svg
-                    class="w-5 h-5 text-blue-600 dark:text-blue-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      :d="plugin.metadata.icon"
-                    />
-                  </svg>
-                </div>
+                <PluginIcon :icon="plugin.metadata.icon" size="md" />
                 <div class="flex-1 min-w-0">
                   <h3
                     class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"

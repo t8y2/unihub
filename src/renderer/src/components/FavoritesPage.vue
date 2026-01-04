@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
+import { PluginIcon } from '@/components/ui/plugin-icon'
 
 const props = defineProps<{
   favoritePlugins: string[]
@@ -96,23 +97,7 @@ const handleToggleFavorite = (pluginId: string): void => {
 
           <div class="relative">
             <div class="flex items-start justify-between mb-2">
-              <div
-                class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500/10 to-pink-500/10 dark:from-red-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-red-500/20 group-hover:to-pink-500/20 dark:group-hover:from-red-500/30 dark:group-hover:to-pink-500/30 transition-all"
-              >
-                <svg
-                  class="w-5 h-5 text-red-600 dark:text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.metadata.icon"
-                  />
-                </svg>
-              </div>
+              <PluginIcon :icon="plugin.metadata.icon" size="md" />
               <!-- 取消收藏按钮 -->
               <div
                 class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"

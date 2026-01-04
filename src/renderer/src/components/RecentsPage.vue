@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { pluginRegistry } from '@/plugins'
+import { PluginIcon } from '@/components/ui/plugin-icon'
 
 const props = defineProps<{
   recentPlugins: string[]
@@ -95,23 +96,7 @@ const handleOpenTool = (pluginId: string): void => {
 
           <div class="relative">
             <div class="flex items-start justify-between mb-2">
-              <div
-                class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-500/20 dark:to-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-green-500/20 group-hover:to-emerald-500/20 dark:group-hover:from-green-500/30 dark:group-hover:to-emerald-500/30 transition-all"
-              >
-                <svg
-                  class="w-5 h-5 text-green-600 dark:text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.metadata.icon"
-                  />
-                </svg>
-              </div>
+              <PluginIcon :icon="plugin.metadata.icon" size="md" />
               <!-- 序号标记 -->
               <div
                 class="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold"
