@@ -75,9 +75,34 @@
 - `version`: 版本号（遵循 semver）
 - `author`: 作者信息（对象或字符串）
 - `category`: 分类（`tool`/`formatter`/`encoder`/`custom`）
-- `icon`: emoji 图标
+- `icon`: 图标，支持三种格式：
+  - **Emoji**: `"🔧"` - 简单直观
+  - **SVG Path**: `"M12 4v16m8-8H4"` - 矢量图标
+  - **图片 URL**: `"https://example.com/icon.png"` - 自定义图片
 - `keywords`: 搜索关键词数组
 - `permissions`: 权限列表（`clipboard`/`fs`/`http`/`spawn`/`backend`）
 - `install`: 安装方式配置（至少提供一种）
 - `homepage`: 项目主页
 - `repository`: 代码仓库
+
+## Icon 格式示例
+
+```json
+// Emoji（推荐，简单）
+"icon": "🔧"
+
+// SVG Path（矢量，可自定义颜色）
+"icon": "M12 4v16m8-8H4"
+
+// 图片 URL（完全自定义）
+"icon": "https://cdn.example.com/plugin-icon.png"
+```
+
+### 图片 URL 要求
+
+如果使用图片 URL 作为图标：
+
+- **推荐尺寸**: 128x128px 或更高（正方形）
+- **格式**: PNG、JPG、WebP、SVG
+- **注意**: 图片会被自动裁剪为正方形并缩放到固定尺寸，建议使用正方形图片以避免变形
+- **CDN**: 建议使用 CDN 加速（如 jsDelivr、Cloudflare）

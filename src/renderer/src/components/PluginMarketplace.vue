@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { PluginIcon } from '@/components/ui/plugin-icon'
 import {
   Select,
   SelectContent,
@@ -407,26 +408,7 @@ onUnmounted(() => {
           >
             <!-- 插件图标和信息 -->
             <div class="flex items-start gap-3 mb-3">
-              <div
-                class="w-12 h-12 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
-              >
-                <!-- 如果 icon 是 SVG path，显示 SVG；否则显示 emoji -->
-                <svg
-                  v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
-                  class="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.icon"
-                  />
-                </svg>
-                <span v-else class="text-2xl">{{ plugin.icon }}</span>
-              </div>
+              <PluginIcon :icon="plugin.icon" size="lg" />
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {{ plugin.name }}

@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
+import { PluginIcon } from './components/ui/plugin-icon'
 import HomePage from './components/HomePage.vue'
 import PluginManagementPage from './components/PluginManagementPage.vue'
 import SettingsPage from './components/SettingsPage.vue'
@@ -545,19 +546,7 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
                 :title="sidebarCollapsed ? plugin.metadata.name : ''"
                 @click="openTab(plugin.metadata.id)"
               >
-                <svg
-                  class="w-4 h-4 flex-shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.metadata.icon"
-                  />
-                </svg>
+                <PluginIcon :icon="plugin.metadata.icon" size="sm" :show-background="false" />
                 <span v-show="!sidebarCollapsed" class="whitespace-nowrap flex-1 text-left">{{
                   plugin.metadata.name
                 }}</span>
