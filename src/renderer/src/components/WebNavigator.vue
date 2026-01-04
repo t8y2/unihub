@@ -65,6 +65,7 @@ const editingWebsite = ref<Website | null>(null)
 const isLoading = ref(false) // 加载状态
 const showDeleteDialog = ref(false) // 删除确认对话框
 const deletingWebsite = ref<Website | null>(null) // 待删除的网站
+const showRestoreDialog = ref(false) // 恢复预置网站对话框
 
 const newWebsite = ref({
   name: '',
@@ -235,6 +236,36 @@ const closeDialog = (): void => {
     icon: '',
     category: ''
   }
+}
+
+// 恢复预置网站
+const restoreDefaultWebsites = async (): Promise<void> => {
+  // 获取当前已存在的网站 URL
+  const existingUrls = new Set(websites.value.map((w) => w.url))
+
+  // 只添加不存在的预置网站
+  const sitesToRestore = DEFAULT_WEBSITES.filter((site) => !existingUrls.has(site.url))
+
+  if (sitesToRestore.length === 0) {
+    alert('所有预置网站都已存在')
+    showRestoreDialog.value = false
+    return
+  }
+
+  const newWebsites = sitesToRestore.map((site, index) => ({
+    ...site,
+    id: `restored-${Date.now()}-${index}`,
+    addedAt: Date.now() - (sitesToRestore.length - index) * 1000
+  }))
+
+  // 添加到列表开头
+  websites.value = [...newWebsites, ...websites.value]
+  await saveWebsites()
+
+  showRestoreDialog.value = false
+
+  // 异步获取新添加网站的 favicon
+  newWebsites.forEach((w) => fetchFavicon(w))
 }
 
 // 获取所有分类
@@ -428,6 +459,18 @@ watch([websites, searchQuery, selectedCategory], () => {
       <div class="flex-1 max-w-md">
         <Input v-model="searchQuery" placeholder="搜索网站..." class="h-9" />
       </div>
+
+      <Button variant="outline" @click="showRestoreDialog = true">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+        恢复预置
+      </Button>
 
       <Button @click="openAddDialog">
         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -648,6 +691,40 @@ watch([websites, searchQuery, selectedCategory], () => {
         <DialogFooter>
           <Button variant="ghost" @click="showDeleteDialog = false">取消</Button>
           <Button variant="destructive" @click="deleteWebsite">删除</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 恢复预置网站对话框 -->
+    <Dialog :open="showRestoreDialog" @update:open="(val) => !val && (showRestoreDialog = false)">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>恢复预置网站</DialogTitle>
+          <DialogDescription>
+            将恢复所有被删除的预置网站（共
+            {{ DEFAULT_WEBSITES.length }} 个），已存在的网站不会重复添加。
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="py-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400">预置网站包括：</p>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <span
+              v-for="(site, index) in DEFAULT_WEBSITES.slice(0, 6)"
+              :key="index"
+              class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded"
+            >
+              {{ site.name }}
+            </span>
+            <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded">
+              等 {{ DEFAULT_WEBSITES.length }} 个
+            </span>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" @click="showRestoreDialog = false">取消</Button>
+          <Button @click="restoreDefaultWebsites">恢复</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
