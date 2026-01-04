@@ -31,6 +31,12 @@ export interface InstalledPluginInfo {
   sourceUrl?: string
 }
 
+export interface PluginInstallOptions {
+  zip?: string // ZIP 包 URL
+  npm?: string // npm 包名
+  github?: string // GitHub 仓库 (owner/repo)
+}
+
 export interface RemotePlugin {
   id: string
   name: string
@@ -47,7 +53,8 @@ export interface RemotePlugin {
   downloads?: number
   rating?: number
   updatedAt?: string
-  downloadUrl: string
+  install: PluginInstallOptions // 新格式
+  downloadUrl?: string // 兼容旧格式
 }
 
 export interface PluginUpdate {
@@ -55,7 +62,8 @@ export interface PluginUpdate {
   currentVersion: string
   latestVersion: string
   changelog?: string
-  downloadUrl: string
+  install: PluginInstallOptions
+  downloadUrl?: string // 兼容旧格式
 }
 
 export interface PluginStoreConfig {

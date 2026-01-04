@@ -31,6 +31,12 @@ import { pluginStatsService } from '@/plugins/marketplace/stats'
 
 type ViewMode = 'grid' | 'list'
 
+interface PluginInstallOptions {
+  zip?: string
+  npm?: string
+  github?: string
+}
+
 interface Plugin {
   id: string
   name: string
@@ -45,7 +51,8 @@ interface Plugin {
   category: string
   keywords: string[]
   permissions: string[]
-  downloadUrl: string
+  install: PluginInstallOptions
+  downloadUrl?: string // 兼容旧格式
   homepage?: string
   repository?: string
   screenshots: string[]
@@ -199,7 +206,15 @@ const confirmInstall = async (): Promise<void> => {
     showPermissionDialog.value = false
 
     console.log('📦 [Marketplace] 开始安装插件:', selectedPlugin.value.name)
-    const result = await window.api.plugin.install(selectedPlugin.value.downloadUrl)
+
+    // 优先使用 install 对象，回退到 downloadUrl
+    const installUrl = selectedPlugin.value.install?.zip || selectedPlugin.value.downloadUrl
+
+    if (!installUrl) {
+      throw new Error('插件没有提供安装地址')
+    }
+
+    const result = await window.api.plugin.install(installUrl)
 
     if (result.success) {
       console.log('✅ [Marketplace] 插件安装成功')
