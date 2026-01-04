@@ -678,67 +678,51 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
       </div>
 
       <!-- 内容区 -->
-      <div class="flex-1 flex flex-col min-h-0">
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
         <!-- 主页（无标签时） -->
-        <div v-if="tabs.length === 0" class="flex-1 bg-white dark:bg-gray-900">
-          <HomePage
-            :recent-plugins="recentPlugins"
-            :favorite-plugins="favoritePlugins"
-            @open-tool="openTab"
-            @toggle-favorite="toggleFavorite"
-          />
-        </div>
+        <HomePage
+          v-if="tabs.length === 0"
+          :recent-plugins="recentPlugins"
+          :favorite-plugins="favoritePlugins"
+          @open-tool="openTab"
+          @toggle-favorite="toggleFavorite"
+        />
 
         <!-- 工具标签页 -->
         <template v-for="tab in tabs" :key="tab.id">
-          <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0">
+          <div v-show="activeTabId === tab.id" class="flex-1 flex flex-col min-h-0 overflow-hidden">
             <!-- 主页标签 -->
-            <div v-if="tab.pluginId === 'home'" class="flex-1 bg-white dark:bg-gray-900">
-              <HomePage
-                :recent-plugins="recentPlugins"
-                :favorite-plugins="favoritePlugins"
-                @open-tool="openTab"
-                @toggle-favorite="toggleFavorite"
-              />
-            </div>
+            <HomePage
+              v-if="tab.pluginId === 'home'"
+              :recent-plugins="recentPlugins"
+              :favorite-plugins="favoritePlugins"
+              @open-tool="openTab"
+              @toggle-favorite="toggleFavorite"
+            />
 
             <!-- 插件管理页面 -->
-            <div
-              v-else-if="tab.type === 'management'"
-              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
-            >
-              <PluginManagementPage />
-            </div>
+            <PluginManagementPage v-else-if="tab.type === 'management'" />
 
             <!-- 设置页面 -->
-            <div
-              v-else-if="tab.type === 'settings'"
-              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
-            >
-              <SettingsPage />
-            </div>
+            <SettingsPage v-else-if="tab.type === 'settings'" />
 
             <!-- 收藏页面 -->
-            <div v-else-if="tab.type === 'favorites'" class="flex-1 bg-white dark:bg-gray-900">
-              <FavoritesPage
-                :favorite-plugins="favoritePlugins"
-                @open-tool="openTab"
-                @toggle-favorite="toggleFavorite"
-              />
-            </div>
+            <FavoritesPage
+              v-else-if="tab.type === 'favorites'"
+              :favorite-plugins="favoritePlugins"
+              @open-tool="openTab"
+              @toggle-favorite="toggleFavorite"
+            />
 
             <!-- 最近使用页面 -->
-            <div v-else-if="tab.type === 'recents'" class="flex-1 bg-white dark:bg-gray-900">
-              <RecentsPage :recent-plugins="recentPlugins" @open-tool="openTab" />
-            </div>
+            <RecentsPage
+              v-else-if="tab.type === 'recents'"
+              :recent-plugins="recentPlugins"
+              @open-tool="openTab"
+            />
 
             <!-- 网站导航页面 -->
-            <div
-              v-else-if="tab.type === 'web-navigator'"
-              class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900"
-            >
-              <WebNavigator />
-            </div>
+            <WebNavigator v-else-if="tab.type === 'web-navigator'" />
 
             <!-- 普通插件 - 无背景，让插件自己控制样式 -->
             <component

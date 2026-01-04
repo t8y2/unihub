@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useClipboard } from '@/composables/useClipboard'
 
 const { copy } = useClipboard()
@@ -124,8 +126,9 @@ const useCurrentDate = (): void => {
             <div class="text-sm opacity-90 mb-1">秒级时间戳</div>
             <div class="text-2xl font-mono font-bold flex items-center justify-between">
               <span>{{ currentTimestamp }}</span>
-              <button
-                class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
+              <Button
+                size="icon"
+                variant="ghost"
                 @click="copyToClipboard(currentTimestamp.toString())"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,15 +139,16 @@ const useCurrentDate = (): void => {
                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
           <div class="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
             <div class="text-sm opacity-90 mb-1">毫秒级时间戳</div>
             <div class="text-2xl font-mono font-bold flex items-center justify-between">
               <span>{{ currentTimestampMs }}</span>
-              <button
-                class="ml-2 p-2 hover:bg-white/20 rounded transition-colors"
+              <Button
+                size="icon"
+                variant="ghost"
                 @click="copyToClipboard(currentTimestampMs.toString())"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +159,7 @@ const useCurrentDate = (): void => {
                     d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -166,114 +170,110 @@ const useCurrentDate = (): void => {
     </div>
 
     <!-- 转换工具 -->
-    <div class="flex-1 overflow-auto p-6 bg-gray-50 dark:bg-gray-900">
+    <div class="flex-1 overflow-auto p-6">
       <div class="max-w-4xl mx-auto space-y-6">
         <!-- 时间戳转日期 -->
-        <div class="bg-gray-50 rounded-lg p-6">
-          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <svg
-              class="w-5 h-5 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-            时间戳转日期
-          </h3>
-          <div class="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <svg
+                class="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+              时间戳转日期
+            </CardTitle>
+            <CardDescription>输入时间戳（支持秒级和毫秒级）</CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
             <div class="flex gap-2">
-              <input
+              <Input
                 v-model="timestampInput"
                 type="text"
-                placeholder="输入时间戳（支持秒级和毫秒级）"
-                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                placeholder="输入时间戳"
+                class="flex-1 font-mono"
                 @keyup.enter="timestampToDate"
               />
-              <Button variant="secondary" @click="useCurrentTimestamp"> 使用当前 </Button>
-              <Button @click="timestampToDate"> 转换 </Button>
+              <Button variant="secondary" @click="useCurrentTimestamp">使用当前</Button>
+              <Button @click="timestampToDate">转换</Button>
             </div>
             <div
               v-if="dateResult"
-              class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700"
+              class="bg-muted rounded-md p-4 flex items-center justify-between"
             >
-              <div class="flex items-center justify-between">
-                <span class="font-mono text-lg">{{ dateResult }}</span>
-                <button
-                  class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
-                  @click="copyToClipboard(dateResult)"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                </button>
-              </div>
+              <span class="font-mono text-lg">{{ dateResult }}</span>
+              <Button size="icon" variant="ghost" @click="copyToClipboard(dateResult)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         <!-- 日期转时间戳 -->
-        <div class="bg-gray-50 rounded-lg p-6">
-          <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-            <svg
-              class="w-5 h-5 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 17l-5-5m0 0l5-5m-5 5h12"
-              />
-            </svg>
-            日期转时间戳
-          </h3>
-          <div class="space-y-3">
+        <Card>
+          <CardHeader>
+            <CardTitle class="flex items-center gap-2">
+              <svg
+                class="w-5 h-5 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11 17l-5-5m0 0l5-5m-5 5h12"
+                />
+              </svg>
+              日期转时间戳
+            </CardTitle>
+            <CardDescription>选择日期时间进行转换</CardDescription>
+          </CardHeader>
+          <CardContent class="space-y-4">
             <div class="flex gap-2">
-              <input
+              <Input
                 v-model="dateInput"
                 type="datetime-local"
-                class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="flex-1"
                 @change="dateToTimestamp"
               />
-              <Button variant="secondary" @click="useCurrentDate"> 使用当前 </Button>
-              <Button @click="dateToTimestamp"> 转换 </Button>
+              <Button variant="secondary" @click="useCurrentDate">使用当前</Button>
+              <Button @click="dateToTimestamp">转换</Button>
             </div>
             <div
               v-if="timestampResult"
-              class="bg-white dark:bg-gray-800 rounded-md p-4 border border-gray-200 dark:border-gray-700"
+              class="bg-muted rounded-md p-4 flex items-center justify-between"
             >
-              <div class="flex items-center justify-between">
-                <pre class="font-mono text-sm">{{ timestampResult }}</pre>
-                <button
-                  class="p-2 hover:bg-gray-100 dark:bg-gray-700 rounded transition-colors"
-                  @click="copyToClipboard(timestampResult)"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
-                  </svg>
-                </button>
-              </div>
+              <pre class="font-mono text-sm">{{ timestampResult }}</pre>
+              <Button size="icon" variant="ghost" @click="copyToClipboard(timestampResult)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   </div>

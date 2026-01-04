@@ -35,7 +35,7 @@ const handleToggleFavorite = (pluginId: string): void => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-gray-900 overflow-auto">
+  <div class="h-full overflow-auto bg-white dark:bg-gray-900">
     <!-- 拖动区域 -->
     <div data-tauri-drag-region class="h-16 flex-shrink-0"></div>
 
