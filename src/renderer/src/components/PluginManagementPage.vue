@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { PluginIcon } from '@/components/ui/plugin-icon'
 import { toast } from 'vue-sonner'
 import {
   Dialog,
@@ -252,17 +253,6 @@ const uninstallPlugin = async (): Promise<void> => {
         <button
           :class="[
             'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
-            activeTab === 'installed'
-              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-          ]"
-          @click="activeTab = 'installed'"
-        >
-          已安装
-        </button>
-        <button
-          :class="[
-            'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
             activeTab === 'store'
               ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
               : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
@@ -270,6 +260,17 @@ const uninstallPlugin = async (): Promise<void> => {
           @click="activeTab = 'store'"
         >
           插件市场
+        </button>
+        <button
+          :class="[
+            'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+            activeTab === 'installed'
+              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+          ]"
+          @click="activeTab = 'installed'"
+        >
+          已安装
         </button>
         <button
           :class="[
@@ -310,27 +311,7 @@ const uninstallPlugin = async (): Promise<void> => {
               class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
             >
               <!-- 图标 -->
-              <div
-                class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0"
-              >
-                <svg
-                  v-if="
-                    plugin.metadata.icon.startsWith('M') || plugin.metadata.icon.startsWith('m')
-                  "
-                  class="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    :d="plugin.metadata.icon"
-                  />
-                </svg>
-                <span v-else class="text-xl">{{ plugin.metadata.icon }}</span>
-              </div>
+              <PluginIcon :icon="plugin.metadata.icon" size="md" />
 
               <!-- 信息 -->
               <div class="flex-1 min-w-0">

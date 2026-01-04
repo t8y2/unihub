@@ -40,7 +40,7 @@
   "unihub": {
     "id": "com.unihub.modern-vue",
     "name": "Modern Vue Plugin",
-    "icon": "🚀",
+    "icon": "https://api.iconify.design/logos/vue.svg",
     "category": "tool",
     "entry": "dist/index.html",
     "permissions": [

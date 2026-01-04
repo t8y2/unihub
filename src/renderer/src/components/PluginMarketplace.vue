@@ -29,6 +29,7 @@ import {
   CATEGORY_NAMES
 } from '@/constants'
 import { pluginStatsService } from '@/plugins/marketplace/stats'
+import { pluginInstaller } from '@/plugins/marketplace/installer'
 
 type ViewMode = 'grid' | 'list'
 
@@ -75,6 +76,9 @@ const installedPluginIds = ref<Set<string>>(new Set())
 const pluginStats = ref<Map<string, { downloads: number; averageRating: number }>>(new Map())
 const loadingStats = ref(false)
 const viewMode = ref<ViewMode>('grid')
+const uninstalling = ref(false)
+const showUninstallDialog = ref(false)
+const pluginToUninstall = ref<{ id: string; name: string } | null>(null)
 
 // 事件处理器引用
 let pluginChangeHandler: (() => void) | null = null
@@ -246,6 +250,38 @@ const confirmInstall = async (): Promise<void> => {
     toast.error(`安装失败: ${(err as Error).message}`)
   } finally {
     installing.value = false
+  }
+}
+
+// 显示卸载确认对话框
+const confirmUninstall = (pluginId: string, pluginName: string): void => {
+  pluginToUninstall.value = { id: pluginId, name: pluginName }
+  showUninstallDialog.value = true
+}
+
+// 执行卸载
+const uninstallPlugin = async (): Promise<void> => {
+  if (!pluginToUninstall.value) return
+
+  try {
+    uninstalling.value = true
+    await pluginInstaller.uninstall(pluginToUninstall.value.id)
+    toast.success(`${pluginToUninstall.value.name} 已卸载`)
+
+    // 关闭详情对话框
+    closePluginDetail()
+
+    // 更新已安装列表
+    await loadInstalledPlugins()
+
+    // 触发全局刷新事件
+    window.dispatchEvent(new CustomEvent('plugin-uninstalled'))
+  } catch (err) {
+    toast.error(`卸载失败: ${(err as Error).message}`)
+  } finally {
+    uninstalling.value = false
+    showUninstallDialog.value = false
+    pluginToUninstall.value = null
   }
 }
 
@@ -650,7 +686,7 @@ onUnmounted(() => {
         </div>
 
         <DialogFooter v-if="selectedPlugin">
-          <Button variant="outline" @click="closePluginDetail">取消</Button>
+          <Button variant="outline" @click="closePluginDetail">关闭</Button>
           <Button
             v-if="!isPluginInstalled(selectedPlugin.id)"
             :disabled="installing"
@@ -658,16 +694,18 @@ onUnmounted(() => {
           >
             {{ installing ? '安装中...' : '安装插件' }}
           </Button>
-          <Button v-else variant="secondary" disabled>
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            已安装
+          <Button
+            v-else
+            variant="destructive"
+            @click="
+              () => {
+                if (selectedPlugin) {
+                  confirmUninstall(selectedPlugin.id, selectedPlugin.name)
+                }
+              }
+            "
+          >
+            卸载插件
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -682,5 +720,24 @@ onUnmounted(() => {
       @confirm="confirmInstall"
       @cancel="showPermissionDialog = false"
     />
+
+    <!-- 卸载确认对话框 -->
+    <Dialog :open="showUninstallDialog" @update:open="showUninstallDialog = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>确认卸载插件</DialogTitle>
+          <DialogDescription>
+            确定要卸载插件 "{{ pluginToUninstall?.name }}" 吗？此操作无法撤销。
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter>
+          <Button variant="outline" @click="showUninstallDialog = false">取消</Button>
+          <Button variant="destructive" :disabled="uninstalling" @click="uninstallPlugin">
+            {{ uninstalling ? '卸载中...' : '确认卸载' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
