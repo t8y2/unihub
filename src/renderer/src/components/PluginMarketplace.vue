@@ -457,25 +457,7 @@ onUnmounted(() => {
             @click="openPluginDetail(plugin)"
           >
             <!-- 图标 -->
-            <div
-              class="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
-            >
-              <svg
-                v-if="plugin.icon.startsWith('M') || plugin.icon.startsWith('m')"
-                class="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  :d="plugin.icon"
-                />
-              </svg>
-              <span v-else class="text-xl">{{ plugin.icon }}</span>
-            </div>
+            <PluginIcon :icon="plugin.icon" size="md" />
 
             <!-- 信息 -->
             <div class="flex-1 min-w-0">
@@ -546,25 +528,7 @@ onUnmounted(() => {
       <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader v-if="selectedPlugin">
           <div class="flex items-start gap-4 mb-4">
-            <div
-              class="w-16 h-16 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex-shrink-0"
-            >
-              <svg
-                v-if="selectedPlugin.icon.startsWith('M') || selectedPlugin.icon.startsWith('m')"
-                class="w-8 h-8 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  :d="selectedPlugin.icon"
-                />
-              </svg>
-              <span v-else class="text-3xl">{{ selectedPlugin.icon }}</span>
-            </div>
+            <PluginIcon :icon="selectedPlugin.icon" size="xl" />
             <div class="flex-1">
               <DialogTitle class="text-2xl">{{ selectedPlugin.name }}</DialogTitle>
               <DialogDescription class="mt-1">
