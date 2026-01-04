@@ -81,25 +81,25 @@ const handleOpenTool = (pluginId: string): void => {
       </div>
 
       <!-- 最近使用列表 -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         <button
           v-for="(plugin, index) in recentPluginsList"
           :key="plugin.metadata.id"
-          class="group p-5 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.02] hover:border-green-300 dark:hover:border-green-700 text-left relative overflow-hidden"
+          class="group p-3 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-lg hover:scale-[1.02] hover:border-green-300 dark:hover:border-green-700 text-left relative overflow-hidden"
           @click="handleOpenTool(plugin.metadata.id)"
         >
           <!-- 背景装饰 -->
           <div
-            class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:from-green-500/10 group-hover:to-emerald-500/10 transition-all"
+            class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-full blur-xl -mr-12 -mt-12 group-hover:from-green-500/10 group-hover:to-emerald-500/10 transition-all"
           ></div>
 
           <div class="relative">
-            <div class="flex items-start justify-between mb-4">
+            <div class="flex items-start justify-between mb-2">
               <div
-                class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-500/20 dark:to-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-green-500/20 group-hover:to-emerald-500/20 dark:group-hover:from-green-500/30 dark:group-hover:to-emerald-500/30 transition-all shadow-sm"
+                class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 dark:from-green-500/20 dark:to-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-green-500/20 group-hover:to-emerald-500/20 dark:group-hover:from-green-500/30 dark:group-hover:to-emerald-500/30 transition-all"
               >
                 <svg
-                  class="w-7 h-7 text-green-600 dark:text-green-400"
+                  class="w-5 h-5 text-green-600 dark:text-green-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -114,17 +114,17 @@ const handleOpenTool = (pluginId: string): void => {
               </div>
               <!-- 序号标记 -->
               <div
-                class="px-2.5 py-1 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold"
+                class="px-1.5 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold"
               >
                 #{{ index + 1 }}
               </div>
             </div>
             <h3
-              class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors"
+              class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors line-clamp-1"
             >
               {{ plugin.metadata.name }}
             </h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+            <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
               {{ plugin.metadata.description }}
             </p>
           </div>

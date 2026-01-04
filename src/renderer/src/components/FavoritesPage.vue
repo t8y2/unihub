@@ -82,25 +82,25 @@ const handleToggleFavorite = (pluginId: string): void => {
       </div>
 
       <!-- 收藏列表 -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         <button
           v-for="plugin in favoritePluginsList"
           :key="plugin.metadata.id"
-          class="group p-5 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:shadow-xl hover:scale-[1.02] hover:border-red-300 dark:hover:border-red-700 text-left relative overflow-hidden"
+          class="group p-3 bg-gray-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 transition-all hover:shadow-lg hover:scale-[1.02] hover:border-red-300 dark:hover:border-red-700 text-left relative overflow-hidden"
           @click="handleOpenTool(plugin.metadata.id)"
         >
           <!-- 背景装饰 -->
           <div
-            class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-500/5 to-pink-500/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all"
+            class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500/5 to-pink-500/5 rounded-full blur-xl -mr-12 -mt-12 group-hover:from-red-500/10 group-hover:to-pink-500/10 transition-all"
           ></div>
 
           <div class="relative">
-            <div class="flex items-start justify-between mb-4">
+            <div class="flex items-start justify-between mb-2">
               <div
-                class="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/10 to-pink-500/10 dark:from-red-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-red-500/20 group-hover:to-pink-500/20 dark:group-hover:from-red-500/30 dark:group-hover:to-pink-500/30 transition-all shadow-sm"
+                class="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500/10 to-pink-500/10 dark:from-red-500/20 dark:to-pink-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-red-500/20 group-hover:to-pink-500/20 dark:group-hover:from-red-500/30 dark:group-hover:to-pink-500/30 transition-all"
               >
                 <svg
-                  class="w-7 h-7 text-red-600 dark:text-red-400"
+                  class="w-5 h-5 text-red-600 dark:text-red-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -115,11 +115,11 @@ const handleToggleFavorite = (pluginId: string): void => {
               </div>
               <!-- 取消收藏按钮 -->
               <div
-                class="p-2 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
+                class="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all cursor-pointer"
                 title="取消收藏"
                 @click.stop="handleToggleFavorite(plugin.metadata.id)"
               >
-                <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                <svg class="w-3.5 h-3.5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
                   <path
                     d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
                   />
@@ -127,11 +127,11 @@ const handleToggleFavorite = (pluginId: string): void => {
               </div>
             </div>
             <h3
-              class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors"
+              class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors line-clamp-1"
             >
               {{ plugin.metadata.name }}
             </h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+            <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
               {{ plugin.metadata.description }}
             </p>
           </div>
