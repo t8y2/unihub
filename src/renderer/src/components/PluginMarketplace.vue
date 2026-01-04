@@ -402,11 +402,13 @@ onUnmounted(() => {
           <div
             v-for="plugin in filteredPlugins"
             :key="plugin.id"
-            class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
-            @click="openPluginDetail(plugin)"
+            class="border border-gray-200 dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition-shadow"
           >
             <!-- 插件图标和信息 -->
-            <div class="flex items-start gap-3 mb-3">
+            <div
+              class="flex items-start gap-3 mb-3 cursor-pointer"
+              @click="openPluginDetail(plugin)"
+            >
               <PluginIcon :icon="plugin.icon" size="lg" />
               <div class="flex-1 min-w-0">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -419,15 +421,15 @@ onUnmounted(() => {
             </div>
 
             <!-- 描述 -->
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 truncate">
+            <p
+              class="text-sm text-gray-600 dark:text-gray-400 mb-3 cursor-pointer truncate"
+              @click="openPluginDetail(plugin)"
+            >
               {{ plugin.description }}
             </p>
 
             <!-- 标签 -->
-            <div class="flex flex-wrap gap-2 mb-3">
-              <Badge v-if="isPluginInstalled(plugin.id)" variant="default" class="bg-green-600">
-                ✓ 已安装
-              </Badge>
+            <div class="flex flex-wrap gap-2 mb-3 cursor-pointer" @click="openPluginDetail(plugin)">
               <Badge variant="secondary">
                 {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
               </Badge>
@@ -440,10 +442,29 @@ onUnmounted(() => {
               </Badge>
             </div>
 
-            <!-- 统计 -->
-            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-              <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
-              <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
+            <!-- 统计和操作按钮 -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <span>{{ getPluginDisplayStats(plugin).downloads }} 下载</span>
+                <span>⭐ {{ getPluginDisplayStats(plugin).rating.toFixed(1) }}</span>
+              </div>
+
+              <!-- 安装/已安装按钮 - App Store 风格 -->
+              <button
+                v-if="!isPluginInstalled(plugin.id)"
+                class="px-4 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50"
+                :disabled="installing"
+                @click.stop="installPlugin(plugin)"
+              >
+                安装
+              </button>
+              <button
+                v-else
+                class="px-4 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full cursor-default"
+                disabled
+              >
+                已安装
+              </button>
             </div>
           </div>
         </div>
@@ -453,25 +474,19 @@ onUnmounted(() => {
           <div
             v-for="plugin in filteredPlugins"
             :key="plugin.id"
-            class="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow cursor-pointer"
-            @click="openPluginDetail(plugin)"
+            class="flex items-center gap-4 p-3 border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow"
           >
             <!-- 图标 -->
-            <PluginIcon :icon="plugin.icon" size="md" />
+            <div class="cursor-pointer" @click="openPluginDetail(plugin)">
+              <PluginIcon :icon="plugin.icon" size="md" />
+            </div>
 
             <!-- 信息 -->
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 cursor-pointer" @click="openPluginDetail(plugin)">
               <div class="flex items-center gap-2 mb-0.5">
                 <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                   {{ plugin.name }}
                 </h3>
-                <Badge
-                  v-if="isPluginInstalled(plugin.id)"
-                  variant="default"
-                  class="bg-green-600 text-xs py-0"
-                >
-                  ✓ 已安装
-                </Badge>
                 <Badge variant="secondary" class="text-xs py-0">
                   {{ CATEGORY_NAMES[plugin.category] || plugin.category }}
                 </Badge>
@@ -488,7 +503,7 @@ onUnmounted(() => {
             </div>
 
             <!-- 关键词标签 -->
-            <div class="flex gap-1.5">
+            <div class="flex gap-1.5 cursor-pointer" @click="openPluginDetail(plugin)">
               <Badge
                 v-for="keyword in plugin.keywords.slice(0, 3)"
                 :key="keyword"
@@ -498,6 +513,23 @@ onUnmounted(() => {
                 {{ keyword }}
               </Badge>
             </div>
+
+            <!-- 安装/已安装按钮 - App Store 风格 -->
+            <button
+              v-if="!isPluginInstalled(plugin.id)"
+              class="px-5 py-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50 whitespace-nowrap"
+              :disabled="installing"
+              @click.stop="installPlugin(plugin)"
+            >
+              安装
+            </button>
+            <button
+              v-else
+              class="px-5 py-1.5 text-sm font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full cursor-default whitespace-nowrap"
+              disabled
+            >
+              已安装
+            </button>
           </div>
         </div>
       </div>
