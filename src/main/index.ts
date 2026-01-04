@@ -113,6 +113,8 @@ function createWindow(): void {
 }
 
 app.whenReady().then(async () => {
+  const appStartTime = performance.now()
+
   electronApp.setAppUserModelId('com.unihub.app')
 
   // 使用新的 protocol.handle API 注册自定义协议
@@ -150,6 +152,7 @@ app.whenReady().then(async () => {
 
   // 异步初始化插件系统（不阻塞窗口显示）
   setImmediate(() => {
+    const pluginInitStart = performance.now()
     logger.info('开始异步初始化插件系统...')
 
     // 预热插件缓存（异步）
@@ -158,7 +161,8 @@ app.whenReady().then(async () => {
     // 初始化已安装插件的权限（异步）
     pluginManager.initializePermissions()
 
-    logger.info('插件系统初始化完成')
+    const pluginInitEnd = performance.now()
+    logger.info(`插件系统初始化完成，耗时 ${(pluginInitEnd - pluginInitStart).toFixed(2)}ms`)
   })
 
   app.on('browser-window-created', (_, window) => {
@@ -177,6 +181,9 @@ app.whenReady().then(async () => {
       logger.info('👁窗口已显示（通过 Dock）')
     }
   })
+
+  const appEndTime = performance.now()
+  logger.info(`应用启动完成，总耗时 ${(appEndTime - appStartTime).toFixed(2)}ms`)
 })
 
 app.on('window-all-closed', () => {

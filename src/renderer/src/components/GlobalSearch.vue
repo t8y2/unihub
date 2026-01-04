@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { pluginRegistry } from '../plugins'
-import { pinyin } from 'pinyin-pro'
-import { CATEGORY_NAMES, LIMITS } from '@/constants'
+import { searchEngine, type SearchResult } from '@/utils/search'
+import { CATEGORY_NAMES } from '@/constants'
 import { Kbd } from '@/components/ui/kbd'
 
 const emit = defineEmits<{
@@ -22,119 +22,10 @@ const resultRefs = ref<HTMLElement[]>([])
 const isScrolling = ref(false)
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
-interface SearchResult {
-  id: string
-  name: string
-  description: string
-  icon: string
-  keywords: string[]
-  category: string
-  score: number
-}
-
-// 拼音缓存
-const pinyinCache = new Map<string, string>()
-
-// 获取拼音（带缓存）
-function getPinyin(text: string): string {
-  if (pinyinCache.has(text)) return pinyinCache.get(text)!
-
-  const py = pinyin(text, { toneType: 'none', type: 'array' }).join('')
-  pinyinCache.set(text, py)
-  return py
-}
-
-// 获取拼音首字母（带缓存）
-function getPinyinInitials(text: string): string {
-  const cacheKey = `initials:${text}`
-  if (pinyinCache.has(cacheKey)) return pinyinCache.get(cacheKey)!
-
-  const initials = pinyin(text, { pattern: 'first', toneType: 'none', type: 'array' }).join('')
-  pinyinCache.set(cacheKey, initials)
-  return initials
-}
-
-// 检查是否匹配（支持拼音）
-function matchesSearch(text: string, searchTerm: string): boolean {
-  const lowerText = text.toLowerCase()
-  const lowerSearch = searchTerm.toLowerCase()
-
-  // 直接匹配
-  if (lowerText.includes(lowerSearch)) return true
-
-  // 拼音全拼匹配
-  if (getPinyin(text).toLowerCase().includes(lowerSearch)) return true
-
-  // 拼音首字母匹配
-  if (getPinyinInitials(text).toLowerCase().includes(lowerSearch)) return true
-
-  return false
-}
-
-// 搜索缓存
-const searchCache = new Map<string, SearchResult[]>()
-
-// 搜索结果
+// 搜索结果（使用优化的搜索引擎）
 const searchResults = computed(() => {
-  const searchTerm = query.value.trim()
-
-  if (!searchTerm) {
-    return pluginRegistry.getEnabled().map((plugin) => ({
-      id: plugin.metadata.id,
-      name: plugin.metadata.name,
-      description: plugin.metadata.description,
-      icon: plugin.metadata.icon,
-      keywords: plugin.metadata.keywords || [],
-      category: plugin.metadata.category,
-      score: 0
-    }))
-  }
-
-  // 检查缓存
-  if (searchCache.has(searchTerm)) return searchCache.get(searchTerm)!
-
-  const results: SearchResult[] = []
   const plugins = pluginRegistry.getEnabled()
-
-  for (const plugin of plugins) {
-    let score = 0
-
-    if (matchesSearch(plugin.metadata.name, searchTerm)) score += 100
-    if (matchesSearch(plugin.metadata.description, searchTerm)) score += 50
-
-    const keywords = plugin.metadata.keywords || []
-    for (const keyword of keywords) {
-      if (matchesSearch(keyword, searchTerm)) {
-        score += 80
-        break
-      }
-    }
-
-    if (matchesSearch(plugin.metadata.category, searchTerm)) score += 30
-
-    if (score > 0) {
-      results.push({
-        id: plugin.metadata.id,
-        name: plugin.metadata.name,
-        description: plugin.metadata.description,
-        icon: plugin.metadata.icon,
-        keywords,
-        category: plugin.metadata.category,
-        score
-      })
-    }
-  }
-
-  results.sort((a, b) => b.score - a.score)
-
-  // 缓存结果
-  if (searchCache.size >= LIMITS.SEARCH_CACHE_SIZE) {
-    const firstKey = searchCache.keys().next().value
-    if (firstKey) searchCache.delete(firstKey)
-  }
-  searchCache.set(searchTerm, results)
-
-  return results
+  return searchEngine.search(query.value, plugins)
 })
 
 // 监听 visible 变化，自动聚焦
@@ -142,16 +33,33 @@ watch(
   () => props.visible,
   (visible) => {
     if (visible) {
-      setTimeout(() => {
-        searchInput.value?.focus()
-      }, 100)
+      // 使用 nextTick 确保 DOM 已更新
+      nextTick(() => {
+        // 多次尝试聚焦，确保成功
+        const focusInput = (): void => {
+          if (searchInput.value) {
+            searchInput.value.focus()
+            console.log('[GlobalSearch] 输入框已聚焦')
+          } else {
+            console.warn('[GlobalSearch] 输入框未找到')
+          }
+        }
+
+        // 立即聚焦
+        focusInput()
+
+        // 延迟再次聚焦（确保成功）
+        setTimeout(focusInput, 50)
+        setTimeout(focusInput, 150)
+      })
       selectedIndex.value = 0
       resultRefs.value = []
     } else {
       query.value = ''
       resultRefs.value = []
     }
-  }
+  },
+  { immediate: true } // 立即执行一次
 )
 
 // 监听搜索结果变化，重置选中索引

@@ -36,37 +36,54 @@ const toggleCategory = (category: string): void => {
 
 // 初始化应用
 const initializeApp = async (): Promise<void> => {
-  // 初始化插件系统
+  const startTime = performance.now()
+
+  // 初始化插件系统（同步，快速）
   initPlugins()
 
-  // 加载第三方插件
-  try {
-    await pluginInstaller.loadInstalledPlugins()
-  } catch (error) {
-    console.error('加载第三方插件失败:', error)
-  }
+  // 加载第三方插件（异步，不阻塞）
+  requestIdleCallback(
+    async () => {
+      try {
+        await pluginInstaller.loadInstalledPlugins()
+      } catch (error) {
+        console.error('加载第三方插件失败:', error)
+      }
+    },
+    { timeout: 2000 }
+  )
 
-  // 恢复主题设置
+  // 恢复主题设置（同步，快速）
   const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME)
   if (savedTheme === 'dark') {
     isDark.value = true
     document.documentElement.classList.add('dark')
   }
 
-  // 恢复侧边栏状态
+  // 恢复侧边栏状态（同步，快速）
   sidebarCollapsed.value = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED) === 'true'
 
-  // 加载快捷键设置
-  try {
-    const shortcuts = await window.api.settings.getShortcuts()
-    globalSearchShortcut.value = shortcuts.globalSearch || '⌘K'
-    console.log('已加载全局搜索快捷键:', globalSearchShortcut.value)
-  } catch (error) {
-    console.error('加载快捷键设置失败:', error)
-  }
+  // 加载快捷键设置（异步，不阻塞）
+  window.api.settings
+    .getShortcuts()
+    .then((shortcuts) => {
+      globalSearchShortcut.value = shortcuts.globalSearch || '⌘K'
+      console.log('已加载全局搜索快捷键:', globalSearchShortcut.value)
+    })
+    .catch((error) => {
+      console.error('加载快捷键设置失败:', error)
+    })
 
-  // 加载插件数据
-  await loadAll()
+  // 加载插件数据（异步，不阻塞）
+  requestIdleCallback(
+    () => {
+      loadAll()
+    },
+    { timeout: 1000 }
+  )
+
+  const endTime = performance.now()
+  console.log(`⚡ 应用初始化完成，耗时 ${(endTime - startTime).toFixed(2)}ms`)
 }
 
 onMounted(() => {
@@ -101,7 +118,7 @@ onMounted(() => {
   // 监听快捷键注册失败
   window.electron.ipcRenderer.on(
     'shortcut-register-failed',
-    (_event: unknown, key: string, shortcut: string) => {
+    (_event: unknown, _key: string, shortcut: string) => {
       console.warn(`快捷键 ${shortcut} 注册失败，可能被系统占用`)
       // 可以在这里显示一个提示
     }
@@ -136,7 +153,7 @@ const handleGlobalSearchShortcut = (e: KeyboardEvent): void => {
   // 检查是否匹配
   const keyMatches =
     mainKey === 'Space'
-      ? e.key === ' ' || e.code === 'Space' || e.keyCode === 32
+      ? e.key === ' ' || e.code === 'Space'
       : e.key.toUpperCase() === mainKey.toUpperCase() || e.key === mainKey
 
   const modifiersMatch =
@@ -144,22 +161,6 @@ const handleGlobalSearchShortcut = (e: KeyboardEvent): void => {
     (parts.includes('Ctrl') ? hasCtrl : !e.ctrlKey) &&
     (parts.includes('Alt') ? hasAlt : !e.altKey) &&
     (parts.includes('Shift') ? hasShift : !e.shiftKey)
-
-  // 调试日志
-  console.log('快捷键检测:', {
-    shortcut,
-    parts,
-    mainKey,
-    keyMatches,
-    modifiersMatch,
-    event: {
-      key: e.key,
-      metaKey: e.metaKey,
-      ctrlKey: e.ctrlKey,
-      altKey: e.altKey,
-      shiftKey: e.shiftKey
-    }
-  })
 
   if (keyMatches && modifiersMatch) {
     e.preventDefault()

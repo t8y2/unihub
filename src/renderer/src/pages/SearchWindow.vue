@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import GlobalSearch from '../components/GlobalSearch.vue'
 
 const showSearch = ref(true)
+const searchKey = ref(0) // 用于强制重新渲染
 
 const handleOpenPlugin = async (pluginId: string): Promise<void> => {
   await window.api.search.openPlugin(pluginId)
@@ -15,10 +16,14 @@ const handleClose = async (): Promise<void> => {
 onMounted(() => {
   // 监听聚焦事件
   window.electron.ipcRenderer.on('focus-search-input', () => {
-    showSearch.value = false
-    setTimeout(() => {
-      showSearch.value = true
-    }, 10)
+    console.log('[SearchWindow] 收到聚焦事件')
+    // 强制重新渲染组件以触发自动聚焦
+    searchKey.value++
+  })
+
+  // 初始聚焦
+  nextTick(() => {
+    console.log('[SearchWindow] 初始聚焦')
   })
 })
 </script>
@@ -26,6 +31,7 @@ onMounted(() => {
 <template>
   <div class="w-full h-screen overflow-hidden">
     <GlobalSearch
+      :key="searchKey"
       :visible="showSearch"
       :standalone="true"
       @open-plugin="handleOpenPlugin"

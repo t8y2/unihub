@@ -26,8 +26,10 @@ export const DEFAULT_CATEGORIES = ['formatter', 'tool', 'encoder']
 export const LIMITS = {
   RECENT_PLUGINS: 10,
   FAVORITE_DISPLAY: 6,
-  SEARCH_CACHE_SIZE: 50,
-  MAX_CACHED_VIEWS: 5
+  SEARCH_CACHE_SIZE: 100, // 增加搜索缓存大小
+  MAX_CACHED_VIEWS: 5,
+  PLUGIN_PRELOAD_DELAY: 1000, // 插件预加载延迟（毫秒）
+  IDLE_UNLOAD_THRESHOLD: 10 // 空闲时卸载插件的阈值
 } as const
 
 // ========== UI 尺寸 ==========

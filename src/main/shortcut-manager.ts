@@ -26,7 +26,7 @@ export class ShortcutManager {
   }
 
   /**
-   * 注册全局快捷键
+   * 注册全局快捷键（优化版本）
    */
   register(pluginId: string, accelerator: string, callback: () => void): boolean {
     try {
@@ -36,11 +36,23 @@ export class ShortcutManager {
         return false
       }
 
+      // 创建优化的回调函数（减少闭包开销）
+      const optimizedCallback = (): void => {
+        // 使用 setImmediate 确保快捷键响应不阻塞
+        setImmediate(() => {
+          try {
+            callback()
+          } catch (error) {
+            logger.error({ err: error, accelerator }, '快捷键回调执行失败')
+          }
+        })
+      }
+
       // 注册全局快捷键
-      const success = globalShortcut.register(accelerator, callback)
+      const success = globalShortcut.register(accelerator, optimizedCallback)
 
       if (success) {
-        this.shortcuts.set(accelerator, { pluginId, accelerator, callback })
+        this.shortcuts.set(accelerator, { pluginId, accelerator, callback: optimizedCallback })
         logger.info({ accelerator, pluginId }, '已注册快捷键')
         return true
       } else {

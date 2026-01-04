@@ -78,6 +78,14 @@ export class SearchWindowManager {
     this.searchWindow.on('ready-to-show', () => {
       this.searchWindow?.show()
       this.searchWindow?.focus()
+
+      // 等待窗口完全显示后再通知渲染进程聚焦搜索框
+      setTimeout(() => {
+        if (this.searchWindow && !this.searchWindow.isDestroyed()) {
+          this.searchWindow.webContents.send('focus-search-input')
+          logger.info('窗口创建完成，已发送聚焦事件')
+        }
+      }, 150)
     })
 
     // 失去焦点时隐藏（但需要防止激活主窗口）
@@ -122,10 +130,18 @@ export class SearchWindowManager {
       return
     }
 
+    // 显示并聚焦窗口
     this.searchWindow.show()
     this.searchWindow.focus()
-    // 通知渲染进程聚焦搜索框
-    this.searchWindow.webContents.send('focus-search-input')
+
+    // 等待窗口完全显示后再通知渲染进程聚焦搜索框
+    setTimeout(() => {
+      if (this.searchWindow && !this.searchWindow.isDestroyed()) {
+        this.searchWindow.webContents.send('focus-search-input')
+        logger.info('已发送聚焦事件到渲染进程')
+      }
+    }, 100)
+
     logger.info('👁搜索窗口已显示')
   }
 
