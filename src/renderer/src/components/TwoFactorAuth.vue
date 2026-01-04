@@ -5,6 +5,14 @@ import qrcode from 'qrcode-generator'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import { toast } from 'vue-sonner'
 import { useClipboard } from '@/composables/useClipboard'
 
@@ -23,9 +31,11 @@ const currentTime = ref(Date.now())
 const showAddDialog = ref(false)
 const showTestDialog = ref(false)
 const showQRDialog = ref(false)
+const showImportDialog = ref(false)
 const qrCodeData = ref({ dataUrl: '', name: '', issuer: '', secret: '' })
 
 const newAccount = ref({ name: '', issuer: '', secret: '' })
+const importUri = ref('')
 const testSecret = ref('')
 const testToken = ref('')
 const testError = ref('')
@@ -185,13 +195,13 @@ const showTestQRCode = async (): Promise<void> => {
 }
 
 const importFromUri = (): void => {
-  const uri = prompt(
-    '请输入 otpauth:// URI:\n\n例如: otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example'
-  )
-  if (!uri) return
+  if (!importUri.value.trim()) {
+    toast.error('请输入 URI')
+    return
+  }
 
   try {
-    const totp = OTPAuth.URI.parse(uri)
+    const totp = OTPAuth.URI.parse(importUri.value.trim())
     if (!(totp instanceof OTPAuth.TOTP)) {
       toast.error('只支持 TOTP 类型')
       return
@@ -207,6 +217,8 @@ const importFromUri = (): void => {
 
     saveAccounts()
     toast.success('导入成功！')
+    showImportDialog.value = false
+    importUri.value = ''
   } catch (e) {
     toast.error(`导入失败: ${e instanceof Error ? e.message : String(e)}`)
   }
@@ -288,7 +300,7 @@ onUnmounted(() => {
           </svg>
           快速获取
         </Button>
-        <Button size="sm" variant="secondary" @click="importFromUri"> 导入 URI </Button>
+        <Button size="sm" variant="secondary" @click="showImportDialog = true"> 导入 URI </Button>
         <Button size="sm" @click="showAddDialog = true">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -398,17 +410,13 @@ onUnmounted(() => {
     </div>
 
     <!-- 添加账户对话框 -->
-    <div
-      v-if="showAddDialog"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showAddDialog = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">添加新账户</h3>
-        </div>
+    <Dialog :open="showAddDialog" @update:open="(open) => (showAddDialog = open)">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>添加新账户</DialogTitle>
+        </DialogHeader>
 
-        <div class="px-6 py-4 space-y-4">
+        <div class="space-y-4">
           <div>
             <Label class="mb-1">账户名称 *</Label>
             <Input v-model="newAccount.name" type="text" placeholder="例如: user@example.com" />
@@ -431,26 +439,22 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+        <DialogFooter>
           <Button variant="ghost" @click="showAddDialog = false"> 取消 </Button>
           <Button @click="addAccount"> 添加 </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 快速获取对话框 -->
-    <div
-      v-if="showTestDialog"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showTestDialog = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">快速获取验证码</h3>
-          <p class="text-sm text-gray-500 mt-1">输入密钥即可获取验证码</p>
-        </div>
+    <Dialog :open="showTestDialog" @update:open="(open) => (showTestDialog = open)">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>快速获取验证码</DialogTitle>
+          <DialogDescription>输入密钥即可获取验证码</DialogDescription>
+        </DialogHeader>
 
-        <div class="px-6 py-4 space-y-4">
+        <div class="space-y-4">
           <div>
             <Label class="mb-1">密钥 (Secret)</Label>
             <Input
@@ -463,14 +467,18 @@ onUnmounted(() => {
             <p class="text-xs text-gray-500 mt-1">输入后自动生成验证码</p>
           </div>
 
-          <div v-if="testToken" class="bg-gray-50 rounded-lg p-4">
+          <div v-if="testToken" class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
             <div class="text-center">
               <div class="text-xs text-gray-500 mb-2">当前验证码</div>
-              <div class="text-4xl font-mono font-bold text-gray-900 tracking-wider mb-3">
+              <div
+                class="text-4xl font-mono font-bold text-gray-900 dark:text-gray-100 tracking-wider mb-3"
+              >
                 {{ testToken }}
               </div>
               <div class="flex items-center justify-center gap-2 mb-3">
-                <div class="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden max-w-xs">
+                <div
+                  class="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden max-w-xs"
+                >
                   <div
                     class="h-full bg-blue-500 transition-all duration-100"
                     :style="{ width: `${timeProgress}%` }"
@@ -487,19 +495,24 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div v-if="testError" class="bg-red-50 border border-red-200 rounded-lg p-3">
-            <p class="text-sm text-red-900">{{ testError }}</p>
+          <div
+            v-if="testError"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3"
+          >
+            <p class="text-sm text-red-900 dark:text-red-200">{{ testError }}</p>
           </div>
 
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p class="text-xs text-blue-900">
+          <div
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
+          >
+            <p class="text-xs text-blue-900 dark:text-blue-200">
               <strong>提示：</strong
               >这是快速获取功能，关闭后不会保存。如需长期使用，请点击"添加账户"保存。
             </p>
           </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <DialogFooter>
           <Button
             variant="ghost"
             @click="
@@ -513,46 +526,85 @@ onUnmounted(() => {
           >
             关闭
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 二维码显示对话框 -->
-    <div
-      v-if="showQRDialog"
-      class="fixed inset-0 flex items-center justify-center z-50"
-      style="
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        background-color: rgba(0, 0, 0, 0.3);
-      "
-      @click.self="showQRDialog = false"
-    >
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm mx-4">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">{{ qrCodeData.issuer }}</h3>
-          <p class="text-sm text-gray-500 mt-1">{{ qrCodeData.name }}</p>
-        </div>
+    <Dialog :open="showQRDialog" @update:open="(open) => (showQRDialog = open)">
+      <DialogContent class="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{{ qrCodeData.issuer }}</DialogTitle>
+          <DialogDescription>{{ qrCodeData.name }}</DialogDescription>
+        </DialogHeader>
 
-        <div class="px-6 py-6 flex flex-col items-center">
+        <div class="flex flex-col items-center">
           <img
             :src="qrCodeData.dataUrl"
             alt="QR Code"
             class="rounded-lg shadow-sm w-48 h-48"
             style="image-rendering: pixelated"
           />
-          <div class="mt-4 w-full bg-gray-50 rounded-lg p-3">
+          <div class="mt-4 w-full bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
             <p class="text-xs text-gray-500 mb-1 text-center">密钥</p>
-            <p class="font-mono text-sm text-gray-900 text-center break-all">
+            <p class="font-mono text-sm text-gray-900 dark:text-gray-100 text-center break-all">
               {{ qrCodeData.secret }}
             </p>
           </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+        <DialogFooter>
           <Button variant="ghost" @click="showQRDialog = false"> 关闭 </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- 导入 URI 对话框 -->
+    <Dialog :open="showImportDialog" @update:open="(open) => (showImportDialog = open)">
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>导入 URI</DialogTitle>
+          <DialogDescription>输入 otpauth:// URI 来导入账户</DialogDescription>
+        </DialogHeader>
+
+        <div class="space-y-4">
+          <div>
+            <Label class="mb-1">URI</Label>
+            <Input
+              v-model="importUri"
+              type="text"
+              placeholder="otpauth://totp/Example:user@example.com?secret=..."
+              class="font-mono text-xs"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              例如: otpauth://totp/Example:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example
+            </p>
+          </div>
+
+          <div
+            class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3"
+          >
+            <p class="text-xs text-blue-900 dark:text-blue-200">
+              <strong>提示：</strong>URI 通常可以从二维码中扫描获取，或从服务提供商处复制。
+            </p>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <DialogFooter>
+          <Button
+            variant="ghost"
+            @click="
+              () => {
+                showImportDialog = false
+                importUri = ''
+              }
+            "
+          >
+            取消
+          </Button>
+          <Button @click="importFromUri"> 导入 </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
