@@ -11,6 +11,12 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger
+} from '@/components/ui/context-menu'
 
 interface Website {
   id: string
@@ -22,10 +28,40 @@ interface Website {
   faviconDataUrl?: string // 缓存的 favicon data URL
 }
 
+// 预置网站数据
+const DEFAULT_WEBSITES: Omit<Website, 'id' | 'addedAt'>[] = [
+  // 开发工具
+  { name: 'GitHub', url: 'https://github.com', category: '开发' },
+  { name: 'Stack Overflow', url: 'https://stackoverflow.com', category: '开发' },
+  { name: 'MDN', url: 'https://developer.mozilla.org', category: '开发' },
+  { name: 'npm', url: 'https://www.npmjs.com', category: '开发' },
+  { name: 'CodePen', url: 'https://codepen.io', category: '开发' },
+
+  // 设计
+  { name: 'Figma', url: 'https://www.figma.com', category: '设计' },
+  { name: 'Dribbble', url: 'https://dribbble.com', category: '设计' },
+  { name: 'Behance', url: 'https://www.behance.net', category: '设计' },
+
+  // AI工具
+  { name: 'ChatGPT', url: 'https://chat.openai.com', category: 'AI' },
+  { name: 'Claude', url: 'https://claude.ai', category: 'AI' },
+  { name: 'Midjourney', url: 'https://www.midjourney.com', category: 'AI' },
+
+  // 社交媒体
+  { name: 'Twitter', url: 'https://twitter.com', category: '社交' },
+  { name: 'Reddit', url: 'https://www.reddit.com', category: '社交' },
+  { name: 'YouTube', url: 'https://www.youtube.com', category: '社交' },
+
+  // 工具
+  { name: 'Google', url: 'https://www.google.com', category: '工具' },
+  { name: 'Gmail', url: 'https://mail.google.com', category: '工具' },
+  { name: 'Notion', url: 'https://www.notion.so', category: '工具' },
+  { name: 'Trello', url: 'https://trello.com', category: '工具' }
+]
+
 const websites = ref<Website[]>([])
 const showAddDialog = ref(false)
 const editingWebsite = ref<Website | null>(null)
-const isEditMode = ref(false) // 编辑模式
 const isLoading = ref(false) // 加载状态
 const showDeleteDialog = ref(false) // 删除确认对话框
 const deletingWebsite = ref<Website | null>(null) // 待删除的网站
@@ -43,13 +79,26 @@ const selectedCategory = ref<string>('all')
 // 加载网站列表
 const loadWebsites = async (): Promise<void> => {
   try {
-    // 内置插件使用 localStorage 而不是 unihub.db
     const data = localStorage.getItem('web-navigator-sites')
-    if (data) {
+    if (!data) {
+      // 首次使用，加载预置网站
+      websites.value = DEFAULT_WEBSITES.map((site, index) => ({
+        ...site,
+        id: `default-${index}`,
+        addedAt: Date.now() - (DEFAULT_WEBSITES.length - index) * 1000
+      }))
+      await saveWebsites()
+    } else {
       websites.value = JSON.parse(data) as Website[]
     }
   } catch (error) {
     console.error('加载网站列表失败:', error)
+    // 出错时也加载预置网站
+    websites.value = DEFAULT_WEBSITES.map((site, index) => ({
+      ...site,
+      id: `default-${index}`,
+      addedAt: Date.now() - (DEFAULT_WEBSITES.length - index) * 1000
+    }))
   }
 }
 
@@ -354,23 +403,7 @@ onMounted(async () => {
   updateData()
   // 异步获取所有 favicon
   fetchAllFavicons()
-
-  // 监听 ESC 键退出编辑模式
-  window.addEventListener('keydown', handleKeyDown)
 })
-
-// 清理事件监听
-import { onUnmounted } from 'vue'
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyDown)
-})
-
-// 处理键盘事件
-const handleKeyDown = (e: KeyboardEvent): void => {
-  if (e.key === 'Escape' && isEditMode.value) {
-    isEditMode.value = false
-  }
-}
 
 // 监听变化
 const handleWebsitesChange = (): void => {
@@ -407,28 +440,6 @@ watch([websites, searchQuery, selectedCategory], () => {
         </svg>
         添加网站
       </Button>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        :class="{ 'bg-blue-100 dark:bg-blue-900': isEditMode }"
-        @click="isEditMode = !isEditMode"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      </Button>
     </div>
 
     <!-- 分类筛选 -->
@@ -455,7 +466,7 @@ watch([websites, searchQuery, selectedCategory], () => {
     </div>
 
     <!-- 网站列表 -->
-    <div class="flex-1 overflow-auto p-6">
+    <div class="flex-1 overflow-auto p-8">
       <div v-if="filteredWebsites.length === 0" class="text-center py-12">
         <svg
           class="w-16 h-16 mx-auto text-gray-400 mb-4"
@@ -478,26 +489,47 @@ watch([websites, searchQuery, selectedCategory], () => {
 
       <div
         v-else
-        class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-3"
+        class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12 gap-6"
       >
-        <div
-          v-for="website in filteredWebsites"
-          :key="website.id"
-          class="group relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer aspect-square flex flex-col"
-          @click="!isEditMode && openWebsite(website.url)"
-        >
-          <!-- 编辑模式下的操作按钮 -->
-          <div
-            v-if="isEditMode"
-            class="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center gap-2 z-10"
-          >
-            <Button
-              size="icon"
-              variant="default"
-              class="h-8 w-8"
-              @click.stop="openEditDialog(website)"
+        <ContextMenu v-for="website in filteredWebsites" :key="website.id">
+          <ContextMenuTrigger>
+            <div
+              class="group relative flex flex-col items-center cursor-pointer"
+              @click="openWebsite(website.url)"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <!-- 网站图标 -->
+              <div
+                class="w-16 h-16 mb-2 rounded-2xl flex items-center justify-center overflow-hidden shadow-md transition-shadow group-hover:shadow-xl"
+                :class="
+                  getWebsiteIcon(website)
+                    ? 'bg-white dark:bg-gray-700'
+                    : `bg-gradient-to-br ${getGradientColor(website.name)}`
+                "
+              >
+                <img
+                  v-if="getWebsiteIcon(website)"
+                  :src="getWebsiteIcon(website)"
+                  :alt="website.name"
+                  class="w-10 h-10 object-contain"
+                  @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
+                />
+                <div v-else class="text-white text-2xl font-bold">
+                  {{ website.name.charAt(0).toUpperCase() }}
+                </div>
+              </div>
+
+              <!-- 网站名称 -->
+              <h3
+                class="font-medium text-xs text-gray-900 dark:text-gray-100 text-center line-clamp-2 w-full px-1"
+              >
+                {{ getWebsiteName(website) }}
+              </h3>
+            </div>
+          </ContextMenuTrigger>
+
+          <ContextMenuContent class="w-32 p-1">
+            <ContextMenuItem @click="openEditDialog(website)">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -505,14 +537,10 @@ watch([websites, searchQuery, selectedCategory], () => {
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
-            </Button>
-            <Button
-              size="icon"
-              variant="destructive"
-              class="h-8 w-8"
-              @click.stop="confirmDelete(website)"
-            >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              编辑
+            </ContextMenuItem>
+            <ContextMenuItem class="text-red-600 dark:text-red-400" @click="confirmDelete(website)">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -520,38 +548,10 @@ watch([websites, searchQuery, selectedCategory], () => {
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
-            </Button>
-          </div>
-
-          <!-- 网站内容 -->
-          <div class="flex-1 flex flex-col items-center justify-center text-center p-3">
-            <!-- 网站图标 -->
-            <div
-              class="w-12 h-12 mb-2 rounded-lg flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0"
-              :class="
-                getWebsiteIcon(website)
-                  ? 'bg-white dark:bg-gray-700'
-                  : `bg-gradient-to-br ${getGradientColor(website.name)}`
-              "
-            >
-              <img
-                v-if="getWebsiteIcon(website)"
-                :src="getWebsiteIcon(website)"
-                :alt="website.name"
-                class="w-full h-full object-cover"
-                @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
-              />
-              <div v-else class="text-white text-lg font-bold">
-                {{ website.name.charAt(0).toUpperCase() }}
-              </div>
-            </div>
-
-            <!-- 网站名称 -->
-            <h3 class="font-medium text-xs text-gray-900 dark:text-gray-100 line-clamp-2 w-full">
-              {{ getWebsiteName(website) }}
-            </h3>
-          </div>
-        </div>
+              删除
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       </div>
     </div>
 
