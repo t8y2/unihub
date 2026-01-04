@@ -396,6 +396,18 @@ watch([websites, searchQuery, selectedCategory], () => {
         <Input v-model="searchQuery" placeholder="搜索网站..." class="h-9" />
       </div>
 
+      <Button @click="openAddDialog">
+        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        添加网站
+      </Button>
+
       <Button
         variant="ghost"
         size="icon"
@@ -416,18 +428,6 @@ watch([websites, searchQuery, selectedCategory], () => {
             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
           />
         </svg>
-      </Button>
-
-      <Button @click="openAddDialog">
-        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        添加网站
       </Button>
     </div>
 

@@ -371,6 +371,34 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
             <span v-show="!sidebarCollapsed" class="whitespace-nowrap">网站导航</span>
           </button>
 
+          <!-- 插件管理按钮 -->
+          <button
+            :class="[
+              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+              tabs.some((t) => t.id === activeTabId && t.type === 'management')
+                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
+              sidebarCollapsed ? 'justify-center' : ''
+            ]"
+            :title="sidebarCollapsed ? '插件管理' : ''"
+            @click="openPluginManagement"
+          >
+            <svg
+              class="w-4 h-4 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              />
+            </svg>
+            <span v-show="!sidebarCollapsed" class="whitespace-nowrap">插件管理</span>
+          </button>
+
           <!-- 分隔线 -->
           <div v-show="!sidebarCollapsed" class="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
 
@@ -460,28 +488,6 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
 
       <!-- 底部按钮 -->
       <div class="p-2 border-t border-gray-200 dark:border-gray-700 space-y-1">
-        <button
-          :class="[
-            'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-            tabs.some((t) => t.id === activeTabId && t.type === 'management')
-              ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50',
-            sidebarCollapsed ? 'justify-center' : ''
-          ]"
-          :title="sidebarCollapsed ? '插件管理' : ''"
-          @click="openPluginManagement"
-        >
-          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-            />
-          </svg>
-          <span v-show="!sidebarCollapsed" class="whitespace-nowrap">插件管理</span>
-        </button>
-
         <!-- 底部工具栏 -->
         <div :class="['flex items-center gap-1 px-1', sidebarCollapsed ? 'flex-col' : '']">
           <!-- 主题切换 -->
