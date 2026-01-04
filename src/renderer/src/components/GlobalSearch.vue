@@ -12,11 +12,15 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   visible: boolean
+  standalone?: boolean // 是否为独立窗口模式
 }>()
 
 const query = ref('')
 const selectedIndex = ref(0)
 const searchInput = ref<HTMLInputElement>()
+const resultRefs = ref<HTMLElement[]>([])
+const isScrolling = ref(false)
+let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
 interface SearchResult {
   id: string
@@ -142,8 +146,10 @@ watch(
         searchInput.value?.focus()
       }, 100)
       selectedIndex.value = 0
+      resultRefs.value = []
     } else {
       query.value = ''
+      resultRefs.value = []
     }
   }
 )
@@ -151,6 +157,31 @@ watch(
 // 监听搜索结果变化，重置选中索引
 watch(searchResults, () => {
   selectedIndex.value = 0
+})
+
+// 监听选中索引变化，滚动到可见区域
+watch(selectedIndex, (newIndex, oldIndex) => {
+  const element = resultRefs.value[newIndex]
+  if (element) {
+    // 标记正在滚动
+    isScrolling.value = true
+
+    // 清除之前的定时器
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
+
+    // 根据滚动方向决定对齐方式
+    // 往下滚（newIndex > oldIndex）：对齐到底部
+    // 往上滚（newIndex < oldIndex）：对齐到顶部
+    const block = newIndex > oldIndex ? 'end' : 'start'
+    element.scrollIntoView({ block, behavior: 'auto' })
+
+    // 滚动结束后恢复鼠标悬停
+    scrollTimeout = setTimeout(() => {
+      isScrolling.value = false
+    }, 100)
+  }
 })
 
 // 键盘导航
@@ -174,7 +205,13 @@ const handleKeyDown = (e: KeyboardEvent): void => {
       break
     case 'Escape':
       e.preventDefault()
-      emit('close')
+      // 独立模式：直接关闭搜索窗口
+      // 浮层模式：触发 close 事件
+      if (props.standalone) {
+        window.api.search.close()
+      } else {
+        emit('close')
+      }
       break
   }
 }
@@ -184,17 +221,28 @@ const selectResult = (result: SearchResult): void => {
   emit('close')
 }
 
+const handleMouseEnter = (index: number): void => {
+  // 只有在非滚动状态下才响应鼠标悬停
+  if (!isScrolling.value) {
+    selectedIndex.value = index
+  }
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
+  if (scrollTimeout) {
+    clearTimeout(scrollTimeout)
+  }
 })
 </script>
 
 <template>
-  <Teleport to="body">
+  <!-- 浮层模式 -->
+  <Teleport v-if="!standalone" to="body">
     <Transition name="search-fade">
       <div
         v-if="visible"
@@ -254,6 +302,11 @@ onUnmounted(() => {
             <div
               v-for="(result, index) in searchResults"
               :key="result.id"
+              :ref="
+                (el) => {
+                  if (el) resultRefs[index] = el as HTMLElement
+                }
+              "
               :class="[
                 'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
                 index === selectedIndex
@@ -261,7 +314,7 @@ onUnmounted(() => {
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
               ]"
               @click="selectResult(result)"
-              @mouseenter="selectedIndex = index"
+              @mouseenter="handleMouseEnter(index)"
             >
               <!-- 图标 -->
               <div
@@ -342,6 +395,148 @@ onUnmounted(() => {
       </div>
     </Transition>
   </Teleport>
+
+  <!-- 独立窗口模式 -->
+  <div v-else-if="visible" class="w-full h-full flex flex-col bg-white dark:bg-gray-800">
+    <!-- 搜索框 - 固定 -->
+    <div
+      class="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700"
+    >
+      <svg
+        class="w-5 h-5 text-gray-400 flex-shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      <input
+        ref="searchInput"
+        v-model="query"
+        type="text"
+        placeholder="搜索插件（支持拼音）..."
+        class="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400"
+      />
+      <Kbd>ESC</Kbd>
+    </div>
+
+    <!-- 搜索结果 -->
+    <div class="flex-1 overflow-y-auto">
+      <div v-if="searchResults.length === 0" class="px-4 py-8 text-center">
+        <svg
+          class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p class="text-sm text-gray-500 dark:text-gray-400">未找到匹配的插件</p>
+      </div>
+
+      <div
+        v-for="(result, index) in searchResults"
+        :key="result.id"
+        :ref="
+          (el) => {
+            if (el) resultRefs[index] = el as HTMLElement
+          }
+        "
+        :class="[
+          'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+          index === selectedIndex
+            ? 'bg-blue-50 dark:bg-blue-900/20'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+        ]"
+        @click="selectResult(result)"
+        @mouseenter="handleMouseEnter(index)"
+      >
+        <!-- 图标 -->
+        <div
+          class="w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white flex-shrink-0"
+        >
+          <svg
+            v-if="result.icon.startsWith('M')"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              :d="result.icon"
+            />
+          </svg>
+          <span v-else class="text-xl">{{ result.icon }}</span>
+        </div>
+
+        <!-- 信息 -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              {{ result.name }}
+            </h3>
+            <span
+              class="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
+            >
+              {{ CATEGORY_NAMES[result.category] || result.category }}
+            </span>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+            {{ result.description }}
+          </p>
+          <div v-if="result.keywords.length > 0" class="flex gap-1 mt-1 flex-wrap">
+            <span
+              v-for="keyword in result.keywords.slice(0, 3)"
+              :key="keyword"
+              class="px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded"
+            >
+              {{ keyword }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 快捷键提示 -->
+        <div v-if="index === selectedIndex" class="flex-shrink-0">
+          <Kbd>↵</Kbd>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部提示 -->
+    <div
+      class="flex items-center justify-between px-4 py-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700"
+    >
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-1">
+          <Kbd>↑</Kbd>
+          <Kbd>↓</Kbd>
+          导航
+        </span>
+        <span class="flex items-center gap-1">
+          <Kbd>↵</Kbd>
+          选择
+        </span>
+        <span class="flex items-center gap-1">
+          <Kbd>ESC</Kbd>
+          关闭
+        </span>
+      </div>
+      <span>{{ searchResults.length }} 个结果</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>

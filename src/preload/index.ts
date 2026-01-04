@@ -76,6 +76,10 @@ const api = {
     update: (partial: Record<string, unknown>) => ipcRenderer.invoke('settings:update', partial),
     reset: () => ipcRenderer.invoke('settings:reset')
   },
+  search: {
+    openPlugin: (pluginId: string) => ipcRenderer.invoke('search:open-plugin', pluginId),
+    close: () => ipcRenderer.invoke('search:close')
+  },
   db: {
     addFavorite: (pluginId: string) => ipcRenderer.invoke('db:addFavorite', pluginId),
     removeFavorite: (pluginId: string) => ipcRenderer.invoke('db:removeFavorite', pluginId),

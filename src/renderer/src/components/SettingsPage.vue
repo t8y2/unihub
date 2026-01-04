@@ -3,6 +3,17 @@ import { ref, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import { Kbd } from '@/components/ui/kbd'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog'
+import {
   SETTINGS_TABS,
   SHORTCUT_LABELS,
   BUILTIN_SHORTCUTS,
@@ -101,7 +112,10 @@ const handleKeyDown = (e: KeyboardEvent): void => {
   const key = e.key
   if (!EXCLUDED_KEYS.includes(key)) {
     // 转换特殊键名
-    keys.push(KEYBOARD_KEY_MAP[key] || key.toUpperCase())
+    const mappedKey = KEYBOARD_KEY_MAP[key] || key.toUpperCase()
+    if (mappedKey) {
+      keys.push(mappedKey)
+    }
   }
 
   recordedKeys.value = keys
@@ -131,17 +145,17 @@ const cancelRecording = (): void => {
 }
 
 // 重置设置
+const showResetDialog = ref(false)
 const resetSettings = async (): Promise<void> => {
-  if (confirm('确定要重置所有设置吗？')) {
-    try {
-      console.warn('重置所有设置')
-      await window.api.settings.reset()
-      await loadSettings()
-      toast.success('设置已重置')
-    } catch (error) {
-      console.error('重置设置失败', error)
-      toast.error('重置设置失败')
-    }
+  try {
+    console.warn('重置所有设置')
+    await window.api.settings.reset()
+    await loadSettings()
+    toast.success('设置已重置')
+    showResetDialog.value = false
+  } catch (error) {
+    console.error('重置设置失败', error)
+    toast.error('重置设置失败')
   }
 }
 
@@ -279,12 +293,27 @@ const exportSystemInfo = (): void => {
                   >
                     清除最近访问记录
                   </button>
-                  <button
-                    class="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/70 transition-colors ml-3"
-                    @click="resetSettings"
-                  >
-                    重置所有设置
-                  </button>
+                  <AlertDialog v-model:open="showResetDialog">
+                    <AlertDialogTrigger as-child>
+                      <button
+                        class="px-3 py-2 text-sm bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 rounded-md hover:bg-red-200 dark:hover:bg-red-900/70 transition-colors ml-3"
+                      >
+                        重置所有设置
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认重置设置</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          此操作将重置所有设置为默认值，包括快捷键、主题等配置。此操作无法撤销。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction @click="resetSettings">确认重置</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </div>

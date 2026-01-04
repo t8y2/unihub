@@ -2,10 +2,15 @@ import './style.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'
+import SearchWindow from './pages/SearchWindow.vue'
 import { initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 
-const app = createApp(App)
+// 根据 hash 决定加载哪个组件
+const hash = window.location.hash.slice(1) // 移除 #
+const isSearchWindow = hash === '/search'
+
+const app = createApp(isSearchWindow ? SearchWindow : App)
 
 // 初始化插件系统
 initPlugins()

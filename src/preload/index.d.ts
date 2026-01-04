@@ -61,6 +61,10 @@ declare global {
         update: (partial: Record<string, unknown>) => Promise<{ success: boolean }>
         reset: () => Promise<{ success: boolean }>
       }
+      search: {
+        openPlugin: (pluginId: string) => Promise<{ success: boolean }>
+        close: () => Promise<{ success: boolean }>
+      }
       db: {
         addFavorite: (pluginId: string) => Promise<{ success: boolean }>
         removeFavorite: (pluginId: string) => Promise<{ success: boolean }>

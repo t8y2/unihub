@@ -11,6 +11,7 @@ import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
 import { settingsManager } from './settings-manager'
 import { dbManager } from './db-manager'
+import { searchWindowManager } from './search-window-manager'
 import { pathToFileURL } from 'url'
 import { createLogger } from '../shared/logger'
 
@@ -65,6 +66,7 @@ function createWindow(): void {
     if (mainWindow) {
       webContentsViewManager.setMainWindow(mainWindow)
       shortcutManager.setMainWindow(mainWindow)
+      searchWindowManager.setMainWindow(mainWindow)
     }
 
     // 注册全局快捷键
@@ -155,6 +157,8 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   // 清理快捷键
   shortcutManager.cleanup()
+  // 清理搜索窗口
+  searchWindowManager.destroy()
 
   if (process.platform !== 'darwin') {
     app.quit()
@@ -280,6 +284,21 @@ function setupIpcHandlers(): void {
         })
       }
 
+      if (key === 'globalSearch' && oldShortcuts.globalSearch !== value) {
+        shortcutManager.unregister(oldShortcuts.globalSearch)
+        // 注册新快捷键
+        shortcutManager.register('system', value, () => {
+          if (mainWindow) {
+            if (!mainWindow.isVisible()) {
+              mainWindow.show()
+              mainWindow.focus()
+            }
+            // 通知渲染进程打开全局搜索
+            mainWindow.webContents.send('open-global-search')
+          }
+        })
+      }
+
       settingsManager.setShortcut(key, value)
       return { success: true }
     }
@@ -338,6 +357,17 @@ function setupIpcHandlers(): void {
     mainWindow?.close()
   })
 
+  // 搜索窗口相关
+  ipcMain.handle('search:open-plugin', (_, pluginId: string) => {
+    searchWindowManager.openPluginAndHide(pluginId)
+    return { success: true }
+  })
+
+  ipcMain.handle('search:close', () => {
+    searchWindowManager.hideSearchWindow()
+    return { success: true }
+  })
+
   // 延迟初始化 API（不阻塞启动）
   setImmediate(() => {
     logger.info(
@@ -356,9 +386,54 @@ function registerGlobalShortcuts(): void {
   // 延迟注册快捷键，避免阻塞窗口显示
   setImmediate(() => {
     // 注册显示/隐藏窗口快捷键
-    shortcutManager.register('system', shortcuts.toggleWindow, () => {
+    const toggleSuccess = shortcutManager.register('system', shortcuts.toggleWindow, () => {
       shortcutManager.toggleMainWindow()
     })
-    logger.info({ shortcut: shortcuts.toggleWindow }, '✅ 已注册全局快捷键')
+    logger.info(
+      { shortcut: shortcuts.toggleWindow, success: toggleSuccess },
+      '✅ 已注册全局快捷键: 显示/隐藏窗口'
+    )
+
+    // 注册全局搜索快捷键
+    logger.info({ shortcut: shortcuts.globalSearch }, '🔄 正在注册全局搜索快捷键...')
+    const searchSuccess = shortcutManager.register('system', shortcuts.globalSearch, () => {
+      logger.info('🎯 全局搜索快捷键被触发')
+
+      // 检查主窗口是否存在且未销毁
+      if (!mainWindow || mainWindow.isDestroyed()) {
+        logger.warn('⚠️ 主窗口已销毁，无法响应快捷键')
+        return
+      }
+
+      // 检查主窗口是否可见且聚焦
+      if (mainWindow.isVisible() && mainWindow.isFocused()) {
+        // 主窗口可见且聚焦，使用应用内搜索
+        logger.info('📱 主窗口可见，使用应用内搜索')
+        mainWindow.webContents.send('open-global-search')
+      } else {
+        // 主窗口隐藏或未聚焦，显示独立搜索窗口
+        logger.info('🔍 主窗口隐藏，显示搜索窗口')
+        searchWindowManager.showSearchWindow()
+      }
+    })
+
+    if (searchSuccess) {
+      logger.info({ shortcut: shortcuts.globalSearch }, '✅ 已注册全局快捷键: 全局搜索')
+    } else {
+      logger.warn(
+        { shortcut: shortcuts.globalSearch },
+        '❌ 注册全局搜索快捷键失败，可能被系统占用。请在设置中更换快捷键。'
+      )
+      // 通知渲染进程快捷键注册失败
+      if (mainWindow) {
+        mainWindow.webContents.once('did-finish-load', () => {
+          mainWindow?.webContents.send(
+            'shortcut-register-failed',
+            'globalSearch',
+            shortcuts.globalSearch
+          )
+        })
+      }
+    }
   })
 }

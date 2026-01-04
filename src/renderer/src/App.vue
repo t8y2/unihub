@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { pluginRegistry, initPlugins } from './plugins'
 import { pluginInstaller } from './plugins/marketplace/installer'
 import HomePage from './components/HomePage.vue'
@@ -21,6 +21,7 @@ const isDark = ref(false)
 const sidebarCollapsed = ref(false)
 const showGlobalSearch = ref(false)
 const expandedCategories = ref(new Set(DEFAULT_CATEGORIES))
+const globalSearchShortcut = ref('⌘K')
 
 // 使用插件数据 composable
 const { recentPlugins, favoritePlugins, loadAll, addRecent, toggleFavorite } = usePluginData()
@@ -54,6 +55,15 @@ const initializeApp = async (): Promise<void> => {
   // 恢复侧边栏状态
   sidebarCollapsed.value = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED) === 'true'
 
+  // 加载快捷键设置
+  try {
+    const shortcuts = await window.api.settings.getShortcuts()
+    globalSearchShortcut.value = shortcuts.globalSearch || '⌘K'
+    console.log('已加载全局搜索快捷键:', globalSearchShortcut.value)
+  } catch (error) {
+    console.error('加载快捷键设置失败:', error)
+  }
+
   // 加载插件数据
   await loadAll()
 }
@@ -69,7 +79,92 @@ onMounted(() => {
       closeTab(activeTabId.value)
     }
   })
+
+  // 监听全局搜索快捷键
+  window.electron.ipcRenderer.on('open-global-search', () => {
+    // 如果侧边栏展开，先收起
+    if (!sidebarCollapsed.value) {
+      sidebarCollapsed.value = true
+    }
+    showGlobalSearch.value = true
+  })
+
+  // 监听从搜索窗口打开插件
+  window.electron.ipcRenderer.on('open-plugin-from-search', (_event: unknown, pluginId: string) => {
+    // 收起侧边栏
+    sidebarCollapsed.value = true
+    // 打开插件
+    openTab(pluginId)
+  })
+
+  // 监听快捷键注册失败
+  window.electron.ipcRenderer.on(
+    'shortcut-register-failed',
+    (_event: unknown, key: string, shortcut: string) => {
+      console.warn(`快捷键 ${shortcut} 注册失败，可能被系统占用`)
+      // 可以在这里显示一个提示
+    }
+  )
+
+  // 监听全局搜索快捷键
+  window.addEventListener('keydown', handleGlobalSearchShortcut)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalSearchShortcut)
+})
+
+// 处理全局搜索快捷键
+const handleGlobalSearchShortcut = (e: KeyboardEvent): void => {
+  if (!shouldHandleShortcut()) return
+
+  const shortcut = globalSearchShortcut.value
+  if (!shortcut) return
+
+  // 解析快捷键
+  const parts = shortcut.split('+')
+  const hasCommand = parts.includes('Command') && e.metaKey
+  const hasCtrl = parts.includes('Ctrl') && e.ctrlKey
+  const hasAlt = parts.includes('Alt') && e.altKey
+  const hasShift = parts.includes('Shift') && e.shiftKey
+
+  // 获取主键
+  const mainKey = parts.find((p) => !['Command', 'Ctrl', 'Alt', 'Shift'].includes(p))
+  if (!mainKey) return
+
+  // 检查是否匹配
+  const keyMatches =
+    mainKey === 'Space'
+      ? e.key === ' ' || e.code === 'Space' || e.keyCode === 32
+      : e.key.toUpperCase() === mainKey.toUpperCase() || e.key === mainKey
+
+  const modifiersMatch =
+    (parts.includes('Command') ? hasCommand : !e.metaKey) &&
+    (parts.includes('Ctrl') ? hasCtrl : !e.ctrlKey) &&
+    (parts.includes('Alt') ? hasAlt : !e.altKey) &&
+    (parts.includes('Shift') ? hasShift : !e.shiftKey)
+
+  // 调试日志
+  console.log('快捷键检测:', {
+    shortcut,
+    parts,
+    mainKey,
+    keyMatches,
+    modifiersMatch,
+    event: {
+      key: e.key,
+      metaKey: e.metaKey,
+      ctrlKey: e.ctrlKey,
+      altKey: e.altKey,
+      shiftKey: e.shiftKey
+    }
+  })
+
+  if (keyMatches && modifiersMatch) {
+    e.preventDefault()
+    showGlobalSearch.value = true
+  }
+}
 
 // 检查是否应该处理快捷键
 const shouldHandleShortcut = (): boolean => {
@@ -89,9 +184,7 @@ useKeyboard(
         : closeTab(activeTabId.value)
     },
     n: () => addHomeTab(),
-    b: () => toggleSidebar(),
-    k: () => (showGlobalSearch.value = true),
-    p: () => (showGlobalSearch.value = true)
+    b: () => toggleSidebar()
   },
   shouldHandleShortcut
 )
@@ -577,7 +670,7 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
           <!-- 全局搜索按钮 -->
           <button
             class="flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors"
-            title="搜索插件 (⌘K)"
+            :title="`搜索插件 (${globalSearchShortcut})`"
             @click="showGlobalSearch = true"
           >
             <svg
@@ -594,7 +687,7 @@ const addHomeTab = (): void => createOrActivateTab('plugin', 'home', '主页')
               />
             </svg>
             <span class="text-xs text-gray-600 dark:text-gray-400">搜索</span>
-            <Kbd>⌘K</Kbd>
+            <Kbd>{{ globalSearchShortcut }}</Kbd>
           </button>
         </div>
 
