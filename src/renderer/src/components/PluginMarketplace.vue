@@ -515,7 +515,7 @@ onUnmounted(() => {
             <!-- 安装/已安装按钮 - App Store 风格 -->
             <button
               v-if="!isPluginInstalled(plugin.id)"
-              class="px-5 py-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50 whitespace-nowrap"
+              class="px-4 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50 whitespace-nowrap"
               :disabled="installing"
               @click.stop="installPlugin(plugin)"
             >
@@ -523,7 +523,7 @@ onUnmounted(() => {
             </button>
             <button
               v-else
-              class="px-5 py-1.5 text-sm font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full cursor-default whitespace-nowrap"
+              class="px-4 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full cursor-default whitespace-nowrap"
               disabled
             >
               已安装
