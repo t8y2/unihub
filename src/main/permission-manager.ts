@@ -32,7 +32,7 @@ export class PermissionManager {
     ) as Permission[]
 
     this.permissions.set(pluginId, new Set(validPermissions))
-    logger.info({ pluginId, permissions: validPermissions }, '✅ 已注册插件权限')
+    logger.info({ pluginId, permissions: validPermissions }, '已注册插件权限')
   }
 
   /**
@@ -46,13 +46,13 @@ export class PermissionManager {
 
     const pluginPermissions = this.permissions.get(pluginId)
     if (!pluginPermissions) {
-      logger.warn({ pluginId }, '⚠️ 插件未注册权限')
+      logger.warn({ pluginId }, '⚠插件未注册权限')
       return false
     }
 
     const has = pluginPermissions.has(permission)
     if (!has) {
-      logger.warn({ pluginId, permission }, '⚠️ 插件缺少权限')
+      logger.warn({ pluginId, permission }, '⚠插件缺少权限')
     }
     return has
   }
@@ -96,7 +96,7 @@ export class PermissionManager {
    */
   unregisterPlugin(pluginId: string): void {
     this.permissions.delete(pluginId)
-    logger.info({ pluginId }, '✅ 已移除插件权限')
+    logger.info({ pluginId }, '已移除插件权限')
   }
 
   /**

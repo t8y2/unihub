@@ -32,7 +32,7 @@ export class ShortcutManager {
     try {
       // 检查快捷键是否已被占用
       if (this.shortcuts.has(accelerator)) {
-        logger.warn({ accelerator }, '⚠️ 快捷键已被占用')
+        logger.warn({ accelerator }, '⚠快捷键已被占用')
         return false
       }
 
@@ -41,14 +41,14 @@ export class ShortcutManager {
 
       if (success) {
         this.shortcuts.set(accelerator, { pluginId, accelerator, callback })
-        logger.info({ accelerator, pluginId }, '✅ 已注册快捷键')
+        logger.info({ accelerator, pluginId }, '已注册快捷键')
         return true
       } else {
-        logger.warn({ accelerator }, '⚠️ 注册快捷键失败')
+        logger.warn({ accelerator }, '⚠注册快捷键失败')
         return false
       }
     } catch (error) {
-      logger.error({ err: error, accelerator }, '❌ 注册快捷键失败')
+      logger.error({ err: error, accelerator }, '注册快捷键失败')
       return false
     }
   }
@@ -60,16 +60,16 @@ export class ShortcutManager {
     try {
       const handler = this.shortcuts.get(accelerator)
       if (!handler) {
-        logger.warn({ accelerator }, '⚠️ 快捷键未注册')
+        logger.warn({ accelerator }, '⚠快捷键未注册')
         return false
       }
 
       globalShortcut.unregister(accelerator)
       this.shortcuts.delete(accelerator)
-      logger.info({ accelerator }, '✅ 已取消注册快捷键')
+      logger.info({ accelerator }, '已取消注册快捷键')
       return true
     } catch (error) {
-      logger.error({ err: error, accelerator }, '❌ 取消注册快捷键失败')
+      logger.error({ err: error, accelerator }, '取消注册快捷键失败')
       return false
     }
   }
@@ -90,7 +90,7 @@ export class ShortcutManager {
       this.unregister(accelerator)
     })
 
-    logger.info({ pluginId }, '✅ 已取消插件的所有快捷键')
+    logger.info({ pluginId }, '已取消插件的所有快捷键')
   }
 
   /**
@@ -131,7 +131,7 @@ export class ShortcutManager {
   cleanup(): void {
     globalShortcut.unregisterAll()
     this.shortcuts.clear()
-    logger.info('✅ 已清理所有快捷键')
+    logger.info('已清理所有快捷键')
   }
 
   /**
@@ -142,7 +142,7 @@ export class ShortcutManager {
    */
   toggleMainWindow(): void {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      logger.warn('⚠️ 主窗口已销毁，无法切换显示状态')
+      logger.warn('⚠主窗口已销毁，无法切换显示状态')
       return
     }
 

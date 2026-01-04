@@ -307,7 +307,7 @@ export class PluginManager {
         permissionManager.registerPlugin(plugin.id, plugin.metadata.permissions)
         logger.info(
           { pluginName: plugin.metadata.name, permissions: plugin.metadata.permissions },
-          '✅ 已加载插件权限'
+          '已加载插件权限'
         )
       }
     })

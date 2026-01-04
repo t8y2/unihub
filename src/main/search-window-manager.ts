@@ -90,7 +90,7 @@ export class SearchWindowManager {
       }, 100)
     })
 
-    logger.info('✅ 搜索窗口已创建')
+    logger.info('搜索窗口已创建')
   }
 
   /**
@@ -99,7 +99,7 @@ export class SearchWindowManager {
   showSearchWindow(): void {
     // 检查主窗口是否已销毁
     if (this.mainWindow && this.mainWindow.isDestroyed()) {
-      logger.error('❌ 主窗口已销毁，无法显示搜索窗口')
+      logger.error('主窗口已销毁，无法显示搜索窗口')
       return
     }
 
@@ -107,13 +107,13 @@ export class SearchWindowManager {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
       const wasFocused = this.mainWindow.isFocused()
       const wasVisible = this.mainWindow.isVisible()
-      logger.info({ wasFocused, wasVisible }, '📝 记录主窗口状态')
+      logger.info({ wasFocused, wasVisible }, '记录主窗口状态')
       this.mainWindowWasFocused = wasFocused
 
       // 如果主窗口可见但不聚焦，先隐藏它，防止搜索窗口关闭时被激活
       if (wasVisible && !wasFocused) {
         this.mainWindow.hide()
-        logger.info('🙈 主窗口可见但未聚焦，先隐藏')
+        logger.info('主窗口可见但未聚焦，先隐藏')
       }
     }
 
@@ -126,7 +126,7 @@ export class SearchWindowManager {
     this.searchWindow.focus()
     // 通知渲染进程聚焦搜索框
     this.searchWindow.webContents.send('focus-search-input')
-    logger.info('👁️ 搜索窗口已显示')
+    logger.info('👁搜索窗口已显示')
   }
 
   /**
@@ -140,25 +140,25 @@ export class SearchWindowManager {
           shouldShow: this.shouldShowMainWindow,
           isClosingByUser: this.isClosingByUser
         },
-        '📊 隐藏搜索窗口前的状态'
+        '隐藏搜索窗口前的状态'
       )
 
       this.searchWindow.hide()
-      logger.info('🙈 搜索窗口已隐藏')
+      logger.info('搜索窗口已隐藏')
 
       // 只有在需要打开插件时才显示主窗口
       if (this.shouldShowMainWindow && this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.show()
         this.mainWindow.focus()
-        logger.info('👁️ 显示主窗口（打开插件）')
+        logger.info('👁显示主窗口（打开插件）')
       } else if (this.mainWindowWasFocused && this.mainWindow && !this.mainWindow.isDestroyed()) {
         // 如果主窗口之前是聚焦的，恢复显示
         this.mainWindow.show()
         this.mainWindow.focus()
-        logger.info('👁️ 恢复主窗口（之前是聚焦状态）')
+        logger.info('👁恢复主窗口（之前是聚焦状态）')
       } else {
         // 其他情况：不显示主窗口
-        logger.info('🚫 不显示主窗口')
+        logger.info('不显示主窗口')
       }
 
       // 重置标志
@@ -174,7 +174,7 @@ export class SearchWindowManager {
   openPluginAndHide(pluginId: string): void {
     // 检查主窗口是否已销毁
     if (!this.mainWindow || this.mainWindow.isDestroyed()) {
-      logger.error('❌ 主窗口已销毁，无法打开插件')
+      logger.error('主窗口已销毁，无法打开插件')
       this.hideSearchWindow()
       return
     }
@@ -192,7 +192,7 @@ export class SearchWindowManager {
       }
     }, 100)
 
-    logger.info({ pluginId }, '🚀 从搜索窗口打开插件')
+    logger.info({ pluginId }, '从搜索窗口打开插件')
   }
 
   /**
@@ -202,7 +202,7 @@ export class SearchWindowManager {
     if (this.searchWindow && !this.searchWindow.isDestroyed()) {
       this.searchWindow.destroy()
       this.searchWindow = null
-      logger.info('🗑️ 搜索窗口已销毁')
+      logger.info('🗑搜索窗口已销毁')
     }
   }
 }

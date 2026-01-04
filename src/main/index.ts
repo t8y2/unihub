@@ -82,10 +82,10 @@ function createWindow(): void {
       // macOS: 如果不是真正退出，阻止窗口关闭，改为隐藏
       event.preventDefault()
       mainWindow?.hide()
-      logger.info('🙈 窗口已隐藏（macOS）')
+      logger.info('窗口已隐藏（macOS）')
     } else {
       // Windows/Linux 或 macOS 真正退出时：允许关闭
-      logger.info('👋 窗口正在关闭')
+      logger.info('窗口正在关闭')
     }
   })
 
@@ -130,14 +130,14 @@ app.whenReady().then(async () => {
 
       // 检查文件是否存在
       if (!existsSync(fullPath)) {
-        logger.error({ path: fullPath }, '❌ 插件文件不存在')
+        logger.error({ path: fullPath }, '插件文件不存在')
         return new Response('File not found', { status: 404 })
       }
 
       // 使用 net.fetch 加载本地文件
       return net.fetch(pathToFileURL(fullPath).href)
     } catch (error) {
-      logger.error({ err: error }, '❌ 加载插件资源失败')
+      logger.error({ err: error }, '加载插件资源失败')
       return new Response('Internal error', { status: 500 })
     }
   })
@@ -150,7 +150,7 @@ app.whenReady().then(async () => {
 
   // 异步初始化插件系统（不阻塞窗口显示）
   setImmediate(() => {
-    logger.info('🔄 开始异步初始化插件系统...')
+    logger.info('开始异步初始化插件系统...')
 
     // 预热插件缓存（异步）
     pluginManager.warmupCache()
@@ -158,7 +158,7 @@ app.whenReady().then(async () => {
     // 初始化已安装插件的权限（异步）
     pluginManager.initializePermissions()
 
-    logger.info('✅ 插件系统初始化完成')
+    logger.info('插件系统初始化完成')
   })
 
   app.on('browser-window-created', (_, window) => {
@@ -174,7 +174,7 @@ app.whenReady().then(async () => {
       // 窗口存在但隐藏，显示它
       mainWindow.show()
       mainWindow.focus()
-      logger.info('👁️ 窗口已显示（通过 Dock）')
+      logger.info('👁窗口已显示（通过 Dock）')
     }
   })
 })
@@ -390,7 +390,7 @@ function setupIpcHandlers(): void {
     if (process.platform === 'darwin') {
       // macOS: 隐藏窗口而不是关闭
       mainWindow?.hide()
-      logger.info('🙈 窗口已隐藏（通过 IPC）')
+      logger.info('窗口已隐藏（通过 IPC）')
     } else {
       // Windows/Linux: 关闭窗口（会触发应用退出）
       mainWindow?.close()
@@ -412,7 +412,7 @@ function setupIpcHandlers(): void {
   setImmediate(() => {
     logger.info(
       { pluginAPI: pluginAPI ? 'OK' : 'FAIL', nodeAPI: nodeAPI ? 'OK' : 'FAIL' },
-      '✅ API 已初始化'
+      'API 已初始化'
     )
   })
 }
@@ -431,38 +431,38 @@ function registerGlobalShortcuts(): void {
     })
     logger.info(
       { shortcut: shortcuts.toggleWindow, success: toggleSuccess },
-      '✅ 已注册全局快捷键: 显示/隐藏窗口'
+      '已注册全局快捷键: 显示/隐藏窗口'
     )
 
     // 注册全局搜索快捷键
-    logger.info({ shortcut: shortcuts.globalSearch }, '🔄 正在注册全局搜索快捷键...')
+    logger.info({ shortcut: shortcuts.globalSearch }, '正在注册全局搜索快捷键...')
     const searchSuccess = shortcutManager.register('system', shortcuts.globalSearch, () => {
-      logger.info('🎯 全局搜索快捷键被触发')
+      logger.info('全局搜索快捷键被触发')
 
       // 检查主窗口是否存在且未销毁
       if (!mainWindow || mainWindow.isDestroyed()) {
-        logger.warn('⚠️ 主窗口已销毁，无法响应快捷键')
+        logger.warn('⚠主窗口已销毁，无法响应快捷键')
         return
       }
 
       // 检查主窗口是否可见且聚焦
       if (mainWindow.isVisible() && mainWindow.isFocused()) {
         // 主窗口可见且聚焦，使用应用内搜索
-        logger.info('📱 主窗口可见，使用应用内搜索')
+        logger.info('主窗口可见，使用应用内搜索')
         mainWindow.webContents.send('open-global-search')
       } else {
         // 主窗口隐藏或未聚焦，显示独立搜索窗口
-        logger.info('🔍 主窗口隐藏，显示搜索窗口')
+        logger.info('主窗口隐藏，显示搜索窗口')
         searchWindowManager.showSearchWindow()
       }
     })
 
     if (searchSuccess) {
-      logger.info({ shortcut: shortcuts.globalSearch }, '✅ 已注册全局快捷键: 全局搜索')
+      logger.info({ shortcut: shortcuts.globalSearch }, '已注册全局快捷键: 全局搜索')
     } else {
       logger.warn(
         { shortcut: shortcuts.globalSearch },
-        '❌ 注册全局搜索快捷键失败，可能被系统占用。请在设置中更换快捷键。'
+        '注册全局搜索快捷键失败，可能被系统占用。请在设置中更换快捷键。'
       )
       // 通知渲染进程快捷键注册失败
       if (mainWindow) {

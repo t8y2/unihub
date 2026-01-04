@@ -14,7 +14,7 @@ export class PluginDevServer {
    */
   registerDevPlugin(pluginId: string, devUrl: string, autoReload = true): void {
     this.devPlugins.set(pluginId, { url: devUrl, autoReload })
-    logger.info({ pluginId, devUrl }, '✅ 已注册开发模式插件')
+    logger.info({ pluginId, devUrl }, '已注册开发模式插件')
   }
 
   /**
@@ -22,7 +22,7 @@ export class PluginDevServer {
    */
   unregisterDevPlugin(pluginId: string): void {
     this.devPlugins.delete(pluginId)
-    logger.info({ pluginId }, '❌ 已取消开发模式插件')
+    logger.info({ pluginId }, '已取消开发模式插件')
   }
 
   /**

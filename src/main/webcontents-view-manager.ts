@@ -120,7 +120,7 @@ export class WebContentsViewManager {
       // 检查是否是 Cmd+W (Mac) 或 Ctrl+W (Windows/Linux)
       if (input.type === 'keyDown' && input.key === 'w' && (input.meta || input.control)) {
         event.preventDefault()
-        logger.info({ pluginId }, '🚫 阻止插件中的 Cmd+W 关闭窗口')
+        logger.info({ pluginId }, '阻止插件中的 Cmd+W 关闭窗口')
         // 通知主窗口的渲染进程处理关闭标签
         this.mainWindow?.webContents.send('handle-close-tab')
       }
@@ -152,7 +152,7 @@ export class WebContentsViewManager {
 
     // 获取最久未使用的插件 ID（队尾）
     const oldestPluginId = this.lruQueue[this.lruQueue.length - 1]
-    logger.info({ pluginId: oldestPluginId }, '🗑️ LRU 驱逐')
+    logger.info({ pluginId: oldestPluginId }, '🗑LRU 驱逐')
     this.removePluginView(oldestPluginId)
   }
 
