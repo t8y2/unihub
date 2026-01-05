@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { pluginRegistry } from '../plugins'
-import { searchEngine, type SearchResult } from '@/utils/search'
+import {
+  unifiedSearchEngine,
+  type UnifiedSearchResult,
+  type LocalApp
+} from '@/utils/unified-search'
 import { CATEGORY_NAMES } from '@/constants'
 import { Kbd } from '@/components/ui/kbd'
 import { PluginIcon } from '@/components/ui/plugin-icon'
+import LazyAppIcon from './LazyAppIcon.vue'
 
 const emit = defineEmits<{
   openPlugin: [pluginId: string]
+  openApp: [appPath: string]
   close: []
 }>()
 
@@ -21,12 +27,63 @@ const selectedIndex = ref(0)
 const searchInput = ref<HTMLInputElement>()
 const resultRefs = ref<HTMLElement[]>([])
 const isScrolling = ref(false)
+const localApps = ref<LocalApp[]>([])
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null
 
-// 搜索结果（使用优化的搜索引擎）
+// 加载本地应用列表（混合策略：快速加载 + 渐进式图标预加载）
+const loadApps = async (): Promise<void> => {
+  try {
+    // 第一步：快速加载应用列表（无图标）
+    const quickResult = await window.api.apps.listQuick()
+    if (quickResult.success && quickResult.data) {
+      // 转换为带有空图标的格式，兼容现有接口
+      const appsWithEmptyIcons = quickResult.data.map((app) => ({
+        ...app,
+        icon: undefined
+      }))
+
+      localApps.value = appsWithEmptyIcons
+      unifiedSearchEngine.buildAppIndex(appsWithEmptyIcons)
+      console.log(`[GlobalSearch] 快速加载 ${quickResult.data.length} 个应用（无图标）`)
+
+      // 第二步：异步预加载前20个应用的图标（用户最可能搜索的）
+      const topAppPaths = quickResult.data.slice(0, 20).map((app) => app.path)
+      if (topAppPaths.length > 0) {
+        setTimeout(async () => {
+          try {
+            const iconResult = await window.api.apps.preloadIcons(topAppPaths)
+            if (iconResult.success && iconResult.data) {
+              console.log(`[GlobalSearch] 预加载了 ${Object.keys(iconResult.data).length} 个图标`)
+            }
+          } catch (error) {
+            console.warn('[GlobalSearch] 预加载图标失败:', error)
+          }
+        }, 100) // 100ms 后开始预加载，不阻塞界面
+      }
+    }
+  } catch (error) {
+    console.error('[GlobalSearch] 加载应用列表失败:', error)
+    // 降级到完整加载
+    try {
+      const fullResult = await window.api.apps.list()
+      if (fullResult.success && fullResult.data) {
+        localApps.value = fullResult.data
+        unifiedSearchEngine.buildAppIndex(fullResult.data)
+        console.log(`[GlobalSearch] 降级到完整加载 ${fullResult.data.length} 个应用`)
+      }
+    } catch (fallbackError) {
+      console.error('[GlobalSearch] 降级加载也失败:', fallbackError)
+    }
+  }
+}
+
+// 搜索结果（使用统一搜索引擎）
 const searchResults = computed(() => {
   const plugins = pluginRegistry.getEnabled()
-  return searchEngine.search(query.value, plugins)
+  // 构建插件索引
+  unifiedSearchEngine.buildPluginIndex(plugins)
+  // 统一搜索
+  return unifiedSearchEngine.search(query.value, plugins)
 })
 
 // 监听 visible 变化，自动聚焦
@@ -137,8 +194,12 @@ const handleKeyDown = (e: KeyboardEvent): void => {
   }
 }
 
-const selectResult = (result: SearchResult): void => {
-  emit('openPlugin', result.id)
+const selectResult = (result: UnifiedSearchResult): void => {
+  if (result.type === 'plugin') {
+    emit('openPlugin', result.id)
+  } else if (result.type === 'app' && result.path) {
+    emit('openApp', result.path)
+  }
   emit('close')
 }
 
@@ -152,6 +213,8 @@ const handleMouseEnter = (index: number): void => {
 onMounted(() => {
   // 使用 capture 阶段捕获事件，确保优先处理
   window.addEventListener('keydown', handleKeyDown, true)
+  // 加载本地应用
+  loadApps()
 })
 
 onUnmounted(() => {
@@ -243,7 +306,13 @@ onUnmounted(() => {
               @mouseenter="handleMouseEnter(index)"
             >
               <!-- 图标 -->
-              <PluginIcon :icon="result.icon" size="md" />
+              <template v-if="result.type === 'app' && result.path">
+                <div class="flex-shrink-0">
+                  <!-- 懒加载图标 -->
+                  <LazyAppIcon :app-path="result.path" :app-name="result.name" />
+                </div>
+              </template>
+              <PluginIcon v-else :icon="result.icon" size="md" />
 
               <!-- 信息 -->
               <div class="flex-1 min-w-0">
@@ -252,9 +321,16 @@ onUnmounted(() => {
                     {{ result.name }}
                   </h3>
                   <span
+                    v-if="result.type === 'plugin'"
                     class="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
                   >
                     {{ CATEGORY_NAMES[result.category] || result.category }}
+                  </span>
+                  <span
+                    v-else-if="result.type === 'app'"
+                    class="px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 rounded"
+                  >
+                    应用
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
@@ -370,7 +446,13 @@ onUnmounted(() => {
         @mouseenter="handleMouseEnter(index)"
       >
         <!-- 图标 -->
-        <PluginIcon :icon="result.icon" size="md" />
+        <template v-if="result.type === 'app' && result.path">
+          <div class="flex-shrink-0">
+            <!-- 懒加载图标 -->
+            <LazyAppIcon :app-path="result.path" :app-name="result.name" />
+          </div>
+        </template>
+        <PluginIcon v-else :icon="result.icon" size="md" />
 
         <!-- 信息 -->
         <div class="flex-1 min-w-0">
@@ -379,9 +461,16 @@ onUnmounted(() => {
               {{ result.name }}
             </h3>
             <span
+              v-if="result.type === 'plugin'"
               class="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded"
             >
               {{ CATEGORY_NAMES[result.category] || result.category }}
+            </span>
+            <span
+              v-else-if="result.type === 'app'"
+              class="px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 rounded"
+            >
+              应用
             </span>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">

@@ -27,8 +27,12 @@ const message = ref('')
 const loadDevPlugins = async (): Promise<void> => {
   try {
     const result = await window.api.plugin.dev.list()
-    if (result.success) {
-      devPlugins.value = result.data
+    if (result.success && result.data) {
+      devPlugins.value = result.data.map((item) => ({
+        id: item.pluginId,
+        url: item.devUrl,
+        autoReload: item.autoReload
+      }))
     }
   } catch (error) {
     console.error('加载开发模式插件失败:', error)

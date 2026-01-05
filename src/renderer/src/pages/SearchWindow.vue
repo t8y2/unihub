@@ -9,6 +9,15 @@ const handleOpenPlugin = async (pluginId: string): Promise<void> => {
   await window.api.search.openPlugin(pluginId)
 }
 
+const handleOpenApp = async (appPath: string): Promise<void> => {
+  try {
+    await window.api.apps.open(appPath)
+    await window.api.search.close()
+  } catch (error) {
+    console.error('[SearchWindow] 打开应用失败:', error)
+  }
+}
+
 const handleClose = async (): Promise<void> => {
   await window.api.search.close()
 }
@@ -35,6 +44,7 @@ onMounted(() => {
       :visible="showSearch"
       :standalone="true"
       @open-plugin="handleOpenPlugin"
+      @open-app="handleOpenApp"
       @close="handleClose"
     />
   </div>

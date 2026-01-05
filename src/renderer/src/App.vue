@@ -155,15 +155,21 @@ onMounted(() => {
   })
 
   // 监听从搜索窗口打开插件
-  window.electron.ipcRenderer.on('open-plugin-from-search', (_event: unknown, pluginId: string) => {
-    // 打开插件
-    openTab(pluginId)
-  })
+  window.electron.ipcRenderer.on(
+    'open-plugin-from-search',
+    (_event: unknown, ...args: unknown[]) => {
+      const pluginId = args[0] as string
+      // 打开插件
+      openTab(pluginId)
+    }
+  )
 
   // 监听快捷键注册失败
   window.electron.ipcRenderer.on(
     'shortcut-register-failed',
-    (_event: unknown, _key: string, shortcut: string) => {
+    (_event: unknown, ...args: unknown[]) => {
+      // const _key = args[0] as string
+      const shortcut = args[1] as string
       console.warn(`快捷键 ${shortcut} 注册失败，可能被系统占用`)
       // 可以在这里显示一个提示
     }
@@ -297,6 +303,18 @@ const toggleTheme = (): void => {
 const toggleSidebar = (): void => {
   sidebarCollapsed.value = !sidebarCollapsed.value
   localStorage.setItem(STORAGE_KEYS.SIDEBAR_COLLAPSED, String(sidebarCollapsed.value))
+}
+
+// 打开本地应用
+const handleOpenApp = async (appPath: string): Promise<void> => {
+  try {
+    const result = await window.api.apps.open(appPath)
+    if (!result.success) {
+      console.error('打开应用失败:', result.error)
+    }
+  } catch (error) {
+    console.error('打开应用失败:', error)
+  }
 }
 
 // 标签管理
@@ -467,6 +485,7 @@ const addHomeTab = (): void => {
     <GlobalSearch
       :visible="showGlobalSearch"
       @open-plugin="openTab"
+      @open-app="handleOpenApp"
       @close="showGlobalSearch = false"
     />
     <!-- 侧边栏 -->

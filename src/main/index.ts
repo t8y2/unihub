@@ -15,6 +15,7 @@ import { searchWindowManager } from './search-window-manager'
 import { updaterManager } from './updater-manager'
 import { pathToFileURL } from 'url'
 import { createLogger } from '../shared/logger'
+import { appScanner } from './app-scanner'
 
 const logger = createLogger('main')
 
@@ -446,6 +447,73 @@ function setupIpcHandlers(): void {
   ipcMain.handle('search:close', () => {
     searchWindowManager.hideSearchWindow()
     return { success: true }
+  })
+
+  // 快速获取应用列表（不包含图标）
+  ipcMain.handle('apps:listQuick', async () => {
+    try {
+      const apps = await appScanner.getAppsQuick()
+      return { success: true, data: apps }
+    } catch (error) {
+      logger.error({ err: error }, '快速获取应用列表失败')
+      return { success: false, error: '快速获取应用列表失败' }
+    }
+  })
+
+  // 批量预加载应用图标
+  ipcMain.handle('apps:preloadIcons', async (_, appPaths: string[]) => {
+    try {
+      const iconMap = await appScanner.preloadIcons(appPaths)
+      // 转换 Map 为普通对象以便序列化
+      const iconData = Object.fromEntries(iconMap)
+      return { success: true, data: iconData }
+    } catch (error) {
+      logger.error({ err: error, appPaths }, '批量预加载图标失败')
+      return { success: false, error: '批量预加载图标失败' }
+    }
+  })
+
+  // 本地应用相关
+  ipcMain.handle('apps:list', async () => {
+    try {
+      const apps = await appScanner.getApps()
+      return { success: true, data: apps }
+    } catch (error) {
+      logger.error({ err: error }, '获取应用列表失败')
+      return { success: false, error: '获取应用列表失败' }
+    }
+  })
+
+  ipcMain.handle('apps:open', async (_, appPath: string) => {
+    try {
+      await shell.openPath(appPath)
+      return { success: true }
+    } catch (error) {
+      logger.error({ err: error, appPath }, '打开应用失败')
+      return { success: false, error: '打开应用失败' }
+    }
+  })
+
+  ipcMain.handle('apps:refresh', async () => {
+    try {
+      await appScanner.refresh()
+      const apps = await appScanner.getApps()
+      return { success: true, data: apps }
+    } catch (error) {
+      logger.error({ err: error }, '刷新应用列表失败')
+      return { success: false, error: '刷新应用列表失败' }
+    }
+  })
+
+  // 按需获取应用图标
+  ipcMain.handle('apps:getIcon', async (_, appPath: string) => {
+    try {
+      const icon = await appScanner.getAppIcon(appPath)
+      return { success: true, data: icon }
+    } catch (error) {
+      logger.error({ err: error, appPath }, '获取应用图标失败')
+      return { success: false, error: '获取应用图标失败' }
+    }
   })
 
   // 应用内搜索相关（浮层模式）

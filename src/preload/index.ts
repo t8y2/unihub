@@ -123,6 +123,14 @@ const api = {
     openPlugin: (pluginId: string) => ipcRenderer.invoke('search:open-plugin', pluginId),
     close: () => ipcRenderer.invoke('search:close')
   },
+  apps: {
+    list: () => ipcRenderer.invoke('apps:list'),
+    listQuick: () => ipcRenderer.invoke('apps:listQuick'),
+    open: (appPath: string) => ipcRenderer.invoke('apps:open', appPath),
+    refresh: () => ipcRenderer.invoke('apps:refresh'),
+    getIcon: (appPath: string) => ipcRenderer.invoke('apps:getIcon', appPath),
+    preloadIcons: (appPaths: string[]) => ipcRenderer.invoke('apps:preloadIcons', appPaths)
+  },
   db: {
     addFavorite: (pluginId: string) => ipcRenderer.invoke('db:addFavorite', pluginId),
     removeFavorite: (pluginId: string) => ipcRenderer.invoke('db:removeFavorite', pluginId),
