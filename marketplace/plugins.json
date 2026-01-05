@@ -1,7 +1,32 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-01-04T00:00:00Z",
+  "lastUpdated": "2025-01-05T00:00:00Z",
   "plugins": [
+    {
+      "id": "com.unihub.todolist",
+      "name": "待办清单",
+      "version": "1.0.0",
+      "description": "优雅的待办事项管理工具 - 支持分类、优先级、提醒和统计",
+      "author": {
+        "name": "UniHub Team",
+        "email": "team@unihub.dev",
+        "url": "https://github.com/unihub"
+      },
+      "icon": "https://api.iconify.design/fluent-emoji/clipboard.svg",
+      "category": "tool",
+      "keywords": ["todo", "todolist", "task", "gtd", "productivity", "待办", "任务管理"],
+      "permissions": ["storage"],
+      "install": {
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/todolist/plugin.zip"
+      },
+      "homepage": "https://github.com/t8y2",
+      "repository": "https://github.com/t8y2/unihub",
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-01-05T00:00:00Z",
+      "updatedAt": "2025-01-05T00:00:00Z"
+    },
     {
       "id": "com.unihub.javascript-formatter",
       "name": "JavaScript 格式化",
