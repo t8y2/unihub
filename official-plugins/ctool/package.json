@@ -1,0 +1,39 @@
+{
+  "name": "ctool-plugin",
+  "version": "1.0.0",
+  "description": "程序开发常用工具集 - 包含 40+ 个开发工具",
+  "author": {
+    "name": "baiy",
+    "url": "https://github.com/baiy"
+  },
+  "keywords": [
+    "ctool",
+    "developer",
+    "tools",
+    "hash",
+    "encrypt",
+    "base64",
+    "formatter",
+    "开发工具"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "echo 'Please build Ctool first and copy dist files here'",
+    "package": "node scripts/package.js"
+  },
+  "unihub": {
+    "id": "com.baiy.ctool",
+    "name": "Ctool 开发工具集",
+    "icon": "dist/favicon.ico",
+    "category": "developer",
+    "permissions": [
+      "clipboard",
+      "fs",
+      "http"
+    ],
+    "entry": "dist/index.html"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1"
+  }
+}

@@ -3,6 +3,42 @@
   "lastUpdated": "2025-01-05T00:00:00Z",
   "plugins": [
     {
+      "id": "com.baiy.ctool",
+      "name": "Ctool 开发工具集",
+      "version": "2.3.0",
+      "description": "程序开发常用工具集 - 包含 40+ 个开发工具：哈希、加密解密、Base64、代码格式化、JSON 工具、正则表达式、时间转换、二维码等",
+      "author": {
+        "name": "baiy",
+        "url": "https://github.com/baiy"
+      },
+      "icon": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/ctool/favicon.ico",
+      "category": "developer",
+      "keywords": [
+        "ctool",
+        "developer",
+        "tools",
+        "hash",
+        "encrypt",
+        "base64",
+        "formatter",
+        "json",
+        "regex",
+        "开发工具",
+        "工具集"
+      ],
+      "permissions": ["clipboard", "fs", "http"],
+      "install": {
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/ctool/plugin.zip"
+      },
+      "homepage": "https://github.com/baiy/Ctool",
+      "repository": "https://github.com/baiy/Ctool",
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-01-05T00:00:00Z",
+      "updatedAt": "2025-01-05T00:00:00Z"
+    },
+    {
       "id": "com.unihub.todolist",
       "name": "待办清单",
       "version": "1.0.0",
