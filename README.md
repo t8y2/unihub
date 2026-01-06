@@ -1,37 +1,36 @@
 # UniHub
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron">
+  <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=flat-square&logo=vue.js&logoColor=white" alt="Vue.js">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+</p>
+
+<p align="center">
+  <a href="https://github.com/t8y2/unihub/stargazers">
+    <img src="https://img.shields.io/github/stars/t8y2/unihub?style=flat-square&color=yellow" alt="Stars">
+  </a>
+  <a href="https://github.com/t8y2/unihub/network/members">
+    <img src="https://img.shields.io/github/forks/t8y2/unihub?style=flat-square&color=orange" alt="Forks">
+  </a>
+  <a href="https://github.com/t8y2/unihub/issues">
+    <img src="https://img.shields.io/github/issues/t8y2/unihub?style=flat-square&color=red" alt="Issues">
+  </a>
+</p>
+
+<p align="center">
+  <a href="./README.en.md">English</a> | 简体中文
+</p>
+
 一个基于 Electron 的现代化工具集应用，支持强大的插件系统。
 
 ## 📸 预览
 
-<table>
-  <tr>
-    <td width="50%">
-      <img src="docs/screenshots/main.png" alt="主界面">
-      <p align="center"><em>主界面</em></p>
-    </td>
-    <td width="50%">
-      <img src="docs/screenshots/plugins.png" alt="插件管理">
-      <p align="center"><em>插件管理</em></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img src="docs/screenshots/marketplace.png" alt="插件市场">
-      <p align="center"><em>插件市场</em></p>
-    </td>
-    <td width="50%">
-      <img src="docs/screenshots/settings.png" alt="设置页面">
-      <p align="center"><em>设置页面</em></p>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2">
-      <img src="docs/screenshots/dark-mode.png" alt="深色模式">
-      <p align="center"><em>深色模式</em></p>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="UniHub Demo" width="100%">
+</p>
 
 ## 特性
 
