@@ -1,0 +1,29 @@
+name: Sync Plugins to Gist
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'marketplace/plugins.json'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync to Gist
+        # 只在主仓库运行，跳过 fork 的 PR
+        if: github.repository == 't8y2/unihub' && github.event_name == 'push'
+        env:
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        run: node scripts/sync-plugins-to-gist.js

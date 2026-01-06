@@ -67,10 +67,10 @@ echo "2. Generate new token (classic)"
 echo "3. 权限选择: gist"
 echo "4. 生成并复制 token"
 echo ""
-read -sp "请输入 GitHub Token: " GITHUB_TOKEN
+read -sp "请输入 GitHub Token: " GIST_TOKEN
 echo ""
 
-if [ -z "$GITHUB_TOKEN" ]; then
+if [ -z "$GIST_TOKEN" ]; then
     echo "❌ GitHub Token 不能为空"
     exit 1
 fi
@@ -82,7 +82,7 @@ echo ""
 echo "📝 创建本地配置文件..."
 cat > .env << EOF
 GIST_ID=$GIST_ID
-GITHUB_TOKEN=$GITHUB_TOKEN
+GIST_TOKEN=$GIST_TOKEN
 EOF
 echo "✅ .env 文件已创建"
 echo ""
@@ -107,8 +107,8 @@ echo "================================"
 echo "设置 GIST_ID..."
 echo "$GIST_ID" | vercel env add GIST_ID production
 
-echo "设置 GITHUB_TOKEN..."
-echo "$GITHUB_TOKEN" | vercel env add GITHUB_TOKEN production
+echo "设置 GIST_TOKEN..."
+echo "$GIST_TOKEN" | vercel env add GIST_TOKEN production
 
 echo "✅ 环境变量设置完成"
 echo ""

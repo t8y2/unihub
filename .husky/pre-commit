@@ -1,4 +1,1 @@
 pnpm lint-staged
-
-# 同步插件列表到 Gist（如果配置了 GIST_ID 和 GITHUB_TOKEN）
-node scripts/sync-plugins-to-gist.js

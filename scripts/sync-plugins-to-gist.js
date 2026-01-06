@@ -27,13 +27,13 @@ if (existsSync(envPath)) {
 }
 
 const GIST_ID = process.env.GIST_ID
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN
+const GIST_TOKEN = process.env.GIST_TOKEN
 const PLUGINS_FILENAME = 'unihub-plugins.json'
 
 async function syncPluginsToGist() {
   // 检查环境变量
-  if (!GIST_ID || !GITHUB_TOKEN) {
-    console.log('⚠️  跳过 Gist 同步：未配置 GIST_ID 或 GITHUB_TOKEN')
+  if (!GIST_ID || !GIST_TOKEN) {
+    console.log('⚠️  跳过 Gist 同步：未配置 GIST_ID 或 GIST_TOKEN')
     console.log('   如需启用，请在 .env 文件中配置这两个变量')
     process.exit(0)
   }
@@ -52,7 +52,7 @@ async function syncPluginsToGist() {
     const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
+        Authorization: `token ${GIST_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
         'User-Agent': 'UniHub-Sync-Script'

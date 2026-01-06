@@ -4,7 +4,7 @@
  */
 
 const GIST_ID = process.env.GIST_ID!
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN!
+const GIST_TOKEN = process.env.GIST_TOKEN!
 const STATS_FILENAME = 'unihub-plugin-stats.json'
 const PLUGINS_FILENAME = 'unihub-plugins.json'
 
@@ -26,7 +26,7 @@ export async function getStats(): Promise<StatsData> {
   try {
     const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
+        Authorization: `token ${GIST_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'UniHub-Stats-API'
       },
@@ -61,7 +61,7 @@ export async function updateStats(stats: StatsData): Promise<void> {
     const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
+        Authorization: `token ${GIST_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
         'Content-Type': 'application/json',
         'User-Agent': 'UniHub-Stats-API'
@@ -91,7 +91,7 @@ export async function getPluginsList(): Promise<unknown> {
   try {
     const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: {
-        Authorization: `token ${GITHUB_TOKEN}`,
+        Authorization: `token ${GIST_TOKEN}`,
         Accept: 'application/vnd.github.v3+json',
         'User-Agent': 'UniHub-Stats-API'
       },
