@@ -3,7 +3,7 @@
   "lastUpdated": "2025-01-05T00:00:00Z",
   "plugins": [
     {
-      "id": "com.excalidraw.excalidraw",
+      "id": "com.unihub.excalidraw",
       "name": "Excalidraw 绘图工具",
       "version": "0.18.0",
       "description": "Excalidraw 离线绘图工具 - 手绘风格的图表和白板工具，支持本地保存和加载",
