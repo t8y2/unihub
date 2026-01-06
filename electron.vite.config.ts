@@ -83,7 +83,6 @@ export default defineConfig({
             if (
               id.includes('node_modules/jose') ||
               id.includes('node_modules/otpauth') ||
-              id.includes('node_modules/jsqr') ||
               id.includes('node_modules/qrcode-generator')
             ) {
               return 'crypto-utils'
