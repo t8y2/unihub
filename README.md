@@ -1,4 +1,4 @@
-# UniHub
+<h1 align="center">UniHub</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron">
@@ -32,15 +32,6 @@
   <img src="docs/screenshots/demo.gif" alt="UniHub Demo" width="100%">
 </p>
 
-## 特性
-
-- 🔌 强大的插件系统 - 支持动态加载和管理插件
-- 🎨 现代化 UI - 基于 Vue 3 + Tailwind CSS
-- 🚀 高性能 - 使用 Vite 构建
-- 📦 插件市场 - 内置插件市场，一键安装
-- 🔒 权限管理 - 细粒度的插件权限控制
-- 🔄 自动更新 - 支持应用自动更新，基于 GitHub Releases
-
 ## 💬 交流群
 
 欢迎加入 UniHub 交流群，与其他开发者一起讨论和分享！
@@ -58,6 +49,15 @@
   </tr>
 </table>
 
+## 特性
+
+- 🔌 强大的插件系统 - 支持动态加载和管理插件
+- 🎨 现代化 UI - 基于 Vue 3 + Tailwind CSS
+- 🚀 高性能 - 使用 Vite 构建
+- 📦 插件市场 - 内置插件市场，一键安装
+- 🔒 权限管理 - 细粒度的插件权限控制
+- 🔄 自动检测更新 - 支持应用自动更新，基于 GitHub Releases
+
 ## 快速开始
 
 ```bash
@@ -74,104 +74,28 @@ pnpm build:win          # Windows
 pnpm build:linux        # Linux
 ```
 
-## 🛠️ 插件开发 CLI
+## 插件开发
 
-官方 CLI 工具让插件开发更简单：
-
-```bash
-# 安装
-npm install -g @unihubjs/plugin-cli
-
-# 创建插件
-uhp create my-plugin
-
-# 开发
-cd my-plugin && npm install && npm run dev
-
-# 打包
-npm run package
-```
-
-查看完整文档：[tools/plugin-cli](tools/plugin-cli/README.md)
-
-## 插件开发指南
-
-### 使用 CLI 工具（推荐）
+使用官方 CLI 工具快速开发插件：
 
 ```bash
 # 安装 CLI
 npm install -g @unihubjs/plugin-cli
 
-# 创建插件
+# 创建插件（支持 simple/vue/react 模板）
 uhp create my-plugin
 
 # 开发
-cd my-plugin
-npm install
-npm run dev
+cd my-plugin && npm install
+uhp dev
 
 # 打包
-npm run package
+uhp package
 ```
 
-查看完整文档：[Plugin CLI](tools/plugin-cli/README.md)
+生成的 `plugin.zip` 可直接拖拽到 UniHub 安装，或提交 PR 到 `marketplace/plugins.json` 发布到插件市场。
 
-### 手动创建插件
-
-最简单的插件只需要两个文件：
-
-```
-my-plugin/
-├── package.json
-└── dist/
-    └── index.html
-```
-
-**package.json 配置：**
-
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "unihub": {
-    "id": "com.yourname.myplugin",
-    "name": "我的插件",
-    "icon": "🚀",
-    "category": "tool",
-    "entry": "dist/index.html",
-    "permissions": ["clipboard"]
-  }
-}
-```
-
-**UniHub API：**
-
-```javascript
-// 剪贴板
-await window.unihub.clipboard.writeText('text')
-
-// 文件系统（需要 fs 权限）
-await window.unihub.fs.readFile(path)
-
-// HTTP 请求（需要 http 权限）
-await window.unihub.http.get(url)
-
-// 数据库（需要 db 权限）
-await window.unihub.db.set(key, value)
-```
-
-### 发布插件
-
-**本地安装：** 拖拽 `plugin.zip` 到 UniHub 插件管理页面
-
-**发布到市场：** 编辑 `marketplace/plugins.json` 并提交 PR
-
-### 示例插件
-
-- `examples/simple-html-plugin` - 纯 HTML
-- `examples/modern-vue-plugin` - Vue 3 + TypeScript
-- `examples/h5-formatter-plugin` - 格式化工具
-- `official-plugins/` - 更多官方插件
+查看完整文档：[Plugin CLI](tools/plugin-cli/README.md) | 示例插件：[examples/](examples/)
 
 ## 快捷键
 

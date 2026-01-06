@@ -1,4 +1,4 @@
-# UniHub
+<h1 align="center">UniHub</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron">
@@ -32,15 +32,6 @@ A modern Electron-based toolkit application with a powerful plugin system.
   <img src="docs/screenshots/demo.gif" alt="UniHub Demo" width="100%">
 </p>
 
-## Features
-
-- 🔌 Powerful Plugin System - Support dynamic loading and management of plugins
-- 🎨 Modern UI - Built with Vue 3 + Tailwind CSS
-- 🚀 High Performance - Powered by Vite
-- 📦 Plugin Marketplace - Built-in marketplace for one-click installation
-- 🔒 Permission Management - Fine-grained plugin permission control
-- 🔄 Auto Update - Support automatic updates based on GitHub Releases
-
 ## 💬 Community
 
 Join UniHub community to discuss and share with other developers!
@@ -58,6 +49,15 @@ Join UniHub community to discuss and share with other developers!
   </tr>
 </table>
 
+## Features
+
+- 🔌 Powerful Plugin System - Support dynamic loading and management of plugins
+- 🎨 Modern UI - Built with Vue 3 + Tailwind CSS
+- 🚀 High Performance - Powered by Vite
+- 📦 Plugin Marketplace - Built-in marketplace for one-click installation
+- 🔒 Permission Management - Fine-grained plugin permission control
+- 🔄 Auto Update - Support automatic updates based on GitHub Releases
+
 ## Quick Start
 
 ```bash
@@ -74,193 +74,28 @@ pnpm build:win          # Windows
 pnpm build:linux        # Linux
 ```
 
-## Plugin Development Guide
+## Plugin Development
 
-### 1. Plugin Structure
-
-A minimal plugin requires only two files:
-
-```
-my-plugin/
-├── package.json        # Plugin configuration
-└── dist/
-    └── index.html      # Plugin entry
-```
-
-### 2. package.json Configuration
-
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "description": "My Plugin",
-  "author": "Your Name",
-  "unihub": {
-    "id": "com.yourname.myplugin",
-    "name": "My Plugin",
-    "icon": "🚀",
-    "category": "tool",
-    "entry": "dist/index.html",
-    "permissions": ["clipboard"]
-  }
-}
-```
-
-#### Required Fields
-
-| Field      | Description                        | Example                                        |
-| ---------- | ---------------------------------- | ---------------------------------------------- |
-| `id`       | Unique plugin ID (reverse domain)  | `"com.yourname.myplugin"`                      |
-| `name`     | Plugin display name                | `"My Plugin"`                                  |
-| `icon`     | Icon (Emoji, URL or relative path) | `"🚀"` or `"https://..."` or `"dist/icon.png"` |
-| `category` | Category                           | `"tool"`                                       |
-| `entry`    | Entry file path                    | `"dist/index.html"`                            |
-
-#### Optional Fields
-
-| Field         | Description      | Example                    |
-| ------------- | ---------------- | -------------------------- |
-| `permissions` | Permission list  | `["clipboard", "fs"]`      |
-| `keywords`    | Search keywords  | `["tool", "utility"]`      |
-| `homepage`    | Project homepage | `"https://github.com/..."` |
-| `repository`  | Code repository  | `"https://github.com/..."` |
-
-#### Categories
-
-- `tool` - Tools
-- `formatter` - Formatters
-- `encoder` - Encoders/Decoders
-- `productivity` - Productivity
-- `developer` - Developer Tools
-- `entertainment` - Entertainment
-- `custom` - Custom
-
-#### Permissions
-
-- `clipboard` - Clipboard read/write
-- `fs` - File system access
-- `http` - HTTP requests
-- `spawn` - Backend processes
-- `db` - Database storage
-- `notification` - System notifications
-- `system` - System information
-
-### 3. Create Plugin
-
-#### Method 1: Pure HTML (Simplest)
-
-Create `dist/index.html`:
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>My Plugin</title>
-    <style>
-      body {
-        font-family: system-ui;
-        padding: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Hello UniHub!</h1>
-    <button onclick="copyText()">Copy Text</button>
-
-    <script>
-      function copyText() {
-        // Use UniHub API
-        if (window.unihub?.clipboard) {
-          window.unihub.clipboard.writeText('Hello World!')
-        }
-      }
-    </script>
-  </body>
-</html>
-```
-
-#### Method 2: Using Vue + Vite (Recommended)
-
-Refer to the `examples/modern-vue-plugin` example.
-
-### 4. UniHub API
-
-Plugins can access system features through `window.unihub`:
-
-```javascript
-// Clipboard
-window.unihub.clipboard.writeText('text')
-window.unihub.clipboard.readText()
-
-// File System (requires fs permission)
-window.unihub.fs.readFile(path)
-window.unihub.fs.writeFile(path, content)
-
-// HTTP Requests (requires http permission)
-window.unihub.http.get(url)
-window.unihub.http.post(url, data)
-
-// Database (requires db permission)
-window.unihub.db.get(key)
-window.unihub.db.set(key, value)
-
-// Notifications (requires notification permission)
-window.unihub.notification.show(title, body)
-```
-
-### 5. Package Plugin
+Use the official CLI tool to quickly develop plugins:
 
 ```bash
-# Create plugin.zip
-zip -r plugin.zip package.json dist/
+# Install CLI
+npm install -g @unihubjs/plugin-cli
+
+# Create plugin (supports simple/vue/react templates)
+uhp create my-plugin
+
+# Development
+cd my-plugin && npm install
+uhp dev
+
+# Package
+uhp package
 ```
 
-Or use packaging scripts (refer to examples in `examples/`).
+The generated `plugin.zip` can be directly dragged to UniHub for installation, or submit a PR to `marketplace/plugins.json` to publish to the plugin marketplace.
 
-### 6. Publish Plugin
-
-#### Method 1: Submit to Plugin Marketplace
-
-1. Upload `plugin.zip` to GitHub Release or CDN
-2. Fork this project and edit `marketplace/plugins.json`
-3. Add plugin information:
-
-```json
-{
-  "id": "com.yourname.myplugin",
-  "name": "My Plugin",
-  "version": "1.0.0",
-  "description": "Plugin description",
-  "author": {
-    "name": "Your Name",
-    "email": "your@email.com"
-  },
-  "icon": "🚀",
-  "category": "tool",
-  "keywords": ["tool"],
-  "permissions": ["clipboard"],
-  "install": {
-    "zip": "https://github.com/yourname/plugin/releases/download/v1.0.0/plugin.zip"
-  },
-  "homepage": "https://github.com/yourname/plugin",
-  "repository": "https://github.com/yourname/plugin"
-}
-```
-
-4. Submit PR
-
-#### Method 2: Local Installation
-
-Users can directly drag and drop `plugin.zip` to UniHub's plugin management page for installation.
-
-## Example Plugins
-
-- `examples/simple-html-plugin` - Calculator implemented in pure HTML
-- `examples/modern-vue-plugin` - Toolkit implemented with Vue 3 + TypeScript
-- `examples/h5-formatter-plugin` - HTML/CSS/JS formatter
-
-Check the `official-plugins/` directory for more official plugins.
+Full documentation: [Plugin CLI](tools/plugin-cli/README.md) | Examples: [examples/](examples/)
 
 ## Keyboard Shortcuts
 
