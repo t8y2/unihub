@@ -74,27 +74,65 @@ pnpm build:win          # Windows
 pnpm build:linux        # Linux
 ```
 
+## 🛠️ 插件开发 CLI
+
+官方 CLI 工具让插件开发更简单：
+
+```bash
+# 安装
+npm install -g @unihubjs/plugin-cli
+
+# 创建插件
+uhp create my-plugin
+
+# 开发
+cd my-plugin && npm install && npm run dev
+
+# 打包
+npm run package
+```
+
+查看完整文档：[tools/plugin-cli](tools/plugin-cli/README.md)
+
 ## 插件开发指南
 
-### 1. 插件结构
+### 使用 CLI 工具（推荐）
 
-一个最简单的插件只需要两个文件：
+```bash
+# 安装 CLI
+npm install -g @unihubjs/plugin-cli
+
+# 创建插件
+uhp create my-plugin
+
+# 开发
+cd my-plugin
+npm install
+npm run dev
+
+# 打包
+npm run package
+```
+
+查看完整文档：[Plugin CLI](tools/plugin-cli/README.md)
+
+### 手动创建插件
+
+最简单的插件只需要两个文件：
 
 ```
 my-plugin/
-├── package.json        # 插件配置
+├── package.json
 └── dist/
-    └── index.html      # 插件入口
+    └── index.html
 ```
 
-### 2. package.json 配置
+**package.json 配置：**
 
 ```json
 {
   "name": "my-plugin",
   "version": "1.0.0",
-  "description": "我的插件",
-  "author": "你的名字",
   "unihub": {
     "id": "com.yourname.myplugin",
     "name": "我的插件",
@@ -106,161 +144,34 @@ my-plugin/
 }
 ```
 
-#### 必填字段
-
-| 字段       | 说明                          | 示例                                           |
-| ---------- | ----------------------------- | ---------------------------------------------- |
-| `id`       | 插件唯一标识（反向域名格式）  | `"com.yourname.myplugin"`                      |
-| `name`     | 插件显示名称                  | `"我的插件"`                                   |
-| `icon`     | 图标（Emoji、URL 或相对路径） | `"🚀"` 或 `"https://..."` 或 `"dist/icon.png"` |
-| `category` | 分类                          | `"tool"`                                       |
-| `entry`    | 入口文件路径                  | `"dist/index.html"`                            |
-
-#### 可选字段
-
-| 字段          | 说明       | 示例                       |
-| ------------- | ---------- | -------------------------- |
-| `permissions` | 权限列表   | `["clipboard", "fs"]`      |
-| `keywords`    | 搜索关键词 | `["tool", "utility"]`      |
-| `homepage`    | 项目主页   | `"https://github.com/..."` |
-| `repository`  | 代码仓库   | `"https://github.com/..."` |
-
-#### 分类（category）
-
-- `tool` - 工具
-- `formatter` - 格式化
-- `encoder` - 编码/解码
-- `productivity` - 效率
-- `developer` - 开发者工具
-- `entertainment` - 娱乐
-- `custom` - 自定义
-
-#### 权限（permissions）
-
-- `clipboard` - 剪贴板读写
-- `fs` - 文件系统访问
-- `http` - HTTP 请求
-- `spawn` - 后端进程
-- `db` - 数据库存储
-- `notification` - 系统通知
-- `system` - 系统信息
-
-### 3. 创建插件
-
-#### 方式一：纯 HTML（最简单）
-
-创建 `dist/index.html`：
-
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>我的插件</title>
-    <style>
-      body {
-        font-family: system-ui;
-        padding: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Hello UniHub!</h1>
-    <button onclick="copyText()">复制文本</button>
-
-    <script>
-      function copyText() {
-        // 使用 UniHub API
-        if (window.unihub?.clipboard) {
-          window.unihub.clipboard.writeText('Hello World!')
-        }
-      }
-    </script>
-  </body>
-</html>
-```
-
-#### 方式二：使用 Vue + Vite（推荐）
-
-参考 `examples/modern-vue-plugin` 示例。
-
-### 4. UniHub API
-
-插件可以通过 `window.unihub` 访问系统功能：
+**UniHub API：**
 
 ```javascript
 // 剪贴板
-window.unihub.clipboard.writeText('text')
-window.unihub.clipboard.readText()
+await window.unihub.clipboard.writeText('text')
 
 // 文件系统（需要 fs 权限）
-window.unihub.fs.readFile(path)
-window.unihub.fs.writeFile(path, content)
+await window.unihub.fs.readFile(path)
 
 // HTTP 请求（需要 http 权限）
-window.unihub.http.get(url)
-window.unihub.http.post(url, data)
+await window.unihub.http.get(url)
 
 // 数据库（需要 db 权限）
-window.unihub.db.get(key)
-window.unihub.db.set(key, value)
-
-// 通知（需要 notification 权限）
-window.unihub.notification.show(title, body)
+await window.unihub.db.set(key, value)
 ```
 
-### 5. 打包插件
+### 发布插件
 
-```bash
-# 创建 plugin.zip
-zip -r plugin.zip package.json dist/
-```
+**本地安装：** 拖拽 `plugin.zip` 到 UniHub 插件管理页面
 
-或使用打包脚本（参考 `examples/` 中的示例）。
+**发布到市场：** 编辑 `marketplace/plugins.json` 并提交 PR
 
-### 6. 发布插件
+### 示例插件
 
-#### 方式一：提交到插件市场
-
-1. 将 `plugin.zip` 上传到 GitHub Release 或 CDN
-2. Fork 本项目，编辑 `marketplace/plugins.json`
-3. 添加插件信息：
-
-```json
-{
-  "id": "com.yourname.myplugin",
-  "name": "我的插件",
-  "version": "1.0.0",
-  "description": "插件描述",
-  "author": {
-    "name": "你的名字",
-    "email": "your@email.com"
-  },
-  "icon": "🚀",
-  "category": "tool",
-  "keywords": ["tool"],
-  "permissions": ["clipboard"],
-  "install": {
-    "zip": "https://github.com/yourname/plugin/releases/download/v1.0.0/plugin.zip"
-  },
-  "homepage": "https://github.com/yourname/plugin",
-  "repository": "https://github.com/yourname/plugin"
-}
-```
-
-4. 提交 PR
-
-#### 方式二：本地安装
-
-用户可以直接拖拽 `plugin.zip` 到 UniHub 的插件管理页面安装。
-
-## 示例插件
-
-- `examples/simple-html-plugin` - 纯 HTML 实现的计算器
-- `examples/modern-vue-plugin` - Vue 3 + TypeScript 实现的工具集
-- `examples/h5-formatter-plugin` - HTML/CSS/JS 格式化工具
-
-查看 `official-plugins/` 目录了解更多官方插件。
+- `examples/simple-html-plugin` - 纯 HTML
+- `examples/modern-vue-plugin` - Vue 3 + TypeScript
+- `examples/h5-formatter-plugin` - 格式化工具
+- `official-plugins/` - 更多官方插件
 
 ## 快捷键
 
