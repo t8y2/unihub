@@ -151,6 +151,10 @@ const api = {
     addRecent: (pluginId: string) => ipcRenderer.invoke('db:addRecent', pluginId),
     getRecents: (limit?: number) => ipcRenderer.invoke('db:getRecents', limit),
     clearRecents: () => ipcRenderer.invoke('db:clearRecents')
+  },
+  tab: {
+    showContextMenu: (tabId: string, index: number, total: number) =>
+      ipcRenderer.invoke('tab:show-context-menu', tabId, index, total)
   }
 }
 

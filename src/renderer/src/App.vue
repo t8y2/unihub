@@ -182,6 +182,27 @@ onMounted(() => {
   window.electron.ipcRenderer.on('window-resized', () => {
     updatePluginViewLayout()
   })
+
+  // 监听标签右键菜单事件
+  window.electron.ipcRenderer.on('tab:close', (_event: unknown, ...args: unknown[]) => {
+    const tabId = args[0] as string
+    closeTab(tabId)
+  })
+
+  window.electron.ipcRenderer.on('tab:close-others', (_event: unknown, ...args: unknown[]) => {
+    const tabId = args[0] as string
+    closeOtherTabs(tabId)
+  })
+
+  window.electron.ipcRenderer.on('tab:close-left', (_event: unknown, ...args: unknown[]) => {
+    const tabId = args[0] as string
+    closeLeftTabs(tabId)
+  })
+
+  window.electron.ipcRenderer.on('tab:close-right', (_event: unknown, ...args: unknown[]) => {
+    const tabId = args[0] as string
+    closeRightTabs(tabId)
+  })
 })
 
 onUnmounted(() => {
@@ -444,6 +465,66 @@ const closeTab = (tabId: string): void => {
   }
 
   tabs.value.splice(index, 1)
+}
+
+// 关闭其他标签
+const closeOtherTabs = (tabId: string): void => {
+  const tab = tabs.value.find((t) => t.id === tabId)
+  if (!tab) return
+
+  // 关闭所有第三方插件
+  tabs.value.forEach((t) => {
+    if (t.id !== tabId) {
+      handleThirdPartyPlugin(t.id, 'close')
+    }
+  })
+
+  // 只保留当前标签
+  tabs.value = [tab]
+  activeTabId.value = tabId
+}
+
+// 关闭左侧标签
+const closeLeftTabs = (tabId: string): void => {
+  const index = tabs.value.findIndex((t) => t.id === tabId)
+  if (index === -1 || index === 0) return
+
+  // 关闭左侧所有第三方插件
+  for (let i = 0; i < index; i++) {
+    handleThirdPartyPlugin(tabs.value[i].id, 'close')
+  }
+
+  // 删除左侧标签
+  tabs.value.splice(0, index)
+
+  // 如果当前激活的标签被关闭了，激活目标标签
+  if (!tabs.value.find((t) => t.id === activeTabId.value)) {
+    activeTabId.value = tabId
+  }
+}
+
+// 关闭右侧标签
+const closeRightTabs = (tabId: string): void => {
+  const index = tabs.value.findIndex((t) => t.id === tabId)
+  if (index === -1 || index === tabs.value.length - 1) return
+
+  // 关闭右侧所有第三方插件
+  for (let i = index + 1; i < tabs.value.length; i++) {
+    handleThirdPartyPlugin(tabs.value[i].id, 'close')
+  }
+
+  // 删除右侧标签
+  tabs.value.splice(index + 1)
+
+  // 如果当前激活的标签被关闭了，激活目标标签
+  if (!tabs.value.find((t) => t.id === activeTabId.value)) {
+    activeTabId.value = tabId
+  }
+}
+
+// 显示标签右键菜单（使用原生菜单）
+const showTabContextMenu = (tabId: string, index: number): void => {
+  window.api.tab.showContextMenu(tabId, index, tabs.value.length)
 }
 
 // 回到主页（修改为创建或激活主页标签，而不是关闭所有标签）
@@ -818,48 +899,53 @@ const addHomeTab = (): void => {
           v-if="tabs.length > 0"
           class="flex-1 flex items-center h-full overflow-x-auto overflow-y-hidden scrollbar-hide"
         >
-          <div
-            v-for="tab in tabs"
-            :key="tab.id"
-            :class="[
-              'group h-full flex items-center gap-2 px-4 cursor-pointer transition-colors relative flex-shrink-0 no-drag min-w-0',
-              activeTabId === tab.id
-                ? 'bg-white dark:bg-gray-900'
-                : 'bg-[rgb(246,246,245)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
-            ]"
-            @click="activeTabId = tab.id"
-          >
-            <span
+          <TransitionGroup name="tab" tag="div" class="flex items-center h-full">
+            <div
+              v-for="(tab, index) in tabs"
+              :key="tab.id"
               :class="[
-                'text-sm font-medium truncate',
+                'group h-full flex items-center gap-2 px-4 cursor-pointer relative flex-shrink-0 no-drag min-w-0 max-w-[200px]',
+                'transition-all duration-200 ease-out',
                 activeTabId === tab.id
-                  ? 'text-gray-900 dark:text-gray-100'
-                  : 'text-gray-600 dark:text-gray-400'
+                  ? 'bg-white dark:bg-gray-900 shadow-sm'
+                  : 'bg-[rgb(246,246,245)] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 border-r border-gray-200 dark:border-gray-700'
               ]"
-              >{{ tab.title }}</span
+              @click="activeTabId = tab.id"
+              @contextmenu.prevent="showTabContextMenu(tab.id, index)"
             >
-            <button
-              :class="[
-                'w-4 h-4 rounded flex items-center justify-center hover:bg-gray-300/50 dark:hover:bg-gray-600/50 transition-colors flex-shrink-0',
-                activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              ]"
-              @click.stop="closeTab(tab.id)"
-            >
-              <svg
-                class="w-3 h-3 text-gray-500 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <span
+                :class="[
+                  'text-sm font-medium truncate transition-all duration-200',
+                  activeTabId === tab.id
+                    ? 'text-gray-900 dark:text-gray-100'
+                    : 'text-gray-600 dark:text-gray-400'
+                ]"
+                >{{ tab.title }}</span
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+              <button
+                :class="[
+                  'w-4 h-4 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0',
+                  'hover:bg-gray-300/70 dark:hover:bg-gray-600/70',
+                  activeTabId === tab.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                ]"
+                @click.stop="closeTab(tab.id)"
+              >
+                <svg
+                  class="w-3 h-3 text-gray-500 dark:text-gray-400 transition-transform duration-150 hover:scale-125"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </TransitionGroup>
 
           <!-- 新增标签页按钮 -->
           <button
@@ -958,3 +1044,54 @@ const addHomeTab = (): void => {
   <!-- 更新通知 -->
   <UpdateNotification ref="updateNotificationRef" />
 </template>
+
+<style scoped>
+/* Chrome 风格的 Tab 动画 */
+
+/* Tab 进入动画 - 从右侧滑入并展开 */
+.tab-enter-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Tab 离开动画 - 收缩并淡出 */
+.tab-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 1, 1);
+  position: absolute;
+}
+
+.tab-enter-from {
+  opacity: 0;
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  transform: scale(0.9);
+}
+
+.tab-leave-to {
+  opacity: 0;
+  max-width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  transform: scale(0.95);
+}
+
+/* Tab 移动动画 - 平滑过渡位置变化 */
+.tab-move {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 确保离开的元素不影响布局 */
+.tab-leave-active {
+  position: absolute;
+}
+
+/* 滚动条隐藏 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>

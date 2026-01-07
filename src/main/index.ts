@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net, Menu } from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -516,6 +516,44 @@ function setupIpcHandlers(): void {
       logger.error({ err: error, appPath }, '获取应用图标失败')
       return { success: false, error: '获取应用图标失败' }
     }
+  })
+
+  // 右键菜单相关
+  ipcMain.handle('tab:show-context-menu', (event, tabId: string, index: number, total: number) => {
+    const template = [
+      {
+        label: '关闭',
+        click: () => {
+          event.sender.send('tab:close', tabId)
+        }
+      },
+      {
+        label: '关闭其他标签',
+        enabled: total > 1,
+        click: () => {
+          event.sender.send('tab:close-others', tabId)
+        }
+      },
+      { type: 'separator' as const },
+      {
+        label: '关闭左侧标签',
+        enabled: index > 0,
+        click: () => {
+          event.sender.send('tab:close-left', tabId)
+        }
+      },
+      {
+        label: '关闭右侧标签',
+        enabled: index < total - 1,
+        click: () => {
+          event.sender.send('tab:close-right', tabId)
+        }
+      }
+    ]
+
+    const menu = Menu.buildFromTemplate(template)
+    menu.popup({ window: BrowserWindow.fromWebContents(event.sender) || undefined })
+    return { success: true }
   })
 
   // 应用内搜索相关（浮层模式）

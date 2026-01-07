@@ -182,6 +182,9 @@ declare global {
         ) => Promise<Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>>
         clearRecents: () => Promise<ApiResponse>
       }
+      tab: {
+        showContextMenu: (tabId: string, index: number, total: number) => Promise<ApiResponse>
+      }
     }
     electron: {
       ipcRenderer: {

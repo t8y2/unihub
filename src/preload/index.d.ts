@@ -114,6 +114,13 @@ declare global {
         ) => Promise<Array<{ pluginId: string; lastAccessedAt: number; accessCount: number }>>
         clearRecents: () => Promise<{ success: boolean }>
       }
+      tab: {
+        showContextMenu: (
+          tabId: string,
+          index: number,
+          total: number
+        ) => Promise<{ success: boolean }>
+      }
     }
     // Node.js API（第一公民）
     node: {
