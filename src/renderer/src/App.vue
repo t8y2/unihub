@@ -28,6 +28,62 @@ const globalSearchShortcut = ref('⌘K')
 // 更新通知组件引用
 const updateNotificationRef = ref<InstanceType<typeof UpdateNotification> | null>(null)
 
+// 防止快速连续按 cmd+w 导致的竞态条件（组件级别的锁）
+let isClosingTab = false
+let pendingWindowClose: ReturnType<typeof setTimeout> | null = null
+const CLOSE_TAB_DEBOUNCE_MS = 50 // 标签关闭防抖时间
+const WINDOW_CLOSE_DELAY_MS = 100 // 窗口关闭延迟时间
+
+// 检查是否有 plugin 类型的标签（使用 WebContentsView）
+const hasPluginTabs = (): boolean => {
+  return tabs.value.some((t) => t.type === 'plugin')
+}
+
+// 统一的关闭标签处理函数
+const handleCloseTabRequest = (): void => {
+  // 如果有待执行的窗口关闭，取消它
+  if (pendingWindowClose) {
+    clearTimeout(pendingWindowClose)
+    pendingWindowClose = null
+  }
+
+  // 检查锁
+  if (isClosingTab) {
+    return
+  }
+
+  const currentTabCount = tabs.value.length
+
+  if (currentTabCount === 0) {
+    // 没有标签页，关闭窗口
+    // 只有在之前有 plugin 标签时才延迟（防止 WebContentsView 焦点切换问题）
+    if (pendingWindowClose === null) {
+      // 使用短延迟确保不会误关闭
+      pendingWindowClose = setTimeout(() => {
+        pendingWindowClose = null
+        if (tabs.value.length === 0) {
+          window.electron.ipcRenderer.send('window:close')
+        }
+      }, WINDOW_CLOSE_DELAY_MS)
+    }
+  } else if (activeTabId.value) {
+    const currentTab = tabs.value.find((t) => t.id === activeTabId.value)
+    const isPluginTab = currentTab?.type === 'plugin'
+
+    // 有标签页，关闭当前标签
+    isClosingTab = true
+    closeTab(activeTabId.value)
+
+    // 只有关闭 plugin 标签且还有其他 plugin 标签时才需要防抖
+    const stillHasPluginTabs = hasPluginTabs()
+    const debounceTime = isPluginTab && stillHasPluginTabs ? CLOSE_TAB_DEBOUNCE_MS : 0
+
+    setTimeout(() => {
+      isClosingTab = false
+    }, debounceTime)
+  }
+}
+
 // 提供手动检查更新的方法
 provide('checkForUpdates', () => {
   updateNotificationRef.value?.checkForUpdates()
@@ -132,13 +188,7 @@ onMounted(() => {
   }
 
   window.electron.ipcRenderer.on('handle-close-tab', () => {
-    if (tabs.value.length === 0) {
-      // 没有标签页，关闭窗口
-      window.electron.ipcRenderer.send('window:close')
-    } else if (activeTabId.value) {
-      // 有标签页，关闭当前标签
-      closeTab(activeTabId.value)
-    }
+    handleCloseTabRequest()
   })
 
   // 监听 ESC 键事件（从主进程转发）
@@ -276,9 +326,7 @@ const shouldHandleShortcut = (key?: string): boolean => {
 useKeyboard(
   {
     w: () => {
-      tabs.value.length === 0
-        ? window.electron.ipcRenderer.send('window:close')
-        : closeTab(activeTabId.value)
+      handleCloseTabRequest()
     },
     n: () => addHomeTab(),
     b: () => toggleSidebar()

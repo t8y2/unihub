@@ -54,14 +54,12 @@ export function useKeyboard(keyMap: KeyMap, shouldHandle?: (key?: string) => boo
     e.preventDefault()
     e.stopPropagation()
 
-    // 使用 requestAnimationFrame 确保不阻塞渲染
-    requestAnimationFrame(() => {
-      try {
-        handler()
-      } catch (error) {
-        console.error(`[Keyboard] 快捷键处理失败: ${key}`, error)
-      }
-    })
+    // 直接执行，不使用 requestAnimationFrame 以提高响应速度
+    try {
+      handler()
+    } catch (error) {
+      console.error(`[Keyboard] 快捷键处理失败: ${key}`, error)
+    }
   }
 
   onMounted(() => {
