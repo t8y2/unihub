@@ -5,40 +5,26 @@ import 'vditor/dist/index.css'
 
 const editorRef = ref<HTMLDivElement>()
 let vditor: Vditor | null = null
+let saveTimer: NodeJS.Timeout | null = null
 
-// UniHub API 类型定义
+const STORAGE_KEY = 'markdown-editor-content'
+const AUTO_SAVE_INTERVAL = 10000 // 10 秒自动保存
+
+// 声明 window.unihub 类型
 declare global {
   interface Window {
     unihub?: {
-      storage?: {
-        get: (key: string) => Promise<string | null>
-        set: (key: string, value: string) => Promise<void>
+      db?: {
+        get: (key: string) => Promise<any>
+        set: (key: string, value: any) => Promise<void>
       }
     }
-  }
-}
-
-// 从本地存储加载内容
-async function loadContent() {
-  try {
-    if (window.unihub?.storage) {
-      const saved = await window.unihub.storage.get('markdown-content')
-      return saved || getDefaultContent()
+    electron?: {
+      ipcRenderer?: {
+        on: (channel: string, listener: (...args: any[]) => void) => void
+        removeListener: (channel: string, listener: (...args: any[]) => void) => void
+      }
     }
-  } catch (error) {
-    console.error('加载内容失败:', error)
-  }
-  return getDefaultContent()
-}
-
-// 保存内容到本地存储
-async function saveContent(content: string) {
-  try {
-    if (window.unihub?.storage) {
-      await window.unihub.storage.set('markdown-content', content)
-    }
-  } catch (error) {
-    console.error('保存内容失败:', error)
   }
 }
 
@@ -54,7 +40,9 @@ function getDefaultContent() {
 - ✅ **语法高亮** - 支持代码块语法高亮
 - ✅ **数学公式** - 支持 LaTeX 数学公式
 - ✅ **图表支持** - 支持 Mermaid 流程图
-- ✅ **自动保存** - 内容自动保存到本地
+- ✅ **自动保存** - 内容每 10 秒自动保存
+- ✅ **手动保存** - 支持 Cmd/Ctrl+S 快捷键
+- ✅ **主题切换** - 工具栏右侧可切换深色/浅色主题
 
 ## 代码示例
 
@@ -104,19 +92,133 @@ $$
 `
 }
 
+// 加载内容
+async function loadContent(): Promise<string> {
+  try {
+    if (window.unihub?.db) {
+      const saved = await window.unihub.db.get('content')
+      if (saved) {
+        return saved
+      }
+    }
+  } catch (error) {
+    console.error('[Markdown] unihub.db 加载失败:', error)
+  }
+  
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      return saved
+    }
+  } catch (error) {
+    console.error('[Markdown] localStorage 加载失败:', error)
+  }
+  
+  return getDefaultContent()
+}
+
+// 保存内容
+async function saveContent(content: string): Promise<void> {
+  try {
+    if (window.unihub?.db) {
+      await window.unihub.db.set('content', content)
+      return
+    }
+  } catch (error) {
+    console.error('[Markdown] unihub.db 保存失败:', error)
+  }
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, content)
+  } catch (error) {
+    console.error('[Markdown] localStorage 保存失败:', error)
+  }
+}
+
+// 手动保存
+async function handleManualSave() {
+  const content = vditor?.getValue()
+  if (content) {
+    await saveContent(content)
+    showSaveIndicator()
+  }
+}
+
+// 显示保存指示器
+function showSaveIndicator() {
+  const indicator = document.createElement('div')
+  indicator.textContent = '✓ 已保存'
+  indicator.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    z-index: 9999;
+    animation: fadeInOut 2s ease-in-out;
+  `
+  document.body.appendChild(indicator)
+  
+  setTimeout(() => {
+    indicator.remove()
+  }, 2000)
+}
+
+// 监听键盘事件
+function handleKeyDown(e: KeyboardEvent) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault()
+    handleManualSave()
+  }
+}
+
+// 监听插件可见性变化
+function handleVisibilityChange(_event: unknown, ...args: unknown[]) {
+  const visible = args[0] as boolean
+  console.log('[Markdown] 可见性变化:', visible, 'vditor存在:', !!vditor)
+  
+  if (!visible) {
+    // 插件隐藏时，停止自动保存并保存当前内容
+    if (saveTimer) {
+      clearInterval(saveTimer)
+      saveTimer = null
+      console.log('[Markdown] 已停止自动保存')
+    }
+    const content = vditor?.getValue()
+    if (content) {
+      saveContent(content)
+    }
+  } else {
+    // 插件显示时，恢复自动保存
+    if (!saveTimer && vditor) {
+      saveTimer = setInterval(async () => {
+        const content = vditor?.getValue()
+        if (content) {
+          await saveContent(content)
+          console.log('[Markdown] 保存完成')
+        }
+      }, AUTO_SAVE_INTERVAL)
+      console.log('[Markdown] 已恢复自动保存')
+    }
+  }
+}
+
 onMounted(async () => {
   const initialContent = await loadContent()
   
   vditor = new Vditor(editorRef.value!, {
     height: '100%',
     theme: 'classic',
-    mode: 'ir', // 即时渲染模式
+    mode: 'ir',
     placeholder: '开始编写 Markdown...',
     toolbarConfig: {
       pin: true,
     },
     cache: {
-      enable: false, // 禁用 Vditor 自带的缓存，使用 UniHub storage
+      enable: false,
     },
     counter: {
       enable: true,
@@ -134,31 +236,60 @@ onMounted(async () => {
       },
     },
     upload: {
-      handler: (files) => {
-        // 可以在这里处理图片上传
+      handler: () => {
         return null
       },
     },
     after: () => {
       vditor?.setValue(initialContent)
       
-      // 自动保存 - 每 3 秒保存一次
-      setInterval(() => {
+      saveTimer = setInterval(async () => {
         const content = vditor?.getValue()
         if (content) {
-          saveContent(content)
+          await saveContent(content)
+          console.log('[Markdown] 保存完成')
         }
-      }, 3000)
+      }, AUTO_SAVE_INTERVAL)
     },
   })
+  
+  window.addEventListener('keydown', handleKeyDown)
+  
+  // 监听插件可见性变化
+  if (window.electron?.ipcRenderer) {
+    window.electron.ipcRenderer.on('plugin-visibility-changed', handleVisibilityChange)
+  }
+  
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-10px); }
+      10% { opacity: 1; transform: translateY(0); }
+      90% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+  `
+  document.head.appendChild(style)
 })
 
-onBeforeUnmount(() => {
-  // 保存最后的内容
+onBeforeUnmount(async () => {
+  if (saveTimer) {
+    clearInterval(saveTimer)
+    saveTimer = null
+  }
+  
+  window.removeEventListener('keydown', handleKeyDown)
+  
+  // 移除可见性监听
+  if (window.electron?.ipcRenderer) {
+    window.electron.ipcRenderer.removeListener('plugin-visibility-changed', handleVisibilityChange)
+  }
+  
   const content = vditor?.getValue()
   if (content) {
-    saveContent(content)
+    await saveContent(content)
   }
+  
   vditor?.destroy()
 })
 </script>
@@ -179,21 +310,7 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-/* Vditor 样式覆盖 */
 :deep(.vditor) {
   border: none;
-}
-
-:deep(.vditor-toolbar) {
-  background: #fafafa;
-  border-bottom: 1px solid #e5e5e5;
-}
-
-:deep(.vditor-toolbar__item) {
-  color: #333;
-}
-
-:deep(.vditor-toolbar__item:hover) {
-  background: #e5e5e5;
 }
 </style>

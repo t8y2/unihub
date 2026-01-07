@@ -231,6 +231,10 @@ export class WebContentsViewManager {
         height: windowBounds.height - titleBarHeight
       })
     }
+
+    // 发送插件可见性事件
+    view.webContents.send('plugin-visibility-changed', true)
+    logger.debug({ pluginId }, '插件已显示')
   }
 
   /**
@@ -241,6 +245,10 @@ export class WebContentsViewManager {
 
     const view = this.views.get(pluginId)
     if (!view) return
+
+    // 发送插件可见性事件
+    view.webContents.send('plugin-visibility-changed', false)
+    logger.debug({ pluginId }, '插件已隐藏')
 
     this.mainWindow.contentView.removeChildView(view)
 
