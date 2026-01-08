@@ -271,31 +271,6 @@
       "rating": 4.9,
       "createdAt": "2024-12-31T00:00:00Z",
       "updatedAt": "2024-12-31T00:00:00Z"
-    },
-    {
-      "id": "com.unihub.modern-vue",
-      "name": "Modern Vue Plugin",
-      "version": "1.0.0",
-      "description": "使用 Vite + Vue 3 + TypeScript 构建的现代化插件，支持 Base64 编码、文本加密和数据压缩",
-      "author": {
-        "name": "UniHub Team",
-        "email": "team@unihub.dev",
-        "url": "https://github.com/unihub"
-      },
-      "icon": "https://api.iconify.design/logos/vue.svg",
-      "category": "tool",
-      "keywords": ["vue", "typescript", "encode", "encrypt", "compress", "base64"],
-      "permissions": ["fs", "clipboard", "http", "spawn"],
-      "install": {
-        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/modern-vue-plugin/plugin.zip"
-      },
-      "homepage": "https://github.com/t8y2",
-      "repository": "https://github.com/t8y2/unihub",
-      "screenshots": [],
-      "downloads": 0,
-      "rating": 5.0,
-      "createdAt": "2024-12-31T00:00:00Z",
-      "updatedAt": "2024-12-31T00:00:00Z"
     }
   ]
 }
