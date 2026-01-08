@@ -1,0 +1,14 @@
+{
+  "name": "unihub-docs",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "UniHub 官方文档",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
