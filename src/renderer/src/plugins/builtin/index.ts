@@ -3,7 +3,7 @@ import JsonFormatter from '@/components/JsonFormatter.vue'
 import CodeFormatter from '@/components/CodeFormatter.vue'
 // import JwtTool from '@/components/JwtTool.vue' // 已迁移为官方插件
 import DataConverter from '@/components/DataConverter.vue'
-import TwoFactorAuth from '@/components/TwoFactorAuth.vue'
+// import TwoFactorAuth from '@/components/TwoFactorAuth.vue' // 已迁移为官方插件
 
 // 内置插件定义
 export const builtinPlugins: Plugin[] = [
@@ -98,19 +98,20 @@ export const builtinPlugins: Plugin[] = [
     },
     component: DataConverter,
     enabled: true
-  },
-  {
-    metadata: {
-      id: '2fa',
-      name: '2FA 验证码',
-      description: 'TOTP 双因素验证码生成',
-      version: '1.0.0',
-      author: 'UniHub',
-      icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
-      category: 'tool',
-      keywords: ['2fa', 'totp', 'otp', 'auth', '验证码']
-    },
-    component: TwoFactorAuth,
-    enabled: true
   }
+  // 2FA 验证器已迁移为官方插件，可在插件市场安装
+  // {
+  //   metadata: {
+  //     id: '2fa',
+  //     name: '2FA 验证码',
+  //     description: 'TOTP 双因素验证码生成',
+  //     version: '1.0.0',
+  //     author: 'UniHub',
+  //     icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z',
+  //     category: 'tool',
+  //     keywords: ['2fa', 'totp', 'otp', 'auth', '验证码']
+  //   },
+  //   component: TwoFactorAuth,
+  //   enabled: true
+  // }
 ]

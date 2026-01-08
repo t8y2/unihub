@@ -1,7 +1,32 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-01-07T12:00:00Z",
+  "lastUpdated": "2025-01-08T12:00:00Z",
   "plugins": [
+    {
+      "id": "com.unihub.2fa-authenticator",
+      "name": "2FA 验证器",
+      "version": "1.0.0",
+      "description": "TOTP 双因素验证码生成器 - 支持添加、管理和生成 2FA 验证码，支持导入 URI 和二维码显示",
+      "author": {
+        "name": "UniHub Team",
+        "email": "team@unihub.dev",
+        "url": "https://github.com/unihub"
+      },
+      "icon": "https://api.iconify.design/fluent-emoji/shield.svg",
+      "category": "tool",
+      "keywords": ["2fa", "totp", "otp", "auth", "authenticator", "验证码", "双因素认证"],
+      "permissions": ["clipboard", "storage"],
+      "install": {
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/2fa-authenticator/plugin.zip"
+      },
+      "homepage": "https://github.com/t8y2",
+      "repository": "https://github.com/t8y2/unihub",
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-01-08T12:00:00Z",
+      "updatedAt": "2025-01-08T12:00:00Z"
+    },
     {
       "id": "com.unihub.code-diff",
       "name": "代码对比工具",

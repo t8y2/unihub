@@ -13,10 +13,8 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
+import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'vue-sonner'
-import { useClipboard } from '@/composables/useClipboard'
-
-const { copy } = useClipboard()
 
 interface Account {
   id: string
@@ -124,7 +122,12 @@ const testGenerateToken = (): void => {
 }
 
 const copyToken = async (token: string): Promise<void> => {
-  await copy(token)
+  try {
+    await navigator.clipboard.writeText(token)
+    toast.success('已复制到剪贴板')
+  } catch {
+    toast.error('复制失败')
+  }
 }
 
 const generateQRCodeImage = (text: string): string => {
@@ -282,7 +285,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-800">
+  <div class="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900">
+    <Toaster position="top-center" />
     <div
       class="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-4 gap-2 flex-shrink-0"
     >
@@ -336,12 +340,12 @@ onUnmounted(() => {
         <div
           v-for="account in accounts"
           :key="account.id"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
         >
           <div class="flex items-start justify-between mb-3">
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-900 truncate">{{ account.issuer }}</h3>
-              <p class="text-xs text-gray-500 truncate">{{ account.name }}</p>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{{ account.issuer }}</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ account.name }}</p>
             </div>
             <div class="flex gap-1 ml-2">
               <Button size="icon" variant="ghost" title="显示二维码" @click="showQRCode(account)">
@@ -373,7 +377,7 @@ onUnmounted(() => {
           </div>
 
           <div class="relative mb-2">
-            <div class="text-3xl font-mono font-bold text-center text-gray-900 tracking-wider">
+            <div class="text-3xl font-mono font-bold text-center text-gray-900 dark:text-gray-100 tracking-wider">
               {{ generateToken(account.totp) }}
             </div>
             <Button
@@ -395,7 +399,7 @@ onUnmounted(() => {
           </div>
 
           <div class="flex items-center gap-2">
-            <div class="flex-1 h-1 bg-gray-200 rounded-full overflow-hidden">
+            <div class="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
                 class="h-full bg-blue-500 transition-all duration-100"
                 :style="{ width: `${timeProgress}%` }"
