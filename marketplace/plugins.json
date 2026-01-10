@@ -3,6 +3,31 @@
   "lastUpdated": "2025-01-10T12:00:00Z",
   "plugins": [
     {
+      "id": "com.unihub.image-compressor",
+      "name": "图片压缩工具",
+      "version": "1.0.0",
+      "description": "图片压缩工具 - 支持批量压缩、格式转换、尺寸调整，支持 JPG/PNG/WebP 格式",
+      "author": {
+        "name": "UniHub Team",
+        "email": "team@unihub.dev",
+        "url": "https://github.com/unihub"
+      },
+      "icon": "https://api.iconify.design/mdi/image-size-select-actual.svg",
+      "category": "tool",
+      "keywords": ["image", "compress", "resize", "webp", "图片压缩", "格式转换"],
+      "permissions": ["clipboard"],
+      "install": {
+        "zip": "https://unihub-1307847329.cos.ap-shanghai.myqcloud.com/official-plugins/image-compressor/plugin.zip"
+      },
+      "homepage": "https://github.com/t8y2",
+      "repository": "https://github.com/t8y2/unihub",
+      "screenshots": [],
+      "downloads": 0,
+      "rating": 5.0,
+      "createdAt": "2025-01-10T12:00:00Z",
+      "updatedAt": "2025-01-10T12:00:00Z"
+    },
+    {
       "id": "com.unihub.curl-converter",
       "name": "Win Curl 转换器",
       "version": "1.0.0",
