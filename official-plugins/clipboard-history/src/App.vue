@@ -13,24 +13,34 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
   Code,
-  Pin,
-  PinOff,
+  Bookmark,
+  BookmarkCheck,
   RefreshCw
 } from 'lucide-vue-next'
 
-const { items, isLoading, addItem: addItemToDB, updateItem, deleteItem: deleteItemFromDB, clearUnpinned } = useClipboardDB()
+const {
+  items,
+  favorites,
+  isLoading,
+  addItem: addItemToDB,
+  deleteItem: deleteItemFromDB,
+  clearUnpinned,
+  toggleFavorite,
+  removeFavorite
+} = useClipboardDB()
 const searchQuery = ref('')
 const selectedType = ref<'all' | 'text' | 'url' | 'code' | 'image'>('all')
+// 收藏视图开关（历史与收藏分表）
 const showPinnedOnly = ref(false)
 const lastClipboardContent = ref('')
 const isRefreshing = ref(false)
+let clipboardPollTimer: number | null = null
+let clipboardUnsubscribe: (() => void) | null = null
+// 用于快速判断收藏状态，避免频繁遍历
+const favoriteIds = computed(() => new Set(favorites.value.map((item) => item.id)))
 
 const filteredItems = computed(() => {
-  let filtered = items.value
-
-  if (showPinnedOnly.value) {
-    filtered = filtered.filter((item) => item.pinned)
-  }
+  let filtered = showPinnedOnly.value ? favorites.value : items.value
 
   if (selectedType.value !== 'all') {
     filtered = filtered.filter((item) => item.type === selectedType.value)
@@ -42,16 +52,13 @@ const filteredItems = computed(() => {
     )
   }
 
-  return filtered.sort((a, b) => {
-    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-    return b.timestamp - a.timestamp
-  })
+  return [...filtered].sort((a, b) => b.timestamp - a.timestamp)
 })
 
 const stats = computed(() => {
   return {
     total: items.value.length,
-    pinned: items.value.filter((i) => i.pinned).length,
+    pinned: favorites.value.length,
     text: items.value.filter((i) => i.type === 'text').length,
     url: items.value.filter((i) => i.type === 'url').length,
     code: items.value.filter((i) => i.type === 'code').length
@@ -72,12 +79,22 @@ const addItem = async (content: string) => {
     id: Date.now().toString(),
     content,
     type: detectType(content),
-    timestamp: Date.now(),
-    pinned: false,
-    favorite: false
+    timestamp: Date.now()
   }
 
   await addItemToDB(newItem)
+}
+
+const syncClipboard = async () => {
+  try {
+    const text = await window.unihub.clipboard.readText()
+    if (!text || text.trim().length === 0) return
+    if (text === lastClipboardContent.value) return
+    lastClipboardContent.value = text
+    await addItem(text)
+  } catch (error) {
+    console.error('读取剪贴板失败:', error)
+  }
 }
 
 const copyToClipboard = async (content: string) => {
@@ -89,35 +106,29 @@ const copyToClipboard = async (content: string) => {
   }
 }
 
-const deleteItem = async (id: string) => {
-  await deleteItemFromDB(id)
+const toggleFavoriteItem = async (item: ClipboardItem) => {
+  await toggleFavorite(item)
 }
 
-const togglePin = async (id: string) => {
-  const item = items.value.find((item) => item.id === id)
-  if (item) {
-    item.pinned = !item.pinned
-    await updateItem(item)
+const handleDelete = async (item: ClipboardItem) => {
+  if (showPinnedOnly.value) {
+    // 收藏视图下删除仅移除收藏，不影响历史
+    await removeFavorite(item.id)
+    return
   }
+
+  await deleteItemFromDB(item.id)
 }
 
 const clearAll = async () => {
-  if (confirm('确定要清空所有历史记录吗？（已固定的项目将保留）')) {
+  if (confirm('确定要清空所有历史记录吗？（收藏的项目将保留）')) {
     await clearUnpinned()
   }
 }
 
 const manualRefresh = async () => {
   isRefreshing.value = true
-  try {
-    const text = await window.unihub.clipboard.readText()
-    if (text && text.trim().length > 0) {
-      lastClipboardContent.value = text
-      addItem(text)
-    }
-  } catch (error) {
-    console.error('读取剪贴板失败:', error)
-  }
+  await syncClipboard()
   setTimeout(() => {
     isRefreshing.value = false
   }, 500)
@@ -159,33 +170,54 @@ const handlePaste = async (e: ClipboardEvent) => {
   }
 }
 
-onMounted(async () => {
-  // 订阅剪贴板变化（主进程实时监控）
+const startClipboardWatcher = async () => {
+  await syncClipboard()
+
   try {
     await window.unihub.clipboard.subscribe()
-    
-    // 监听剪贴板变化事件
-    const unsubscribe = window.unihub.clipboard.onChange((data) => {
+    clipboardUnsubscribe = window.unihub.clipboard.onChange((data) => {
       if (data.content && data.content !== lastClipboardContent.value) {
         lastClipboardContent.value = data.content
         addItem(data.content)
       }
     })
-    
-    // 组件卸载时取消订阅
-    onUnmounted(() => {
-      unsubscribe()
-      window.unihub.clipboard.unsubscribe()
-    })
   } catch (error) {
     console.error('订阅剪贴板失败:', error)
   }
-  
+
+  if (clipboardPollTimer === null) {
+    // 订阅事件 + 轮询双保险，避免偶发漏报
+    clipboardPollTimer = window.setInterval(() => {
+      void syncClipboard()
+    }, 1000)
+  }
+}
+
+const stopClipboardWatcher = () => {
+  if (clipboardUnsubscribe) {
+    clipboardUnsubscribe()
+    clipboardUnsubscribe = null
+  }
+
+  if (clipboardPollTimer !== null) {
+    window.clearInterval(clipboardPollTimer)
+    clipboardPollTimer = null
+  }
+
+  void window.unihub.clipboard.unsubscribe().catch((error) => {
+    console.error('取消订阅剪贴板失败:', error)
+  })
+}
+
+onMounted(async () => {
+  await startClipboardWatcher()
+
   // 监听粘贴事件（作为备用）
   window.addEventListener('paste', handlePaste)
 })
 
 onUnmounted(() => {
+  stopClipboardWatcher()
   window.removeEventListener('paste', handlePaste)
 })
 </script>
@@ -226,8 +258,8 @@ onUnmounted(() => {
             ]"
             @click="showPinnedOnly = !showPinnedOnly; selectedType = 'all'"
           >
-            <Pin :size="16" />
-            <span class="flex-1 text-left font-medium">已固定</span>
+            <Bookmark :size="16" />
+            <span class="flex-1 text-left font-medium">收藏</span>
             <span class="text-xs font-semibold tabular-nums">{{ stats.pinned }}</span>
           </button>
 
@@ -292,7 +324,7 @@ onUnmounted(() => {
       <!-- 头部工具栏 -->
       <div class="h-14 bg-card border-b border-border flex items-center px-4 gap-3 flex-shrink-0">
         <h2 class="text-base font-semibold text-foreground">
-          {{ showPinnedOnly ? '已固定' : selectedType === 'all' ? '全部' : selectedType === 'text' ? '文本' : selectedType === 'url' ? '链接' : '代码' }}
+          {{ showPinnedOnly ? '收藏' : selectedType === 'all' ? '全部' : selectedType === 'text' ? '文本' : selectedType === 'url' ? '链接' : '代码' }}
         </h2>
 
         <div class="flex-1"></div>
@@ -365,14 +397,14 @@ onUnmounted(() => {
                     <button
                       :class="[
                         'p-1.5 rounded-md transition-colors',
-                        item.pinned
+                        favoriteIds.has(item.id)
                           ? 'text-primary bg-primary/10'
                           : 'text-muted-foreground hover:text-foreground hover:bg-accent opacity-0 group-hover:opacity-100'
                       ]"
-                      :title="item.pinned ? '取消固定' : '固定'"
-                      @click="togglePin(item.id)"
+                      :title="favoriteIds.has(item.id) ? '取消收藏' : '收藏'"
+                      @click="toggleFavoriteItem(item)"
                     >
-                      <component :is="item.pinned ? Pin : PinOff" :size="14" />
+                      <component :is="favoriteIds.has(item.id) ? BookmarkCheck : Bookmark" :size="14" />
                     </button>
 
                     <button
@@ -386,7 +418,7 @@ onUnmounted(() => {
                     <button
                       class="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
                       title="删除"
-                      @click="deleteItem(item.id)"
+                      @click="handleDelete(item)"
                     >
                       <Trash2 :size="14" />
                     </button>
