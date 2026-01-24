@@ -94,6 +94,10 @@ const api = {
     getShortcuts: () => ipcRenderer.invoke('settings:getShortcuts'),
     setShortcut: (key: 'toggleWindow' | 'globalSearch', value: string) =>
       ipcRenderer.invoke('settings:setShortcut', key, value),
+    setPluginShortcut: (pluginId: string, value: string) =>
+      ipcRenderer.invoke('settings:setPluginShortcut', pluginId, value),
+    removePluginShortcut: (pluginId: string) =>
+      ipcRenderer.invoke('settings:removePluginShortcut', pluginId),
     update: (partial: Record<string, unknown>) => ipcRenderer.invoke('settings:update', partial),
     reset: () => ipcRenderer.invoke('settings:reset')
   },

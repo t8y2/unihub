@@ -55,6 +55,7 @@ declare global {
       settings: {
         getAll: () => Promise<{
           shortcuts: { toggleWindow: string; globalSearch: string }
+          pluginShortcuts: Array<{ pluginId: string; shortcut: string }>
           general: { launchAtStartup: boolean; minimizeToTray: boolean; language: string }
           appearance: { theme: 'light' | 'dark' | 'system'; sidebarWidth: number }
         }>
@@ -63,6 +64,11 @@ declare global {
           key: 'toggleWindow' | 'globalSearch',
           value: string
         ) => Promise<{ success: boolean }>
+        setPluginShortcut: (
+          pluginId: string,
+          value: string
+        ) => Promise<{ success: boolean; message?: string }>
+        removePluginShortcut: (pluginId: string) => Promise<{ success: boolean }>
         update: (partial: Record<string, unknown>) => Promise<{ success: boolean }>
         reset: () => Promise<{ success: boolean }>
       }

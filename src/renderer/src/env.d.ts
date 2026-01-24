@@ -43,6 +43,7 @@ interface Settings {
     toggleWindow: string
     globalSearch: string
   }
+  pluginShortcuts: Array<{ pluginId: string; shortcut: string }>
   general: {
     launchAtStartup: boolean
     minimizeToTray: boolean
@@ -156,6 +157,8 @@ declare global {
         getAll: () => Promise<Settings>
         getShortcuts: () => Promise<Settings['shortcuts']>
         setShortcut: (key: 'toggleWindow' | 'globalSearch', value: string) => Promise<ApiResponse>
+        setPluginShortcut: (pluginId: string, value: string) => Promise<ApiResponse>
+        removePluginShortcut: (pluginId: string) => Promise<ApiResponse>
         update: (partial: Partial<Settings>) => Promise<ApiResponse>
         reset: () => Promise<ApiResponse>
       }

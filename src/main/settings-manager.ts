@@ -14,6 +14,11 @@ export interface AppSettings {
     toggleWindow: string // 显示/隐藏窗口
     globalSearch: string // 全局搜索
   }
+  // 插件快捷键设置
+  pluginShortcuts: Array<{
+    pluginId: string
+    shortcut: string
+  }>
   // 通用设置
   general: {
     launchAtStartup: boolean
@@ -35,6 +40,8 @@ const defaultSettings: AppSettings = {
     toggleWindow: process.platform === 'darwin' ? 'Command+Shift+Space' : 'Ctrl+Shift+Space',
     globalSearch: process.platform === 'darwin' ? 'Command+K' : 'Ctrl+K'
   },
+  // 用于全局快捷键打开插件
+  pluginShortcuts: [],
   general: {
     launchAtStartup: false,
     minimizeToTray: true,
@@ -89,6 +96,8 @@ export class SettingsManager {
   private mergeSettings(defaults: AppSettings, loaded: Partial<AppSettings>): AppSettings {
     return {
       shortcuts: { ...defaults.shortcuts, ...loaded.shortcuts },
+      // 兼容旧版本设置文件（无插件快捷键时回退为空数组）
+      pluginShortcuts: Array.isArray(loaded.pluginShortcuts) ? loaded.pluginShortcuts : [],
       general: { ...defaults.general, ...loaded.general },
       appearance: { ...defaults.appearance, ...loaded.appearance }
     }
@@ -120,11 +129,47 @@ export class SettingsManager {
   }
 
   /**
+   * 获取插件快捷键
+   */
+  getPluginShortcuts(): AppSettings['pluginShortcuts'] {
+    return [...this.settings.pluginShortcuts]
+  }
+
+  /**
    * 更新快捷键
    */
   setShortcut(key: keyof AppSettings['shortcuts'], value: string): void {
     this.settings.shortcuts[key] = value
     this.saveSettings()
+  }
+
+  /**
+   * 更新插件快捷键
+   */
+  setPluginShortcut(pluginId: string, shortcut: string): void {
+    // 同一插件只保留一条快捷键记录
+    const existingIndex = this.settings.pluginShortcuts.findIndex(
+      (item) => item.pluginId === pluginId
+    )
+    if (existingIndex >= 0) {
+      this.settings.pluginShortcuts[existingIndex] = { pluginId, shortcut }
+    } else {
+      this.settings.pluginShortcuts.push({ pluginId, shortcut })
+    }
+    this.saveSettings()
+  }
+
+  /**
+   * 移除插件快捷键
+   */
+  removePluginShortcut(pluginId: string): { pluginId: string; shortcut: string } | null {
+    const existingIndex = this.settings.pluginShortcuts.findIndex(
+      (item) => item.pluginId === pluginId
+    )
+    if (existingIndex === -1) return null
+    const [removed] = this.settings.pluginShortcuts.splice(existingIndex, 1)
+    this.saveSettings()
+    return removed
   }
 
   /**
@@ -177,6 +222,9 @@ export class SettingsManager {
   update(partial: Partial<AppSettings>): void {
     if (partial.shortcuts) {
       this.settings.shortcuts = { ...this.settings.shortcuts, ...partial.shortcuts }
+    }
+    if (partial.pluginShortcuts) {
+      this.settings.pluginShortcuts = [...partial.pluginShortcuts]
     }
     if (partial.general) {
       this.settings.general = { ...this.settings.general, ...partial.general }

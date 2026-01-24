@@ -231,6 +231,27 @@ onMounted(() => {
     }
   )
 
+  // 监听从快捷键打开插件
+  window.electron.ipcRenderer.on(
+    'open-plugin-from-shortcut',
+    (_event: unknown, ...args: unknown[]) => {
+      const pluginId = args[0] as string
+      // 快捷键触发时，确保第三方插件已加载后再打开
+      if (!pluginRegistry.get(pluginId)) {
+        void pluginInstaller
+          .loadInstalledPlugins()
+          .then(() => {
+            openTab(pluginId)
+          })
+          .catch((error) => {
+            console.error('加载第三方插件失败:', error)
+          })
+        return
+      }
+      openTab(pluginId)
+    }
+  )
+
   // 监听快捷键注册失败
   window.electron.ipcRenderer.on(
     'shortcut-register-failed',

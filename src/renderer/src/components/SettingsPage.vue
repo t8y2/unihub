@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from 'vue'
+import { ref, onMounted, onUnmounted, inject, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { Kbd } from '@/components/ui/kbd'
+import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +14,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 import {
   SETTINGS_TABS,
   SHORTCUT_LABELS,
@@ -31,6 +40,7 @@ interface Settings {
     toggleWindow: string
     globalSearch: string
   }
+  pluginShortcuts: Array<{ pluginId: string; shortcut: string }>
   general: {
     launchAtStartup: boolean
     minimizeToTray: boolean
@@ -47,6 +57,7 @@ const settings = ref<Settings>({
     toggleWindow: '',
     globalSearch: ''
   },
+  pluginShortcuts: [],
   general: {
     launchAtStartup: false,
     minimizeToTray: true,
@@ -58,9 +69,29 @@ const settings = ref<Settings>({
   }
 })
 
+interface InstalledPlugin {
+  id: string
+  enabled: boolean
+  metadata: {
+    name: string
+    icon?: string
+  }
+}
+
 // 正在录制的快捷键
-const recordingShortcut = ref<string | null>(null)
+const recordingTarget = ref<
+  | { type: 'global'; key: 'toggleWindow' | 'globalSearch' }
+  | { type: 'plugin'; pluginId: string }
+  | null
+>(null)
 const recordedKeys = ref<string[]>([])
+// 设置页仅展示已安装且启用的插件
+const installedPlugins = ref<InstalledPlugin[]>([])
+const showPluginShortcutDialog = ref(false)
+const pluginSearchQuery = ref('')
+const selectedPluginId = ref('')
+const dialogRecording = ref(false)
+let pluginEventHandler: (() => void) | null = null
 
 // 加载设置
 const loadSettings = async (): Promise<void> => {
@@ -71,6 +102,21 @@ const loadSettings = async (): Promise<void> => {
     console.log('设置加载成功', data)
   } catch (error) {
     console.error('加载设置失败', error)
+  }
+}
+
+const loadInstalledPlugins = async (): Promise<void> => {
+  try {
+    const plugins = await window.api.plugin.list()
+    installedPlugins.value = (plugins as InstalledPlugin[]).filter((plugin) => plugin.enabled)
+    if (
+      selectedPluginId.value &&
+      !installedPlugins.value.some((plugin) => plugin.id === selectedPluginId.value)
+    ) {
+      selectedPluginId.value = ''
+    }
+  } catch (error) {
+    console.error('加载已安装插件失败', error)
   }
 }
 
@@ -87,15 +133,115 @@ const saveShortcut = async (key: 'toggleWindow' | 'globalSearch', value: string)
   }
 }
 
+const savePluginShortcut = async (pluginId: string, value: string): Promise<boolean> => {
+  try {
+    console.log('保存插件快捷键', pluginId, value)
+    const result = await window.api.settings.setPluginShortcut(pluginId, value)
+    if (!result.success) {
+      throw new Error(result.message || '保存插件快捷键失败')
+    }
+
+    const existingIndex = settings.value.pluginShortcuts.findIndex(
+      (item) => item.pluginId === pluginId
+    )
+    if (existingIndex >= 0) {
+      settings.value.pluginShortcuts[existingIndex].shortcut = value
+    } else {
+      settings.value.pluginShortcuts.push({ pluginId, shortcut: value })
+    }
+
+    toast.success('插件快捷键已保存')
+    return true
+  } catch (error) {
+    console.error('保存插件快捷键失败', error)
+    toast.error('保存插件快捷键失败')
+    return false
+  }
+}
+
+const removePluginShortcut = async (pluginId: string): Promise<void> => {
+  try {
+    console.log('移除插件快捷键', pluginId)
+    // 清除设置并注销全局快捷键
+    await window.api.settings.removePluginShortcut(pluginId)
+    settings.value.pluginShortcuts = settings.value.pluginShortcuts.filter(
+      (item) => item.pluginId !== pluginId
+    )
+    toast.success('插件快捷键已清除')
+  } catch (error) {
+    console.error('移除插件快捷键失败', error)
+    toast.error('移除插件快捷键失败')
+  }
+}
+
+const getPluginShortcut = (pluginId: string): string => {
+  // 用于渲染输入框中的当前快捷键
+  return settings.value.pluginShortcuts.find((item) => item.pluginId === pluginId)?.shortcut || ''
+}
+
+const configuredPluginShortcuts = computed(() => {
+  return settings.value.pluginShortcuts.map((item) => ({
+    ...item,
+    name:
+      installedPlugins.value.find((plugin) => plugin.id === item.pluginId)?.metadata?.name ||
+      item.pluginId
+  }))
+})
+
+const availablePlugins = computed(() => {
+  const configuredIds = new Set(settings.value.pluginShortcuts.map((item) => item.pluginId))
+  return installedPlugins.value.filter((plugin) => !configuredIds.has(plugin.id))
+})
+
+const filteredPlugins = computed(() => {
+  const query = pluginSearchQuery.value.trim().toLowerCase()
+  if (!query) return availablePlugins.value
+  return availablePlugins.value.filter((plugin) => {
+    const name = plugin.metadata?.name?.toLowerCase() || ''
+    const id = plugin.id.toLowerCase()
+    return name.includes(query) || id.includes(query)
+  })
+})
+
+const openPluginShortcutDialog = (): void => {
+  showPluginShortcutDialog.value = true
+  pluginSearchQuery.value = ''
+  selectedPluginId.value = ''
+  dialogRecording.value = false
+}
+
+const closePluginShortcutDialog = (): void => {
+  showPluginShortcutDialog.value = false
+  pluginSearchQuery.value = ''
+  selectedPluginId.value = ''
+  dialogRecording.value = false
+  cancelRecording()
+}
+
+const startDialogRecording = (): void => {
+  if (!selectedPluginId.value) {
+    toast.error('请先选择插件')
+    return
+  }
+  dialogRecording.value = true
+  startRecordingPlugin(selectedPluginId.value)
+}
+
 // 开始录制快捷键
-const startRecording = (key: string): void => {
-  recordingShortcut.value = key
+const startRecordingGlobal = (key: string): void => {
+  if (key !== 'toggleWindow' && key !== 'globalSearch') return
+  recordingTarget.value = { type: 'global', key }
+  recordedKeys.value = []
+}
+
+const startRecordingPlugin = (pluginId: string): void => {
+  recordingTarget.value = { type: 'plugin', pluginId }
   recordedKeys.value = []
 }
 
 // 处理键盘事件
 const handleKeyDown = (e: KeyboardEvent): void => {
-  if (!recordingShortcut.value) return
+  if (!recordingTarget.value) return
 
   e.preventDefault()
   e.stopPropagation()
@@ -123,7 +269,7 @@ const handleKeyDown = (e: KeyboardEvent): void => {
 
 // 处理键盘释放
 const handleKeyUp = async (): Promise<void> => {
-  if (!recordingShortcut.value || recordedKeys.value.length === 0) return
+  if (!recordingTarget.value || recordedKeys.value.length === 0) return
 
   // 必须有至少一个修饰键和一个主键
   const hasModifier = recordedKeys.value.some((k) =>
@@ -135,16 +281,24 @@ const handleKeyUp = async (): Promise<void> => {
 
   if (hasModifier && hasMainKey) {
     const shortcut = recordedKeys.value.join('+')
-    await saveShortcut(recordingShortcut.value as 'toggleWindow' | 'globalSearch', shortcut)
+    if (recordingTarget.value.type === 'global') {
+      await saveShortcut(recordingTarget.value.key, shortcut)
+    } else {
+      const success = await savePluginShortcut(recordingTarget.value.pluginId, shortcut)
+      if (success && dialogRecording.value) {
+        closePluginShortcutDialog()
+      }
+    }
   }
 
-  recordingShortcut.value = null
+  dialogRecording.value = false
+  recordingTarget.value = null
   recordedKeys.value = []
 }
 
 // 取消录制
 const cancelRecording = (): void => {
-  recordingShortcut.value = null
+  recordingTarget.value = null
   recordedKeys.value = []
 }
 
@@ -195,7 +349,22 @@ const checkForUpdates = async (): Promise<void> => {
 
 onMounted(() => {
   loadSettings()
+  loadInstalledPlugins()
   loadSystemInfo()
+
+  pluginEventHandler = () => {
+    loadSettings()
+    loadInstalledPlugins()
+  }
+  window.addEventListener('plugin-installed', pluginEventHandler)
+  window.addEventListener('plugin-uninstalled', pluginEventHandler)
+})
+
+onUnmounted(() => {
+  if (pluginEventHandler) {
+    window.removeEventListener('plugin-installed', pluginEventHandler)
+    window.removeEventListener('plugin-uninstalled', pluginEventHandler)
+  }
 })
 
 const systemInfo = ref({
@@ -382,17 +551,17 @@ const exportSystemInfo = (): void => {
                       <button
                         :class="[
                           'px-3 py-1.5 min-w-32 text-sm font-mono rounded border transition-colors text-center',
-                          recordingShortcut === key
+                          recordingTarget?.type === 'global' && recordingTarget.key === key
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 animate-pulse'
                             : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500'
                         ]"
-                        @click="startRecording(key)"
+                        @click="startRecordingGlobal(key)"
                         @keydown="handleKeyDown"
                         @keyup="handleKeyUp"
                         @blur="cancelRecording"
                       >
                         {{
-                          recordingShortcut === key
+                          recordingTarget?.type === 'global' && recordingTarget.key === key
                             ? recordedKeys.length > 0
                               ? recordedKeys.join('+')
                               : '按下快捷键...'
@@ -403,6 +572,134 @@ const exportSystemInfo = (): void => {
                   </div>
                 </div>
               </div>
+
+              <!-- 插件快捷键 -->
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100">插件快捷键</h3>
+                  <button
+                    class="px-2.5 py-1.5 text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors"
+                    @click="openPluginShortcutDialog"
+                  >
+                    添加插件快捷键
+                  </button>
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                  手动添加需要配置快捷键的插件，触发时直接打开对应插件
+                </p>
+
+                <div v-if="configuredPluginShortcuts.length === 0" class="text-xs text-gray-500">
+                  暂无已配置的插件快捷键
+                </div>
+                <div v-else class="space-y-3">
+                  <div
+                    v-for="plugin in configuredPluginShortcuts"
+                    :key="plugin.pluginId"
+                    class="flex items-center justify-between py-2"
+                  >
+                    <span class="text-sm text-gray-700 dark:text-gray-300">
+                      {{ plugin.name }}
+                    </span>
+                    <div class="flex items-center gap-2">
+                      <button
+                        :class="[
+                          'px-3 py-1.5 min-w-32 text-sm font-mono rounded border transition-colors text-center',
+                          recordingTarget?.type === 'plugin' &&
+                          recordingTarget.pluginId === plugin.pluginId
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 animate-pulse'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500'
+                        ]"
+                        @click="startRecordingPlugin(plugin.pluginId)"
+                        @keydown="handleKeyDown"
+                        @keyup="handleKeyUp"
+                        @blur="cancelRecording"
+                      >
+                        {{
+                          recordingTarget?.type === 'plugin' &&
+                          recordingTarget.pluginId === plugin.pluginId
+                            ? recordedKeys.length > 0
+                              ? recordedKeys.join('+')
+                              : '按下快捷键...'
+                            : getPluginShortcut(plugin.pluginId) || '未设置'
+                        }}
+                      </button>
+                      <button
+                        v-if="getPluginShortcut(plugin.pluginId)"
+                        class="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        @click="removePluginShortcut(plugin.pluginId)"
+                      >
+                        清除
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Dialog
+                v-model:open="showPluginShortcutDialog"
+                @update:open="(value) => (value ? null : closePluginShortcutDialog())"
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>添加插件快捷键</DialogTitle>
+                    <DialogDescription>选择一个插件并录制全局快捷键</DialogDescription>
+                  </DialogHeader>
+                  <div class="space-y-3">
+                    <Input v-model="pluginSearchQuery" placeholder="搜索插件名称或 ID" />
+                    <div
+                      class="max-h-56 overflow-auto rounded-md border border-gray-200 dark:border-gray-700"
+                    >
+                      <div v-if="filteredPlugins.length === 0" class="p-3 text-xs text-gray-500">
+                        暂无可添加的插件
+                      </div>
+                      <label
+                        v-for="plugin in filteredPlugins"
+                        :key="plugin.id"
+                        class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        <input
+                          v-model="selectedPluginId"
+                          type="radio"
+                          name="plugin-shortcut"
+                          :value="plugin.id"
+                        />
+                        <span class="truncate">{{ plugin.metadata.name || plugin.id }}</span>
+                        <span class="text-xs text-gray-400">{{ plugin.id }}</span>
+                      </label>
+                    </div>
+                    <button
+                      :class="[
+                        'px-3 py-1.5 text-sm font-mono rounded border transition-colors text-center',
+                        recordingTarget?.type === 'plugin' &&
+                        recordingTarget.pluginId === selectedPluginId
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 animate-pulse'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500'
+                      ]"
+                      @click="startDialogRecording"
+                      @keydown="handleKeyDown"
+                      @keyup="handleKeyUp"
+                      @blur="cancelRecording"
+                    >
+                      {{
+                        recordingTarget?.type === 'plugin' &&
+                        recordingTarget.pluginId === selectedPluginId
+                          ? recordedKeys.length > 0
+                            ? recordedKeys.join('+')
+                            : '按下快捷键...'
+                          : '录制快捷键'
+                      }}
+                    </button>
+                  </div>
+                  <DialogFooter>
+                    <button
+                      class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                      @click="closePluginShortcutDialog"
+                    >
+                      关闭
+                    </button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               <!-- 应用内快捷键（不可修改） -->
               <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">

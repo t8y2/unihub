@@ -1,4 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, net, Menu } from 'electron'
+import {
+  app,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  protocol,
+  net,
+  Menu,
+  Tray,
+  nativeImage
+} from 'electron'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -10,6 +20,7 @@ import { registerDevModeHandlers } from './ipc-handlers'
 import { webContentsViewManager } from './webcontents-view-manager'
 import { shortcutManager } from './shortcut-manager'
 import { settingsManager } from './settings-manager'
+import type { AppSettings } from './settings-manager'
 import { lmdbManager } from './lmdb-manager'
 import { searchWindowManager } from './search-window-manager'
 import { updaterManager } from './updater-manager'
@@ -45,6 +56,129 @@ const nodeAPI = new NodeAPI()
 
 // 标志：应用是否正在退出
 let isQuitting = false
+let tray: Tray | null = null
+
+// 读取最新的通用设置（避免缓存导致状态不同步）
+const getGeneralSettings = (): AppSettings['general'] => settingsManager.getGeneral()
+
+// 切换主窗口显示/隐藏（用于托盘交互）
+const toggleMainWindowVisibility = (): void => {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+
+  if (mainWindow.isVisible()) {
+    mainWindow.hide()
+  } else {
+    if (process.platform === 'darwin') {
+      // macOS: 如果应用被隐藏，先唤起应用再显示窗口
+      app.show()
+    }
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore()
+    }
+    mainWindow.show()
+    mainWindow.focus()
+  }
+
+  updateTrayMenu()
+}
+
+// 根据窗口状态更新托盘菜单
+const updateTrayMenu = (): void => {
+  if (!tray) return
+
+  const isVisible = mainWindow?.isVisible() ?? false
+  const menu = Menu.buildFromTemplate([
+    {
+      label: isVisible ? '隐藏窗口' : '显示窗口',
+      click: () => toggleMainWindowVisibility()
+    },
+    { type: 'separator' as const },
+    {
+      label: '退出',
+      click: () => {
+        isQuitting = true
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setContextMenu(menu)
+}
+
+// 初始化托盘图标
+const createTray = (): void => {
+  if (tray) {
+    updateTrayMenu()
+    return
+  }
+
+  const trayImage = nativeImage.createFromPath(icon)
+  if (process.platform === 'darwin') {
+    trayImage.setTemplateImage(true)
+  }
+
+  tray = new Tray(trayImage)
+  tray.setToolTip('UniHub')
+  tray.on('click', () => toggleMainWindowVisibility())
+  tray.on('right-click', () => {
+    updateTrayMenu()
+    tray?.popUpContextMenu()
+  })
+
+  updateTrayMenu()
+  logger.info('托盘图标已创建')
+}
+
+// 移除托盘图标
+const destroyTray = (): void => {
+  if (!tray) return
+
+  tray.destroy()
+  tray = null
+  logger.info('托盘图标已移除')
+}
+
+// 根据设置控制开机自启动
+const applyLaunchAtStartupSetting = (enabled: boolean): void => {
+  if (process.platform !== 'darwin' && process.platform !== 'win32') {
+    logger.info('当前平台不支持开机自启动设置')
+    return
+  }
+
+  if (process.platform === 'darwin') {
+    app.setLoginItemSettings({ openAtLogin: enabled, openAsHidden: false })
+  } else {
+    app.setLoginItemSettings({ openAtLogin: enabled })
+  }
+
+  logger.info({ enabled }, '已应用开机自启动设置')
+}
+
+// 根据设置控制最小化到托盘
+const applyMinimizeToTraySetting = (enabled: boolean): void => {
+  if (enabled) {
+    createTray()
+  } else {
+    if (mainWindow && !mainWindow.isVisible()) {
+      if (process.platform === 'darwin') {
+        // macOS: 解除隐藏后再显示窗口
+        app.show()
+      }
+      mainWindow.show()
+    }
+    destroyTray()
+  }
+}
+
+// 统一应用通用设置的副作用
+const applyGeneralSettings = (general: Partial<AppSettings['general']>): void => {
+  if (typeof general.launchAtStartup === 'boolean') {
+    applyLaunchAtStartupSetting(general.launchAtStartup)
+  }
+  if (typeof general.minimizeToTray === 'boolean') {
+    applyMinimizeToTraySetting(general.minimizeToTray)
+  }
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -105,15 +239,49 @@ function createWindow(): void {
   // 拦截窗口关闭事件
   mainWindow.on('close', (event) => {
     // 只有真正退出时才允许关闭，其他情况都阻止
-    if (process.platform === 'darwin' && !isQuitting) {
-      // macOS: 阻止关闭，但不隐藏窗口（Cmd+W 不应该隐藏窗口）
-      event.preventDefault()
-      // 不做任何事，让窗口保持显示
-    } else {
-      // Windows/Linux 或 macOS 真正退出时：允许关闭
+    if (isQuitting) {
       logger.info('窗口正在关闭')
+      return
     }
+
+    const { minimizeToTray } = getGeneralSettings()
+    if (minimizeToTray) {
+      // 关闭按钮触发时隐藏到托盘
+      event.preventDefault()
+      if (process.platform === 'darwin') {
+        // macOS: 使用应用级隐藏，确保窗口真正消失
+        mainWindow?.hide()
+        app.hide()
+      } else {
+        mainWindow?.hide()
+      }
+      createTray()
+      logger.info('窗口已隐藏到托盘（关闭按钮）')
+      return
+    }
+    logger.info('窗口正在关闭')
   })
+
+  // 最小化到托盘
+  mainWindow.on('minimize', () => {
+    const { minimizeToTray } = getGeneralSettings()
+    if (!minimizeToTray) return
+
+    // 使用隐藏模拟最小化到托盘
+    if (process.platform === 'darwin') {
+      // macOS: 使用应用级隐藏，行为更接近托盘最小化
+      mainWindow?.hide()
+      app.hide()
+    } else {
+      mainWindow?.hide()
+    }
+    createTray()
+    logger.info('窗口已隐藏到托盘（最小化）')
+  })
+
+  // 监听显示/隐藏以更新托盘菜单
+  mainWindow.on('show', () => updateTrayMenu())
+  mainWindow.on('hide', () => updateTrayMenu())
 
   // 拦截 Cmd+W / Ctrl+W 快捷键和 ESC 键
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -183,6 +351,9 @@ app.whenReady().then(async () => {
   // 立即创建窗口（不等待插件初始化）
   createWindow()
 
+  // 启动时应用通用设置（开机自启动/最小化到托盘）
+  applyGeneralSettings(getGeneralSettings())
+
   // 异步初始化插件系统（不阻塞窗口显示）
   setImmediate(() => {
     const pluginInitStart = performance.now()
@@ -213,6 +384,8 @@ app.whenReady().then(async () => {
       mainWindow.focus()
       logger.info('👁窗口已显示（通过 Dock）')
     }
+
+    updateTrayMenu()
   })
 
   const appEndTime = performance.now()
@@ -257,7 +430,14 @@ function setupIpcHandlers(): void {
   })
 
   ipcMain.handle('plugin:uninstall', async (_, pluginId: string) => {
-    return await pluginManager.uninstallPlugin(pluginId)
+    const result = await pluginManager.uninstallPlugin(pluginId)
+    if (result.success) {
+      const removed = settingsManager.removePluginShortcut(pluginId)
+      if (removed?.shortcut) {
+        shortcutManager.unregister(removed.shortcut)
+      }
+    }
+    return result
   })
 
   ipcMain.handle('plugin:list', async () => {
@@ -406,8 +586,70 @@ function setupIpcHandlers(): void {
     }
   )
 
-  ipcMain.handle('settings:update', (_, partial) => {
+  ipcMain.handle(
+    'settings:setPluginShortcut',
+    async (_, pluginId: string, value: string): Promise<{ success: boolean; message?: string }> => {
+      // 插件快捷键必须是已安装且启用的插件
+      if (!value) {
+        return { success: false, message: '快捷键不能为空' }
+      }
+      const plugins = await pluginManager.listPlugins()
+      const plugin = plugins.find((item) => item.id === pluginId)
+      if (!plugin) {
+        return { success: false, message: '插件未安装' }
+      }
+      if (!plugin.enabled) {
+        return { success: false, message: '插件未启用' }
+      }
+
+      const oldShortcuts = settingsManager.getPluginShortcuts()
+      const existing = oldShortcuts.find((item) => item.pluginId === pluginId)
+
+      // 变更前先取消旧快捷键，避免重复注册
+      if (existing?.shortcut === value) {
+        return { success: true }
+      }
+
+      if (existing?.shortcut) {
+        shortcutManager.unregister(existing.shortcut)
+      }
+
+      const success = shortcutManager.register(pluginId, value, () => {
+        openPluginFromShortcut(pluginId)
+      })
+
+      if (!success) {
+        // 注册失败时回滚到旧快捷键
+        if (existing?.shortcut) {
+          shortcutManager.register(pluginId, existing.shortcut, () => {
+            openPluginFromShortcut(pluginId)
+          })
+        }
+        return { success: false, message: '快捷键注册失败，可能被系统占用' }
+      }
+
+      settingsManager.setPluginShortcut(pluginId, value)
+      return { success: true }
+    }
+  )
+
+  ipcMain.handle('settings:removePluginShortcut', (_, pluginId: string): { success: boolean } => {
+    // 移除设置并注销注册的快捷键
+    const removed = settingsManager.removePluginShortcut(pluginId)
+    if (removed?.shortcut) {
+      shortcutManager.unregister(removed.shortcut)
+    }
+    return { success: true }
+  })
+
+  ipcMain.handle('settings:update', (_, partial: Partial<AppSettings>) => {
     settingsManager.update(partial)
+    if (partial.general) {
+      applyGeneralSettings(partial.general)
+    }
+    if (partial.pluginShortcuts) {
+      resyncPluginShortcuts()
+    }
     return { success: true }
   })
 
@@ -416,6 +658,8 @@ function setupIpcHandlers(): void {
     shortcutManager.cleanup()
     // 重置设置
     settingsManager.resetToDefaults()
+    // 重新应用通用设置
+    applyGeneralSettings(settingsManager.getGeneral())
     // 重新注册默认快捷键
     registerGlobalShortcuts()
     return { success: true }
@@ -456,26 +700,44 @@ function setupIpcHandlers(): void {
 
   // 窗口控制
   ipcMain.on('window:close', () => {
-    if (process.platform === 'darwin') {
-      // macOS: 隐藏窗口而不是关闭
-      mainWindow?.hide()
-      logger.info('窗口已隐藏（通过 IPC）')
-    } else {
-      // Windows/Linux: 关闭窗口（会触发应用退出）
-      mainWindow?.close()
+    const { minimizeToTray } = getGeneralSettings()
+    if (minimizeToTray) {
+      // 开启最小化到托盘时，统一隐藏窗口
+      if (process.platform === 'darwin') {
+        // macOS: 使用应用级隐藏，确保窗口真正消失
+        mainWindow?.hide()
+        app.hide()
+      } else {
+        mainWindow?.hide()
+      }
+      createTray()
+      logger.info('窗口已隐藏到托盘（通过 IPC）')
+      return
     }
+
+    // 未开启最小化到托盘时，允许正常关闭
+    mainWindow?.close()
   })
 
   // 关闭窗口（从渲染进程触发，用于 cmd+w 关闭最后一个标签）
   ipcMain.on('close-window', () => {
-    if (process.platform === 'darwin') {
-      // macOS: 隐藏窗口
-      mainWindow?.hide()
-      logger.info('窗口已隐藏（通过 close-window）')
-    } else {
-      // Windows/Linux: 关闭窗口
-      mainWindow?.close()
+    const { minimizeToTray } = getGeneralSettings()
+    if (minimizeToTray) {
+      // 开启最小化到托盘时，统一隐藏窗口
+      if (process.platform === 'darwin') {
+        // macOS: 使用应用级隐藏，确保窗口真正消失
+        mainWindow?.hide()
+        app.hide()
+      } else {
+        mainWindow?.hide()
+      }
+      createTray()
+      logger.info('窗口已隐藏到托盘（通过 close-window）')
+      return
     }
+
+    // 未开启最小化到托盘时，允许正常关闭
+    mainWindow?.close()
   })
 
   // 聚焦主窗口（用于切换到内置组件时）
@@ -689,5 +951,64 @@ function registerGlobalShortcuts(): void {
         })
       }
     }
+
+    // 注册插件级快捷键（全局）
+    void registerPluginShortcuts()
   })
+}
+
+const openPluginFromShortcut = (pluginId: string): void => {
+  // 全局快捷键触发时确保主窗口可见并打开插件
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    logger.warn({ pluginId }, '主窗口已销毁，无法打开插件')
+    return
+  }
+
+  if (!mainWindow.isVisible()) {
+    if (process.platform === 'darwin') {
+      app.show()
+    }
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore()
+    }
+    mainWindow.show()
+  }
+  mainWindow.focus()
+  mainWindow.webContents.send('open-plugin-from-shortcut', pluginId)
+}
+
+const registerPluginShortcuts = async (): Promise<void> => {
+  const pluginShortcuts = settingsManager.getPluginShortcuts()
+  if (pluginShortcuts.length === 0) return
+
+  const plugins = await pluginManager.listPlugins()
+  const installedMap = new Map(plugins.map((plugin) => [plugin.id, plugin.enabled]))
+
+  pluginShortcuts.forEach(({ pluginId, shortcut }) => {
+    // 跳过空配置或未安装/未启用的插件
+    if (!shortcut) return
+    if (!installedMap.has(pluginId)) {
+      settingsManager.removePluginShortcut(pluginId)
+      return
+    }
+    if (!installedMap.get(pluginId)) return
+
+    const success = shortcutManager.register(pluginId, shortcut, () => {
+      openPluginFromShortcut(pluginId)
+    })
+    if (!success) {
+      logger.warn({ pluginId, shortcut }, '插件快捷键注册失败，可能被系统占用')
+    }
+  })
+}
+
+const resyncPluginShortcuts = (): void => {
+  // 先清理所有插件级快捷键，再按设置重新注册
+  shortcutManager.getAllShortcuts().forEach(({ pluginId, accelerator }) => {
+    if (pluginId !== 'system') {
+      shortcutManager.unregister(accelerator)
+    }
+  })
+
+  void registerPluginShortcuts()
 }
