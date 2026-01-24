@@ -86,6 +86,7 @@
     "onlyBuiltDependencies": [
       "better-sqlite3",
       "electron",
+      "electron-winstaller",
       "esbuild",
       "lmdb",
       "msgpackr-extract"
@@ -98,7 +99,11 @@
       "cpu": [
         "current"
       ]
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "sharp",
+      "vue-demi"
+    ]
   },
   "electronRebuild": {
     "force": true

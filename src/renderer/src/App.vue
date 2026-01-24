@@ -688,7 +688,9 @@ const addHomeTab = (): void => {
       ]"
     >
       <!-- 顶部拖动区域 -->
-      <div class="h-16 flex items-end pb-3 justify-center drag-region flex-shrink-0">
+      <div class="h-16 flex items-end pb-3 justify-center drag-region flex-shrink-0 relative">
+        <!-- macOS 交通灯区域需要禁用拖动，否则无法点击关闭按钮 -->
+        <div class="absolute left-0 top-0 h-6 w-16 no-drag" />
         <span
           v-show="!sidebarCollapsed"
           class="text-sm font-semibold text-gray-800 dark:text-gray-100"

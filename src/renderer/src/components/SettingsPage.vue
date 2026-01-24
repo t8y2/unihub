@@ -2,6 +2,7 @@
 import { ref, onMounted, inject } from 'vue'
 import { toast } from 'vue-sonner'
 import { Kbd } from '@/components/ui/kbd'
+import { Switch } from '@/components/ui/switch'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,6 +86,34 @@ const saveShortcut = async (key: 'toggleWindow' | 'globalSearch', value: string)
     console.error('保存快捷键失败', error)
     toast.error('保存快捷键失败')
   }
+}
+
+// 保存通用设置（开机自启动/最小化到托盘）
+const saveGeneralSetting = async <K extends keyof Settings['general']>(
+  key: K,
+  value: Settings['general'][K]
+): Promise<void> => {
+  try {
+    console.log('保存通用设置', key, value)
+    await window.api.settings.update({
+      general: {
+        [key]: value
+      }
+    })
+    settings.value.general[key] = value
+    toast.success('设置已保存')
+  } catch (error) {
+    console.error('保存通用设置失败', error)
+    toast.error('保存通用设置失败')
+  }
+}
+
+const toggleLaunchAtStartup = async (value: boolean): Promise<void> => {
+  await saveGeneralSetting('launchAtStartup', value)
+}
+
+const toggleMinimizeToTray = async (value: boolean): Promise<void> => {
+  await saveGeneralSetting('minimizeToTray', value)
 }
 
 // 开始录制快捷键
@@ -295,6 +324,42 @@ const exportSystemInfo = (): void => {
             <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">通用设置</h2>
 
             <div class="space-y-6">
+              <!-- 启动与托盘 -->
+              <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  启动与托盘
+                </h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                  管理开机自启动与最小化/关闭行为
+                </p>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-sm text-gray-800 dark:text-gray-200">开机自启动</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        系统启动后自动运行应用
+                      </div>
+                    </div>
+                    <Switch
+                      :checked="settings.general.launchAtStartup"
+                      @update:checked="toggleLaunchAtStartup"
+                    />
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-sm text-gray-800 dark:text-gray-200">最小化到托盘</div>
+                      <div class="text-xs text-gray-500 dark:text-gray-400">
+                        点击关闭或最小化时隐藏到系统托盘
+                      </div>
+                    </div>
+                    <Switch
+                      :checked="settings.general.minimizeToTray"
+                      @update:checked="toggleMinimizeToTray"
+                    />
+                  </div>
+                </div>
+              </div>
+
               <!-- 主题设置 -->
               <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <h3 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">外观</h3>
