@@ -11,3 +11,5 @@ out
 .vercel
 stats-api/.vercel
 .vscode
+
+.codex
