@@ -1,17 +1,17 @@
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, toRaw } from 'vue'
 
 export interface ClipboardItem {
   id: string
   content: string
   type: 'text' | 'url' | 'code' | 'image'
   timestamp: number
-  pinned: boolean
-  favorite: boolean
 }
 
 const DB_NAME = 'clipboard-history'
 const STORE_NAME = 'items'
-const DB_VERSION = 1
+// 收藏独立存储，避免删除历史时误删收藏
+const FAVORITES_STORE = 'favorites'
+const DB_VERSION = 2
 
 class ClipboardDB {
   private db: IDBDatabase | null = null
@@ -33,7 +33,13 @@ class ClipboardDB {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' })
           store.createIndex('timestamp', 'timestamp', { unique: false })
           store.createIndex('type', 'type', { unique: false })
-          store.createIndex('pinned', 'pinned', { unique: false })
+          store.createIndex('content', 'content', { unique: false })
+        }
+
+        if (!db.objectStoreNames.contains(FAVORITES_STORE)) {
+          const store = db.createObjectStore(FAVORITES_STORE, { keyPath: 'id' })
+          store.createIndex('timestamp', 'timestamp', { unique: false })
+          store.createIndex('type', 'type', { unique: false })
           store.createIndex('content', 'content', { unique: false })
         }
       }
@@ -53,6 +59,19 @@ class ClipboardDB {
     })
   }
 
+  async getAllFavorites(): Promise<ClipboardItem[]> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(FAVORITES_STORE, 'readonly')
+      const store = transaction.objectStore(FAVORITES_STORE)
+      const request = store.getAll()
+
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
   async add(item: ClipboardItem): Promise<void> {
     if (!this.db) throw new Error('Database not initialized')
 
@@ -60,6 +79,19 @@ class ClipboardDB {
       const transaction = this.db!.transaction(STORE_NAME, 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
       const request = store.add(item)
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  async upsertFavorite(item: ClipboardItem): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(FAVORITES_STORE, 'readwrite')
+      const store = transaction.objectStore(FAVORITES_STORE)
+      const request = store.put(item)
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
@@ -92,44 +124,61 @@ class ClipboardDB {
     })
   }
 
+  async deleteFavorite(id: string): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(FAVORITES_STORE, 'readwrite')
+      const store = transaction.objectStore(FAVORITES_STORE)
+      const request = store.delete(id)
+
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  async getFavorite(id: string): Promise<ClipboardItem | undefined> {
+    if (!this.db) throw new Error('Database not initialized')
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(FAVORITES_STORE, 'readonly')
+      const store = transaction.objectStore(FAVORITES_STORE)
+      const request = store.get(id)
+
+      request.onsuccess = () => resolve(request.result)
+      request.onerror = () => reject(request.error)
+    })
+  }
+
   async findByContent(content: string): Promise<ClipboardItem | undefined> {
     const items = await this.getAll()
     return items.find((item) => item.content === content)
   }
 
-  async deleteUnpinned(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized')
+  async findFavoriteByContent(content: string): Promise<ClipboardItem | undefined> {
+    const items = await this.getAllFavorites()
+    return items.find((item) => item.content === content)
+  }
 
-    const items = await this.getAll()
-    const unpinned = items.filter((item) => !item.pinned)
+  async clearItems(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized')
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(STORE_NAME, 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
+      const request = store.clear()
 
-      let completed = 0
-      unpinned.forEach((item) => {
-        const request = store.delete(item.id)
-        request.onsuccess = () => {
-          completed++
-          if (completed === unpinned.length) resolve()
-        }
-        request.onerror = () => reject(request.error)
-      })
-
-      if (unpinned.length === 0) resolve()
+      request.onsuccess = () => resolve()
+      request.onerror = () => reject(request.error)
     })
   }
 
   async limitItems(maxCount: number): Promise<void> {
     const items = await this.getAll()
-    const pinned = items.filter((item) => item.pinned)
-    const unpinned = items
-      .filter((item) => !item.pinned)
-      .sort((a, b) => b.timestamp - a.timestamp)
+    const sorted = items.sort((a, b) => b.timestamp - a.timestamp)
 
-    if (unpinned.length > maxCount) {
-      const toDelete = unpinned.slice(maxCount)
+    if (sorted.length > maxCount) {
+      const toDelete = sorted.slice(maxCount)
       for (const item of toDelete) {
         await this.delete(item.id)
       }
@@ -140,17 +189,35 @@ class ClipboardDB {
 export function useClipboardDB() {
   const db = new ClipboardDB()
   const items = ref<ClipboardItem[]>([])
+  const favorites = ref<ClipboardItem[]>([])
   const isLoading = ref(true)
 
   const loadItems = async () => {
     try {
       items.value = await db.getAll()
-      items.value.sort((a, b) => {
-        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-        return b.timestamp - a.timestamp
-      })
+      items.value.sort((a, b) => b.timestamp - a.timestamp)
     } catch (error) {
       console.error('加载数据失败:', error)
+    }
+  }
+
+  const loadFavorites = async () => {
+    try {
+      favorites.value = await db.getAllFavorites()
+      favorites.value.sort((a, b) => b.timestamp - a.timestamp)
+    } catch (error) {
+      console.error('加载收藏失败:', error)
+    }
+  }
+
+  // IndexedDB 不能持久化响应式对象，需转换为纯数据
+  const normalizeItem = (item: ClipboardItem): ClipboardItem => {
+    const raw = toRaw(item) as ClipboardItem
+    return {
+      id: raw.id,
+      content: raw.content,
+      type: raw.type,
+      timestamp: raw.timestamp
     }
   }
 
@@ -160,7 +227,25 @@ export function useClipboardDB() {
       if (existing) {
         existing.timestamp = Date.now()
         await db.update(existing)
+        // 若该条已收藏，则同步更新时间
+        const favorite = await db.getFavorite(existing.id)
+        if (favorite) {
+          await db.upsertFavorite({ ...favorite, ...existing })
+          await loadFavorites()
+        }
         await loadItems()
+        return
+      }
+
+      const favoriteByContent = await db.findFavoriteByContent(item.content)
+      if (favoriteByContent) {
+        // 新增历史时复用已有收藏的 id，保证两边关联
+        const itemToAdd = { ...item, id: favoriteByContent.id }
+        await db.add(itemToAdd)
+        await db.upsertFavorite({ ...favoriteByContent, ...itemToAdd })
+        await db.limitItems(100)
+        await loadItems()
+        await loadFavorites()
         return
       }
 
@@ -169,15 +254,6 @@ export function useClipboardDB() {
       await loadItems()
     } catch (error) {
       console.error('添加数据失败:', error)
-    }
-  }
-
-  const updateItem = async (item: ClipboardItem) => {
-    try {
-      await db.update(item)
-      await loadItems()
-    } catch (error) {
-      console.error('更新数据失败:', error)
     }
   }
 
@@ -192,10 +268,53 @@ export function useClipboardDB() {
 
   const clearUnpinned = async () => {
     try {
-      await db.deleteUnpinned()
+      await db.clearItems()
       await loadItems()
     } catch (error) {
       console.error('清空数据失败:', error)
+    }
+  }
+
+  const toggleFavorite = async (item: ClipboardItem) => {
+    try {
+      const cleanItem = normalizeItem(item)
+      const favorite = await db.getFavorite(cleanItem.id)
+      if (favorite) {
+        await db.deleteFavorite(cleanItem.id)
+      } else {
+        await db.upsertFavorite(cleanItem)
+      }
+      await loadFavorites()
+    } catch (error) {
+      console.error('更新收藏失败:', error)
+    }
+  }
+
+  const removeFavorite = async (id: string) => {
+    try {
+      await db.deleteFavorite(id)
+      await loadFavorites()
+    } catch (error) {
+      console.error('取消收藏失败:', error)
+    }
+  }
+
+  // 旧版固定数据迁移到收藏表
+  const migratePinnedToFavorites = async () => {
+    if (favorites.value.length > 0) return
+
+    const legacyFavorites = items.value.filter(
+      (item) => (item as ClipboardItem & { pinned?: boolean }).pinned
+    )
+    if (legacyFavorites.length === 0) return
+
+    try {
+      for (const item of legacyFavorites) {
+        await db.upsertFavorite(normalizeItem(item))
+      }
+      await loadFavorites()
+    } catch (error) {
+      console.error('迁移收藏失败:', error)
     }
   }
 
@@ -203,6 +322,8 @@ export function useClipboardDB() {
     try {
       await db.init()
       await loadItems()
+      await loadFavorites()
+      await migratePinnedToFavorites()
     } catch (error) {
       console.error('初始化数据库失败:', error)
     } finally {
@@ -212,11 +333,14 @@ export function useClipboardDB() {
 
   return {
     items,
+    favorites,
     isLoading,
     addItem,
-    updateItem,
     deleteItem,
     clearUnpinned,
-    loadItems
+    toggleFavorite,
+    removeFavorite,
+    loadItems,
+    loadFavorites
   }
 }

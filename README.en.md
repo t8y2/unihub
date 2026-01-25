@@ -46,6 +46,10 @@ Join UniHub community to discuss and share with other developers!
       <img src="docs/screenshots/qq-group-qrcode.png" width="200" alt="QQ Group">
       <p><strong>QQ Group</strong></p>
     </td>
+    <td align="center">
+      <img src="docs/screenshots/wx_personal.png" width="200" alt="Personal WeChat">
+      <p><strong>Add Me to Join</strong></p>
+    </td>
   </tr>
 </table>
 

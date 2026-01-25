@@ -46,6 +46,10 @@
       <img src="docs/screenshots/qq-group-qrcode.png" width="200" alt="QQ群">
       <p><strong>QQ 交流群</strong></p>
     </td>
+    <td align="center">
+      <img src="docs/screenshots/wx_personal.png" width="200" alt="个人微信">
+      <p><strong>加我拉你进群</strong></p>
+    </td>
   </tr>
 </table>
 
